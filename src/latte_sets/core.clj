@@ -18,7 +18,10 @@ natural translation to the typed setting.
   (:refer-clojure :exclude [and or not set])
 
   (:require [latte.core :as latte :refer [definition defthm defaxiom
-                                          forall assume have proof lambda]])
+                                          forall lambda ==>
+                                          assume have proof lambda]])
+
+  (:require [latte.quant :as q :refer [exists]])
 
   (:require [latte.prop :as p :refer [<=> and or not]])
 
