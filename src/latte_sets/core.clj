@@ -1,25 +1,24 @@
-(ns latte.subset
+(ns latte-sets.core
   "Set-theoretic notions based on the subset
   approach of type theory.
 
   The main idea is to consider a typed variant of
   a mathematical set as a predicate over a given type.
 
-  In LaTTe what is called a **set** will be technically-speaking
+  What is called a **set** will be technically-speaking
   a subset of a type, hence a predicate over a given type.
+  This means that the set theory developed here is *typed*
+  and thus quite different than the standard axiomatic
+set theories (e.g. ZF and ZFC), which are essentially untyped.
 
-  The main drawback of the approach is that sets
-  are not considered as types (hence type inhabitation
-  and set elemthood are distinct notions).
-
-  The advantage is that it is quite an effective approach in
-  practice,
-  and that it does not require any extension to the kernel
-  such as dependent pairs and sigma-types."
+  But many set-theoretic constructions and results have a
+natural translation to the typed setting.
+"
 
   (:refer-clojure :exclude [and or not set])
 
-  (:require [latte.core :as latte :refer [definition defthm forall assume have proof lambda]])
+  (:require [latte.core :as latte :refer [definition defthm defaxiom
+                                          forall assume have proof lambda]])
 
   (:require [latte.prop :as p :refer [<=> and or not]])
 
@@ -27,46 +26,53 @@
   )
 
 (definition set
-  "The set (or subset of a type) constructor."
+  "The type of sets whose elements are of type `T`."
   [[T :type]]
   (==> T :type))
 
 (definition elem
-  "Set membership."
+  "Set membership. 
+
+Given a type `T`, a value `x` of type `T` and
+ a set `s`, then `(elem T x s)` means that `x` is an element of set `s`.
+ The standard mathematical notation is: `x`∊`s` (leaving the type `T` implicit)."
   [[T :type] [x T] [s (set T)]]
   (s x))
 
-(definition subseteq
-  "Subset or equal relation."
+(definition subset
+  "The subset relation for type `T`.
+
+The expression `(subset T s1 s2)` means that
+ the set `s1` is a subset of `s2`, i.e. `s1`⊆`s2`."
   [[T :type] [s1 (set T)] [s2 (set T)]]
   (forall [x T]
     (==> (elem T x s1)
          (elem T x s2))))
 
-(defthm subseteq-refl
+(defthm subset-refl
   "The subset relation is reflexive."
   [[T :type] [s (set T)]]
-  (subseteq T s s))
+  (subset T s s))
 
-(proof subseteq-refl :script
+(proof subset-refl :script
   (assume [x T
            H (elem T x s)]
     (have a (elem T x s) :by H)
     (have b (==> (elem T x s)
                  (elem T x s)) :discharge [H a])
-    (have c (subseteq T s s) :discharge [x b])
+    (have c (subset T s s) :discharge [x b])
     (qed c)))
 
-(defthm subseteq-trans
+(defthm subset-trans
   "The subset relation is transitive."
   [[T :type] [s1 (set T)] [s2 (set T)] [s3 (set T)]]
-  (==> (subseteq T s1 s2)
-       (subseteq T s2 s3)
-       (subseteq T s1 s3)))
+  (==> (subset T s1 s2)
+       (subset T s2 s3)
+       (subset T s1 s3)))
 
-(proof subseteq-trans :script
-  (assume [H1 (subseteq T s1 s2)
-           H2 (subseteq T s2 s3)]
+(proof subset-trans :script
+  (assume [H1 (subset T s1 s2)
+           H2 (subset T s2 s3)]
     (assume [x T]
       (have a (==> (elem T x s1)
                    (elem T x s2)) :by (H1 x))
@@ -76,14 +82,16 @@
                    (elem T x s3)) :by ((p/impl-trans (elem T x s1)
                                                      (elem T x s2)
                                                      (elem T x s3)) a b))
-      (have d (subseteq T s1 s3) :discharge [x c]))
+      (have d (subset T s1 s3) :discharge [x c]))
     (qed d)))
 
 (definition seteq
-  "Equality on sets."
+  "Equality on sets.
+
+This is a natural equality on sets based on the subset relation."
   [[T :type] [s1 (set T)] [s2 (set T)]]
-  (and (subseteq T s1 s2)
-       (subseteq T s2 s1)))
+  (and (subset T s1 s2)
+       (subset T s2 s1)))
 
 (defthm seteq-refl
   "Set equality is reflexive."
@@ -91,11 +99,11 @@
   (seteq T s s))
 
 (proof seteq-refl :script
-  (have a (subseteq T s s) :by (subseteq-refl T s))
-  (have b (and (subseteq T s s)
-               (subseteq T s s))
-        :by ((p/and-intro (subseteq T s s)
-                          (subseteq T s s)) a a))
+  (have a (subset T s s) :by (subset-refl T s))
+  (have b (and (subset T s s)
+               (subset T s s))
+        :by ((p/and-intro (subset T s s)
+                          (subset T s s)) a a))
   (qed b))
 
 (defthm seteq-sym
@@ -106,12 +114,12 @@
 
 (proof seteq-sym :script
   (assume [H (seteq T s1 s2)]
-    (have a (subseteq T s1 s2) :by ((p/and-elim-left (subseteq T s1 s2)
-                                                       (subseteq T s2 s1)) H))
-    (have b (subseteq T s2 s1) :by ((p/and-elim-right (subseteq T s1 s2)
-                                                        (subseteq T s2 s1)) H))
-    (have c (seteq T s2 s1) :by ((p/and-intro (subseteq T s2 s1)
-                                              (subseteq T s1 s2)) b a))
+    (have a (subset T s1 s2) :by ((p/and-elim-left (subset T s1 s2)
+                                                       (subset T s2 s1)) H))
+    (have b (subset T s2 s1) :by ((p/and-elim-right (subset T s1 s2)
+                                                        (subset T s2 s1)) H))
+    (have c (seteq T s2 s1) :by ((p/and-intro (subset T s2 s1)
+                                              (subset T s1 s2)) b a))
     (qed c)))
 
 (defthm seteq-trans
@@ -124,23 +132,146 @@
 (proof seteq-trans :script
   (assume [H1 (seteq T s1 s2)
            H2 (seteq T s2 s3)]
-    (have a1 (subseteq T s1 s2) :by ((p/and-elim-left (subseteq T s1 s2)
-                                                      (subseteq T s2 s1)) H1))
-    (have b1 (subseteq T s2 s3) :by ((p/and-elim-left (subseteq T s2 s3)
-                                                      (subseteq T s3 s2)) H2))
-    (have c1 (subseteq T s1 s3) :by ((subseteq-trans T s1 s2 s3) a1 b1))
-    (have a2 (subseteq T s2 s1) :by ((p/and-elim-right (subseteq T s1 s2)
-                                                       (subseteq T s2 s1)) H1))
-    (have b2 (subseteq T s3 s2) :by ((p/and-elim-right (subseteq T s2 s3)
-                                                       (subseteq T s3 s2)) H2))
-    (have c2 (subseteq T s3 s1) :by ((subseteq-trans T s3 s2 s1) b2 a2))
-    (have d (seteq T s1 s3) :by ((p/and-intro (subseteq T s1 s3)
-                                              (subseteq T s3 s1)) c1 c2))
+    (have a1 (subset T s1 s2) :by ((p/and-elim-left (subset T s1 s2)
+                                                      (subset T s2 s1)) H1))
+    (have b1 (subset T s2 s3) :by ((p/and-elim-left (subset T s2 s3)
+                                                      (subset T s3 s2)) H2))
+    (have c1 (subset T s1 s3) :by ((subset-trans T s1 s2 s3) a1 b1))
+    (have a2 (subset T s2 s1) :by ((p/and-elim-right (subset T s1 s2)
+                                                       (subset T s2 s1)) H1))
+    (have b2 (subset T s3 s2) :by ((p/and-elim-right (subset T s2 s3)
+                                                       (subset T s3 s2)) H2))
+    (have c2 (subset T s3 s1) :by ((subset-trans T s3 s2 s1) b2 a2))
+    (have d (seteq T s1 s3) :by ((p/and-intro (subset T s1 s3)
+                                              (subset T s3 s1)) c1 c2))
     (qed d)))
 
 
+(definition set-equal
+  "A *Leibniz*-stype equality for sets.
+
+It says that two sets `s1` and `s2` are equal iff for 
+any predicate `P` then `(P s1)` if and only if `(P s2)`.
+
+Note that the identification with [[seteq]] is non-trivial,
+ and requires an axiom."
+  [[T :type] [s1 (set T)] [s2 (set T)]]
+  (forall [P (==> (set T) :type)]
+    (<=> (P s1) (P s2))))
+
+(defthm set-equal-refl
+  "Reflexivity of set equality."
+  [[T :type] [s (set T)]]
+  (set-equal T s s))
+
+(proof set-equal-refl :script
+  (assume [P (==> (set T) :type)]
+    (have a (<=> (P s) (P s))
+          :by (p/iff-refl (P s)))
+    (qed a)))
+
+(defthm set-equal-sym
+  "Symmetry of set equality."
+  [[T :type] [s1 (set T)] [s2 (set T)]]
+  (==> (set-equal T s1 s2)
+       (set-equal T s2 s1)))
+
+(proof set-equal-sym :script
+  (assume [H (set-equal T s1 s2)
+           Q (==> (set T) :type)]
+    (have a (<=> (Q s1) (Q s2)) :by (H Q))
+    (have b (<=> (Q s2) (Q s1)) :by ((p/iff-sym (Q s1) (Q s2)) a))
+    (qed b)))
+
+(defthm set-equal-trans
+  "Transitivity of set equality."
+  [[T :type] [s1 (set T)] [s2 (set T)] [s3 (set T)]]
+  (==> (set-equal T s1 s2)
+       (set-equal T s2 s3)
+       (set-equal T s1 s3)))
+
+(proof set-equal-trans :script
+  (assume [H1 (set-equal T s1 s2)
+           H2 (set-equal T s2 s3)
+           Q (==> (set T) :type)]
+    (have a (<=> (Q s1) (Q s2)) :by (H1 Q))
+    (have b (<=> (Q s2) (Q s3)) :by (H2 Q))
+    (have c (<=> (Q s1) (Q s3))
+          :by ((p/iff-trans (Q s1) (Q s2) (Q s3)) a b))
+    (qed c)))
+
+(defthm set-equal-implies-subset
+  "Going from *Leibniz* equality on sets to the subset relation is easy."
+  [[T :type] [s1 (set T)] [s2 (set T)]]
+  (==> (set-equal T s1 s2)
+       (subset T s1 s2)))
+
+(proof set-equal-implies-subset :script
+  (assume [H (set-equal T s1 s2)
+           x T]
+    (have Qx _ :term (lambda [s (set T)]
+                       (elem T x s)))
+    (have a (<=> (elem T x s1) (elem T x s2))
+          :by (H Qx))
+    (have b (==> (elem T x s1) (elem T x s2))
+          :by ((p/iff-elim-if (elem T x s1) (elem T x s2)) a))
+    (have c (subset T s1 s2) :discharge [x b])
+    (qed c)))
+
+(defthm set-equal-implies-seteq
+  "Subset-based equality implies *Leibniz*-style equality on sets."
+  [[T :type] [s1 (set T)] [s2 (set T)]]
+  (==> (set-equal T s1 s2)
+       (seteq T s1 s2)))
+
+(proof set-equal-implies-seteq :script
+  (assume [H (set-equal T s1 s2)]
+    ;; "First we get s1⊆s2."
+    (have a (subset T s1 s2) :by ((set-equal-implies-subset T s1 s2) H))
+    ;; "Then we get s2⊆s1."
+    (have b1 (set-equal T s2 s1) :by ((set-equal-sym T s1 s2) H))
+    (have b (subset T s2 s1) :by ((set-equal-implies-subset T s2 s1) b1))
+    ;; "... and we can now conclude"
+    (have c (seteq T s1 s2) :by ((p/and-intro (subset T s1 s2)
+                                              (subset T s2 s1)) a b))
+    (qed c)))
+
+(defaxiom seteq-implies-set-equal-ax
+  "Going from subset-based equality to *Leibniz*-style equality
+requires this axiom. This is because we cannot lift membership
+ to an arbitrary predicate."
+  [[T :type] [s1 (set T)] [s2 (set T)]]
+  (==> (seteq T s1 s2)
+       (set-equal T s1 s2)))
+
+(defthm set-equal-seteq
+  "Set equality and subset-based equality (should) coincide (axiomatically)."
+  [[T :type] [s1 (set T)] [s2 (set T)]]
+  (<=> (seteq T s1 s2)
+       (set-equal T s1 s2)))
+
+(proof set-equal-seteq :script
+  (have a (==> (seteq T s1 s2)
+               (set-equal T s1 s2)) :by (seteq-implies-set-equal-ax T s1 s2))
+  (have b (==> (set-equal T s1 s2)
+               (seteq T s1 s2)) :by (set-equal-implies-seteq T s1 s2))
+  (qed ((p/iff-intro (seteq T s1 s2)
+                     (set-equal T s1 s2)) a b)))
+
+(definition proper-subset
+  "The anti-reflexive variant of the subset relation.
+
+The expression `(proper-subset T s1 s2)` means that
+ the set `s1` is a subset of `s2`, but that the two
+sets are distinct, i.e. `s1`⊂`s2` (or more explicitely `s1`⊊`s2`)."
+  [[T :type] [s1 (set T)] [s2 (set T)]]
+  (and (subset T s1 s2)
+       (not (seteq T s1 s2))))
+
 (definition union
-  "Set union."
+  "Set union.
+
+`(union T s1 s2)` is the set `s1`∪`s2`."
   [[T :type] [s1 (set T)] [s2 (set T)]]
   (lambda [x T]
     (or (elem T x s1)
@@ -151,7 +282,7 @@
   [[T :type] [s1 (set T)] [s2 (set T)]]
   (seteq T
          (union T s1 s2)
-         (union T s2 s1)))  
+         (union T s2 s1)))
 
 (proof union-commute :script
   (assume [x T
@@ -164,7 +295,7 @@
     (have a4 (elem T x (union T s2 s1)) :by a3)
     (have a5 (==> (elem T x (union T s1 s2))
                   (elem T x (union T s2 s1))) :discharge [H a4])
-    (have a (subseteq T
+    (have a (subset T
                       (union T s1 s2)
                       (union T s2 s1)) :discharge [x a5]))
   (assume [x T
@@ -173,19 +304,22 @@
           :by ((p/or-sym (elem T x s2) (elem T x s1)) H))
     (have b2 (==> (elem T x (union T s2 s1))
                   (elem T x (union T s1 s2))) :discharge [H b1])
-    (have b (subseteq T
+    (have b (subset T
                       (union T s2 s1)
                       (union T s1 s2)) :discharge [x b2]))
   (have c (seteq T
                  (union T s1 s2)
                  (union T s2 s1))
-        :by ((p/and-intro (subseteq T (union T s1 s2) (union T s2 s1))
-                          (subseteq T (union T s2 s1) (union T s1 s2)))
+        :by ((p/and-intro (subset T (union T s1 s2) (union T s2 s1))
+                          (subset T (union T s2 s1) (union T s1 s2)))
              a b))
   (qed c))
 
 (definition intersection
-  "Set intersection."
+  "Set intersection.
+
+`(intersection T s1 s2)` is the set `s1`∩`s2`."
+
   [[T :type] [s1 (set T)] [s2 (set T)]]
   (lambda [x T]
     (and (elem T x s1)
@@ -229,7 +363,7 @@
           :by ((p/and-sym (elem T x s1) (elem T x s2)) H))
     (have a2 (==> (elem T x (intersection T s1 s2))
                   (elem T x (intersection T s2 s1))) :discharge [H a1])
-    (have a (subseteq T
+    (have a (subset T
                       (intersection T s1 s2)
                       (intersection T s2 s1)) :discharge [x a2]))
   (assume [x T
@@ -238,17 +372,25 @@
           :by ((p/and-sym (elem T x s2) (elem T x s1)) H))
     (have b2 (==> (elem T x (intersection T s2 s1))
                   (elem T x (intersection T s1 s2))) :discharge [H b1])
-    (have b (subseteq T
+    (have b (subset T
                       (intersection T s2 s1)
                       (intersection T s1 s2)) :discharge [x b2]))
   (have c (seteq T
                  (intersection T s1 s2)
                  (intersection T s2 s1))
-        :by ((p/and-intro (subseteq T (intersection T s1 s2) (intersection T s2 s1))
-                          (subseteq T (intersection T s2 s1) (intersection T s1 s2)))
+        :by ((p/and-intro (subset T (intersection T s1 s2) (intersection T s2 s1))
+                          (subset T (intersection T s2 s1) (intersection T s1 s2)))
              a b))
   (qed c))
 
+(definition difference
+  "Set difference
+
+`(difference T s1 s2)` is the set `s1`∖`s2`."
+  [[T :type] [s1 (set T)] [s2 (set T)]]
+  (lambda [x T]
+    (and (elem T x s1)
+         (not (elem T x s2)))))
 
 (definition fullset
   "The full set of a type
