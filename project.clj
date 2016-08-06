@@ -1,4 +1,4 @@
-(defproject latte-sets "0.0.2"
+(defproject latte-sets "0.0.3-SNAPSHOT"
   :description "A formalization of (typed) Set theory in LaTTe."
   :url "https://github.com/fredokun/latte-sets.git"
   :license {:name "MIT Licence"
@@ -8,4 +8,3 @@
   :codox {:metadata {:doc/format :markdown}
           :namespaces [latte-sets.core]}
   :plugins [[lein-codox "0.9.5"]])
-
