@@ -17,7 +17,7 @@ natural translation to the typed setting.
 
   (:refer-clojure :exclude [and or not set])
 
-  (:require [latte.core :as latte :refer [definition defthm defaxiom
+  (:require [latte.core :as latte :refer [definition defthm defaxiom defnotation
                                           forall lambda ==>
                                           assume have proof lambda]])
 
@@ -41,6 +41,40 @@ Given a type `T`, a value `x` of type `T` and
  The standard mathematical notation is: `x`∊`s` (leaving the type `T` implicit)."
   [[T :type] [x T] [s (set T)]]
   (s x))
+
+(defnotation forall-in
+  "Universal quantification over sets.
+
+  `(forall-in [x T s] (P x))` is a 
+shortcut for `(forall [x T]
+                 (==> (elem T x s)
+                      (P x)))`."
+  [binding body]
+  (if (not= (count binding) 3)
+    [:ko {:msg "Binding of `forall-in` should be of the form `[x T s]`."
+          :binding binding}]
+    [:ok `(forall [~(first binding) ~(second binding)]
+                  (==> (elem ~(second binding) ~(first binding) ~(nth binding 2))
+                       ~body))]))
+
+(alter-meta! #'forall-in update-in [:style/indent] (fn [_] [1 :form :form]))
+
+(defnotation exists-in
+  "Existential quantification over sets.
+
+  `(exists-in [x T s] (P x))` is a 
+shortcut for `(exists [x T]
+                 (and (elem T x s)
+                      (P x)))`."
+  [binding body]
+  (if (not= (count binding) 3)
+    [:ko {:msg "Binding of `exists-in` should be of the form `[x T s]`."
+          :binding binding}]
+    [:ok `(exists [~(first binding) ~(second binding)]
+                  (and (elem ~(second binding) ~(first binding) ~(nth binding 2))
+                       ~body))]))
+
+(alter-meta! #'exists-in update-in [:style/indent] (fn [_] [1 :form :form]))
 
 (definition subset
   "The subset relation for type `T`.
