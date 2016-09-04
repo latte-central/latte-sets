@@ -336,6 +336,32 @@ sets are distinct, i.e. `s1`⊂`s2` (or more explicitely `s1`⊊`s2`)."
         :by (p/%and-intro a b))
   (qed c))
 
+
+;; (definition unions
+;;   "Generalize union."
+;;   [[T :type] [P (==> (set T) :type)]]
+;;   (lambda [y T]
+;;     (q/ex (set T) (lambda [X (set T)] (and (P X) (elem T y X))))))
+;; ;; Here it does not work because (set T) if of type :kind and not :type
+
+;;; XXX: hence, we try to use an alternative existential
+;;; (this is highly experimental for now)
+
+(definition ex-set
+  "An existential for sets."
+  [[T :type] [P (==> (set T) :type)]]
+  (forall [α :type]
+    (==> (forall [X (set T)]
+           (==> (P X) α))
+         α)))
+
+(definition unions
+  "Generalized union."
+  [[T :type] [P (==> (set T) :type)]]
+  (lambda [y T]
+    (ex-set T (lambda [X (set T)]
+                (and (P X) (elem T y X))))))
+
 (definition intersection
   "Set intersection.
 
@@ -399,6 +425,13 @@ sets are distinct, i.e. `s1`⊂`s2` (or more explicitely `s1`⊊`s2`)."
                  (intersection T s2 s1))
         :by (p/%and-intro a b))
   (qed c))
+
+(definition intersections
+  "Generalize intersections."
+  [[T :type] [P (==> (set T) :type)]]
+  (lambda [y T]
+    (forall [X (set T)]
+      (==> (P X) (elem T y X)))))
 
 (definition difference
   "Set difference
