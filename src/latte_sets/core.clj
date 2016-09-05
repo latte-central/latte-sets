@@ -348,12 +348,45 @@ sets are distinct, i.e. `s1`⊂`s2` (or more explicitely `s1`⊊`s2`)."
 ;;; (this is highly experimental for now)
 
 (definition ex-set
-  "An existential for sets."
+  "An existential for sets.
+This is the definition of [[latte.quant/ex]] but
+adpated for sets."
   [[T :type] [P (==> (set T) :type)]]
   (forall [α :type]
     (==> (forall [X (set T)]
            (==> (P X) α))
          α)))
+
+(defthm ex-set-elim
+  "The ()elimination rule for the set existential."
+  [[T :type] [P (==> (set  T) :type)] [A :type]]
+  (==> (ex-set T P)
+       (forall [X (set T)] (==> (P X) A))
+       A))
+
+(proof ex-set-elim :script
+  (assume [H1 (ex-set T P)
+           H2 (forall [X (set T)] (==> (P X) A))]
+    (have a (==> (forall [X (set T)] (==> (P X) A))
+                 A) :by (H1 A))
+    (have b A :by (a H2))
+    (qed b)))
+
+(defthm ex-set-intro
+  "Introduction rule for [[ex-set]]."
+  [[T :type] [P (==> (set T) :type)] [X (set T)]]
+  (==> (P X)
+       (ex-set T P)))
+
+(proof ex-set-intro
+    :script
+  (assume [H (P X)
+           A :type
+           Q (forall [Y (set T)] (==> (P Y) A))]
+    (have a (==> (P X) A) :by (Q X))
+    (have b A :by (a H))
+    (have c _ :discharge [A Q b])
+    (qed c)))
 
 (definition unions
   "Generalized union."
