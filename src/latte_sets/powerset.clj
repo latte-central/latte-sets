@@ -18,7 +18,7 @@ to deal with powersets."
               [latte.prop :as p :refer [<=> and or not]]
               [latte.equal :as eq :refer [equal]]
 
-              [latte-sets.core :as s :refer [set elem]]))
+              [latte-sets.core :as s :refer [set elem seteq]]))
 
 (definition powerset
   "The powerset constructor. 
@@ -78,6 +78,53 @@ adpated for sets."
     (have c _ :discharge [A Q b])
     (qed c)))
 
+(definition set-single
+  "The powerset version of [[latte.quant/single]].
+There exists at most one set ..."
+  [[T :type] [X (powerset T)]]
+  (forall [x y (set T)]
+    (==> (set-elem T x X)
+         (set-elem T y X)
+         (seteq T x y))))
+
+(definition set-unique
+  "The powerset version of [[latte.quant/unique]].
+There exists a unique set ..."
+  [[T :type] [X (powerset T)]]
+  (and (set-ex T X)
+       (set-single T X)))
+
+(defaxiom the-set
+  "The powerset version of [[latte.quant/the]]."
+  [[T :type] [X (powerset T)] [u (set-unique T X)]]
+  (set T))
+
+(defaxiom the-set-prop
+  "The property of the unique set descriptor [[the-set]]."
+  [[T :type] [X (powerset T)] [u (set-unique T X)]]
+  (set-elem T (the-set T X u) X))
+
+(defthm the-set-lemma
+  "The unique set ... is unique."
+  [[T :type] [X (powerset T)] [u (set-unique T X)]]
+  (forall [y (set T)]
+    (==> (set-elem T y X)
+         (seteq T y (the-set T X u)))))
+
+(proof the-set-lemma
+    :script
+  (have a (set-single T X) :by (p/%and-elim-right u))
+  (have b (set-elem T (the-set T X u) X) :by (the-set-prop T X u))
+  (assume [y (set T)
+           Hy (set-elem T y X)]
+    (have c (==> (set-elem T y X)
+                 (set-elem T (the-set T X u) X)
+                 (seteq T y (the-set T X u))) :by (a y (the-set T X u)))
+    (have d (seteq T y (the-set T X u)) :by (c Hy b))
+    (have e _ :discharge [y Hy d]))
+  (qed e))
+
+
 (definition unions
   "Generalized union.
 This is the set {y:T | ∃x∈X, y∈x}."
@@ -95,9 +142,6 @@ This is the set {y:T | ∀x∈X, y∈x}."
     (forall [x (set T)]
       (==> (set-elem T x X)
            (elem T y x)))))
-
-
-
 
 
 
