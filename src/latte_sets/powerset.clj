@@ -134,33 +134,27 @@ This is the set {y:T | ∃x∈X, y∈x}."
                 (and (set-elem T x X)
                      (elem T y x))))))
 
-;; TODO
-;; (defthm unions-lower-bound
-;;    "The generalized union is a lower bound wrt. 
-;; the subset relation."
-;;    [[T :type] [X (powerset T)]]
-;;    (forall [x (set T)]
-;;      (==>  (set-elem T x X)
-;;            (subset T (unions T X) x))))
+(defthm unions-upper-bound
+   "The generalized union is an upper bound wrt. 
+the subset relation."
+   [[T :type] [X (powerset T)]]
+   (forall [x (set T)]
+     (==>  (set-elem T x X)
+           (subset T x (unions T X)))))
 
-;; (proof unions-lower-bound
-;;     :script
-;;   (assume [x (set T)
-;;            Hx (set-elem T x X)]
-;;     (assume [y T
-;;              Hy (elem T y (unions T X))]
-;;       (have a (set-ex T (lambda [z (set T)]
-;;                           (and (set-elem T z X)
-;;                                (elem T y z)))) :by Hy)
-;;       (have b (==> (forall [z (set T)]
-;;                      (==> (and (set-elem T z X)
-;;                                (elem T y z))
-;;                           (elem T y x)))
-;;                    (elem T y x))
-;;             :by ((set-ex-elim T (lambda [z (set T)]
-;;                                   (and (set-elem T z X)
-;;                                        (elem T y z)))
-;;                               (elem T y x)) a)))))
+(proof unions-upper-bound
+    :script
+  (assume [x (set T)
+           Hx (set-elem T x X)]
+    (assume [y T
+             Hy (elem T y x)]
+      (have I _ :by (lambda [x (set T)]
+                      (and (set-elem T x X)
+                           (elem T y x))))
+      (have a (set-elem T x I) :by (p/%and-intro Hx Hy))
+      (have b (elem T y (unions T X)) :by ((set-ex-intro T I x) a))
+      (have c (subset T x (unions T X)) :discharge [y Hy b]))
+    (qed c)))
 
 (definition intersections
   "Generalize intersections.
@@ -171,22 +165,25 @@ This is the set {y:T | ∀x∈X, y∈x}."
       (==> (set-elem T x X)
            (elem T y x)))))
 
-;; (defthm intersection-upper-bound
-;;   "The generalized intersection is an upper bound wrt. the subset relation."
-;;   [[T :type] [X (powerset T)]]
-;;   (forall [x (set T)]
-;;     (==> (set-elem T x X)
-;;          (subset T x (intersections T X)))))
+(defthm intersections-lower-bound
+  "The generalized intersection is a lower bound wrt. the subset relation."
+  [[T :type] [X (powerset T)]]
+  (forall [x (set T)]
+    (==> (set-elem T x X)
+         (subset T (intersections T X) x))))
 
-;; (proof intersection-upper-bound
-;;     :script
-;;   (assume [x (set T)
-;;            Hx (set-elem T x X)]
-;;     (assume [y T
-;;              Hy (elem T y x)]
-;;       (assume [z (set T)
-;;                Hz (set-elem T z X)]
-;;         (have a )))))
+(proof intersections-lower-bound
+    :script
+  (assume [x (set T)
+           Hx (set-elem T x X)]
+    (assume [y T
+             Hy (elem T y (intersections T X))]
+      (have a (elem T y x) :by (Hy x Hx))
+      (have b (subset T (intersections T X) x)
+            :discharge [y Hy a]))
+    (qed b)))
+
+
 
 
 
