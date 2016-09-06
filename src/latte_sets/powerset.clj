@@ -18,7 +18,7 @@ to deal with powersets."
               [latte.prop :as p :refer [<=> and or not]]
               [latte.equal :as eq :refer [equal]]
 
-              [latte-sets.core :as s :refer [set elem seteq]]))
+              [latte-sets.core :as s :refer [set elem seteq subset]]))
 
 (definition powerset
   "The powerset constructor. 
@@ -45,7 +45,7 @@ adpated for sets."
          α)))
 
 (defthm set-ex-elim
-  "The ()elimination rule for the set existential."
+  "The elimination rule for the set existential."
   [[T :type] [X (powerset T)] [A :type]]
   (==> (set-ex T X)
        (forall [x (set T)]
@@ -62,13 +62,13 @@ adpated for sets."
     (have b A :by (a H2))
     (qed b)))
 
-(defthm ex-set-intro
+(defthm set-ex-intro
   "Introduction rule for [[ex-set]]."
   [[T :type] [X (powerset T)] [x (set T)]]
   (==> (set-elem T x X)
        (set-ex T X)))
 
-(proof ex-set-intro
+(proof set-ex-intro
     :script
   (assume [H (set-elem T x X)
            A :type
@@ -134,6 +134,34 @@ This is the set {y:T | ∃x∈X, y∈x}."
                 (and (set-elem T x X)
                      (elem T y x))))))
 
+;; TODO
+;; (defthm unions-lower-bound
+;;    "The generalized union is a lower bound wrt. 
+;; the subset relation."
+;;    [[T :type] [X (powerset T)]]
+;;    (forall [x (set T)]
+;;      (==>  (set-elem T x X)
+;;            (subset T (unions T X) x))))
+
+;; (proof unions-lower-bound
+;;     :script
+;;   (assume [x (set T)
+;;            Hx (set-elem T x X)]
+;;     (assume [y T
+;;              Hy (elem T y (unions T X))]
+;;       (have a (set-ex T (lambda [z (set T)]
+;;                           (and (set-elem T z X)
+;;                                (elem T y z)))) :by Hy)
+;;       (have b (==> (forall [z (set T)]
+;;                      (==> (and (set-elem T z X)
+;;                                (elem T y z))
+;;                           (elem T y x)))
+;;                    (elem T y x))
+;;             :by ((set-ex-elim T (lambda [z (set T)]
+;;                                   (and (set-elem T z X)
+;;                                        (elem T y z)))
+;;                               (elem T y x)) a)))))
+
 (definition intersections
   "Generalize intersections.
 This is the set {y:T | ∀x∈X, y∈x}."
@@ -142,6 +170,23 @@ This is the set {y:T | ∀x∈X, y∈x}."
     (forall [x (set T)]
       (==> (set-elem T x X)
            (elem T y x)))))
+
+;; (defthm intersection-upper-bound
+;;   "The generalized intersection is an upper bound wrt. the subset relation."
+;;   [[T :type] [X (powerset T)]]
+;;   (forall [x (set T)]
+;;     (==> (set-elem T x X)
+;;          (subset T x (intersections T X)))))
+
+;; (proof intersection-upper-bound
+;;     :script
+;;   (assume [x (set T)
+;;            Hx (set-elem T x X)]
+;;     (assume [y T
+;;              Hy (elem T y x)]
+;;       (assume [z (set T)
+;;                Hz (set-elem T z X)]
+;;         (have a )))))
 
 
 
