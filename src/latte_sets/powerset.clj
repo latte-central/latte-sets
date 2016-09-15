@@ -183,6 +183,19 @@ This is the set {y:T | ∀x∈X, y∈x}."
             :discharge [y Hy a]))
     (qed b)))
 
+(defthm intersections-prop
+  "Preservation of properties on intersections."
+  [[T :type] [P (==> T :type)][X (powerset T)]]
+  (==> (forall [x (set T)]
+         (==> (set-elem T x X)
+              (forall [y T]
+                (==> (elem T y x)
+                     (P y)))))
+       (forall [y T]
+         (==> (elem T y (intersections T X))
+              (P y)))))
+
+;; proof to do
 
 
 

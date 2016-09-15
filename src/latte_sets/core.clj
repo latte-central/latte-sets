@@ -19,7 +19,7 @@ natural translation to the typed setting.
 
   (:require [latte.core :as latte :refer [definition defthm defaxiom defnotation
                                           forall lambda ==>
-                                          assume have proof lambda]]
+                                          assume have proof lambda forall]]
             [latte.quant :as q :refer [exists]]
             [latte.prop :as p :refer [<=> and or not]]
             [latte.equal :as eq :refer [equal]]))
@@ -117,6 +117,30 @@ The expression `(subset T s1 s2)` means that
                                                      (elem T x s3)) a b))
       (have d (subset T s1 s3) :discharge [x c]))
     (qed d)))
+
+(defthm subset-prop
+  "Preservation of properties on subsets."
+  [[T :type] [P (==> T :type)][s1 (set T)] [s2 (set T)]]
+  (==> (forall [x T]
+         (==> (elem T x s2)
+              (P x)))
+       (subset T s1 s2)
+       (forall [x T]
+         (==> (elem T x s1)
+              (P x)))))
+
+(proof subset-prop
+    :script
+  (assume [H1 (forall [x T]
+                (==> (elem T x s2)
+                     (P x)))
+           H2 (subset T s1 s2)]
+    (assume [x T
+             Hx (elem T x s1)]
+      (have <a> (elem T x s2) :by (H2 x Hx))
+      (have <b> (P x) :by (H1 x <a>))
+      (have <c> _ :discharge [x Hx <b>]))
+    (qed <c>)))
 
 (definition seteq
   "Equality on sets.
