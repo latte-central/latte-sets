@@ -195,7 +195,17 @@ This is the set {y:T | ∀x∈X, y∈x}."
          (==> (elem T y (intersections T X))
               (P y)))))
 
-;; proof to do
+;; TODO
+;; (proof intersections-prop
+;;     :script
+;;   (assume [H (forall [x (set T)]
+;;          (==> (set-elem T x X)
+;;               (forall [y T]
+;;                 (==> (elem T y x)
+;;                      (P y)))))]
+;;     (assume [y T
+;;              Hy (elem T y (intersections T X))]
+;;       )))
 
 
 
