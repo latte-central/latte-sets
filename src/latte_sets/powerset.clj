@@ -185,29 +185,29 @@ This is the set {y:T | ∀x∈X, y∈x}."
 
 (defthm intersections-prop
   "Preservation of properties on intersections."
-  [[T :type] [P (==> T :type)][X (powerset T)]]
-  (==> (forall [x (set T)]
-         (==> (set-elem T x X)
-              (forall [y T]
+  [[T :type] [P (==> T :type)] [X (powerset T)]]
+  (forall [x (set T)]
+    (==> (set-elem T x X)
+         (forall [y T]
+           (==> (elem T y x)
+                (P y)))
+         (forall [z T]
+           (==> (elem T z (intersections T X))
+                (P z))))))
+
+(proof intersections-prop
+    :script
+  (assume [x (set T)
+           H1 (set-elem T x X)
+           H2 (forall [y T]
                 (==> (elem T y x)
-                     (P y)))))
-       (forall [y T]
-         (==> (elem T y (intersections T X))
-              (P y)))))
-
-;; TODO
-;; (proof intersections-prop
-;;     :script
-;;   (assume [H (forall [x (set T)]
-;;          (==> (set-elem T x X)
-;;               (forall [y T]
-;;                 (==> (elem T y x)
-;;                      (P y)))))]
-;;     (assume [y T
-;;              Hy (elem T y (intersections T X))]
-;;       )))
-
-
-
-
-
+                     (P y)))]
+    (assume [z T
+             Hz (elem T z (intersections T X))]
+      (have <a> (==> (elem T z x)
+                     (P z)) :by (H2 z))
+      (have <b> (elem T z x)
+            :by ((intersections-lower-bound T X) x H1 z Hz))
+      (have <c> (P z) :by (<a> <b>))
+      (have <d> _ :discharge [z Hz <c>]))
+    (qed <d>)))
