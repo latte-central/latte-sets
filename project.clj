@@ -4,7 +4,7 @@
   :license {:name "MIT Licence"
             :url "http://opensource.org/licenses/MIT"}
   :dependencies [[org.clojure/clojure "1.8.0"]
-                 [latte "0.3.2-SNAPSHOT"]]
+                 [latte "0.3.3-SNAPSHOT"]]
   :codox {:metadata {:doc/format :markdown}
           :namespaces [latte-sets.core
                        latte-sets.powerset]}
