@@ -470,3 +470,18 @@ of the full set)."
     (have b (not (elem T x (emptyset T))) :discharge [H a])
     (have c _ :discharge [x b])
     (qed c)))
+
+(defthm emptyset-subset-lower-bound
+  "The emptyset is a subset of every other sets."
+  [[T :type] [s (set T)]]
+  (subset T (emptyset T) s))
+
+(proof emptyset-subset-lower-bound
+    :script
+  (assume [x T
+           Hx (elem T x (emptyset T))]
+    (have <a> p/absurd :by Hx)
+    (have <b> (elem T x s) :by ((p/ex-falso (elem T x s)) <a>))
+    (qed <b>)))
+
+
