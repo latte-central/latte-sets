@@ -171,9 +171,9 @@ This is a natural equality on sets based on the subset relation."
 
 (proof seteq-sym :script
   (assume [H (seteq T s1 s2)]
-    (have a (subset T s1 s2) :by (p/%and-elim-left H))
-    (have b (subset T s2 s1) :by (p/%and-elim-right H))
-    (have c (seteq T s2 s1) :by (p/%and-intro b a))
+    (have a (subset T s1 s2) :by (p/and-elim-left% H))
+    (have b (subset T s2 s1) :by (p/and-elim-right% H))
+    (have c (seteq T s2 s1) :by (p/and-intro% b a))
     (qed c)))
 
 (defthm seteq-trans
@@ -186,13 +186,13 @@ This is a natural equality on sets based on the subset relation."
 (proof seteq-trans :script
   (assume [H1 (seteq T s1 s2)
            H2 (seteq T s2 s3)]
-    (have a1 (subset T s1 s2) :by (p/%and-elim-left H1))
-    (have b1 (subset T s2 s3) :by (p/%and-elim-left H2))
+    (have a1 (subset T s1 s2) :by (p/and-elim-left% H1))
+    (have b1 (subset T s2 s3) :by (p/and-elim-left% H2))
     (have c1 (subset T s1 s3) :by ((subset-trans T s1 s2 s3) a1 b1))
-    (have a2 (subset T s2 s1) :by (p/%and-elim-right H1))
-    (have b2 (subset T s3 s2) :by (p/%and-elim-right H2))
+    (have a2 (subset T s2 s1) :by (p/and-elim-right% H1))
+    (have b2 (subset T s3 s2) :by (p/and-elim-right% H2))
     (have c2 (subset T s3 s1) :by ((subset-trans T s3 s2 s1) b2 a2))
-    (have d (seteq T s1 s3) :by (p/%and-intro c1 c2))
+    (have d (seteq T s1 s3) :by (p/and-intro% c1 c2))
     (qed d)))
 
 (definition set-equal
@@ -280,7 +280,7 @@ Note that the identification with [[seteq]] is non-trivial,
     (have b1 (set-equal T s2 s1) :by ((set-equal-sym T s1 s2) H))
     (have b (subset T s2 s1) :by ((set-equal-implies-subset T s2 s1) b1))
     ;; "... and we can now conclude"
-    (have c (seteq T s1 s2) :by (p/%and-intro a b))
+    (have c (seteq T s1 s2) :by (p/and-intro% a b))
     (qed c)))
 
 (defaxiom seteq-implies-set-equal-ax
@@ -357,7 +357,7 @@ sets are distinct, i.e. `s1`⊂`s2` (or more explicitely `s1`⊊`s2`)."
   (have c (seteq T
                  (union T s1 s2)
                  (union T s2 s1))
-        :by (p/%and-intro a b))
+        :by (p/and-intro% a b))
   (qed c))
 
 (definition intersection
@@ -378,7 +378,7 @@ sets are distinct, i.e. `s1`⊂`s2` (or more explicitely `s1`⊊`s2`)."
 
 (proof intersection-elim-left :script
   (assume [H (elem T x (intersection T s1 s2))]
-    (have a (elem T x s1) :by (p/%and-elim-left H))
+    (have a (elem T x s1) :by (p/and-elim-left% H))
     (qed a)))
 
 (defthm intersection-elim-right
@@ -389,7 +389,7 @@ sets are distinct, i.e. `s1`⊂`s2` (or more explicitely `s1`⊊`s2`)."
 
 (proof intersection-elim-right :script
   (assume [H (elem T x (intersection T s1 s2))]
-    (have a (elem T x s2) :by (p/%and-elim-right H))
+    (have a (elem T x s2) :by (p/and-elim-right% H))
     (qed a)))
 
 (defthm intersection-commute
@@ -421,7 +421,7 @@ sets are distinct, i.e. `s1`⊂`s2` (or more explicitely `s1`⊊`s2`)."
   (have c (seteq T
                  (intersection T s1 s2)
                  (intersection T s2 s1))
-        :by (p/%and-intro a b))
+        :by (p/and-intro% a b))
   (qed c))
 
 (definition difference

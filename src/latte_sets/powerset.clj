@@ -113,7 +113,7 @@ There exists a unique set ..."
 
 (proof the-set-lemma
     :script
-  (have a (set-single T X) :by (p/%and-elim-right u))
+  (have a (set-single T X) :by (p/and-elim-right% u))
   (have b (set-elem T (the-set T X u) X) :by (the-set-prop T X u))
   (assume [y (set T)
            Hy (set-elem T y X)]
@@ -151,7 +151,7 @@ the subset relation."
       (have I _ :by (lambda [x (set T)]
                       (and (set-elem T x X)
                            (elem T y x))))
-      (have a (set-elem T x I) :by (p/%and-intro Hx Hy))
+      (have a (set-elem T x I) :by (p/and-intro% Hx Hy))
       (have b (elem T y (unions T X)) :by ((set-ex-intro T I x) a))
       (have c (subset T x (unions T X)) :discharge [y Hy b]))
     (qed c)))
