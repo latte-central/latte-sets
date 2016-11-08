@@ -75,8 +75,7 @@ adpated for sets."
            Q (forall [y (set T)] (==> (set-elem T y X) A))]
     (have a (==> (set-elem T x X) A) :by (Q x))
     (have b A :by (a H))
-    (have c _ :discharge [A Q b])
-    (qed c)))
+    (qed b)))
 
 (definition set-single
   "The powerset version of [[latte.quant/single]].
@@ -120,9 +119,8 @@ There exists a unique set ..."
     (have c (==> (set-elem T y X)
                  (set-elem T (the-set T X u) X)
                  (seteq T y (the-set T X u))) :by (a y (the-set T X u)))
-    (have d (seteq T y (the-set T X u)) :by (c Hy b))
-    (have e _ :discharge [y Hy d]))
-  (qed e))
+    (have d (seteq T y (the-set T X u)) :by (c Hy b)))
+  (qed d))
 
 
 (definition unions
@@ -152,9 +150,8 @@ the subset relation."
                       (and (set-elem T x X)
                            (elem T y x))))
       (have a (set-elem T x I) :by (p/and-intro% Hx Hy))
-      (have b (elem T y (unions T X)) :by ((set-ex-intro T I x) a))
-      (have c (subset T x (unions T X)) :discharge [y Hy b]))
-    (qed c)))
+      (have b (elem T y (unions T X)) :by ((set-ex-intro T I x) a)))
+    (qed b)))
 
 (definition intersections
   "Generalize intersections.
@@ -178,10 +175,8 @@ This is the set {y:T | ∀x∈X, y∈x}."
            Hx (set-elem T x X)]
     (assume [y T
              Hy (elem T y (intersections T X))]
-      (have a (elem T y x) :by (Hy x Hx))
-      (have b (subset T (intersections T X) x)
-            :discharge [y Hy a]))
-    (qed b)))
+      (have a (elem T y x) :by (Hy x Hx)))
+    (qed a)))
 
 (defthm intersections-prop
   "Preservation of properties on intersections."
@@ -208,6 +203,7 @@ This is the set {y:T | ∀x∈X, y∈x}."
                      (P z)) :by (H2 z))
       (have <b> (elem T z x)
             :by ((intersections-lower-bound T X) x H1 z Hz))
-      (have <c> (P z) :by (<a> <b>))
-      (have <d> _ :discharge [z Hz <c>]))
-    (qed <d>)))
+      (have <c> (P z) :by (<a> <b>)))
+    (qed <c>)))
+
+

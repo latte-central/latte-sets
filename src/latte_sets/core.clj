@@ -91,10 +91,7 @@ The expression `(subset T s1 s2)` means that
   (assume [x T
            H (elem T x s)]
     (have a (elem T x s) :by H)
-    (have b (==> (elem T x s)
-                 (elem T x s)) :discharge [H a])
-    (have c (subset T s s) :discharge [x b])
-    (qed c)))
+    (qed a)))
 
 (defthm subset-trans
   "The subset relation is transitive."
@@ -114,9 +111,8 @@ The expression `(subset T s1 s2)` means that
       (have c (==> (elem T x s1)
                    (elem T x s3)) :by ((p/impl-trans (elem T x s1)
                                                      (elem T x s2)
-                                                     (elem T x s3)) a b))
-      (have d (subset T s1 s3) :discharge [x c]))
-    (qed d)))
+                                                     (elem T x s3)) a b)))
+    (qed c)))
 
 (defthm subset-prop
   "Preservation of properties on subsets."
@@ -138,9 +134,8 @@ The expression `(subset T s1 s2)` means that
     (assume [x T
              Hx (elem T x s1)]
       (have <a> (elem T x s2) :by (H2 x Hx))
-      (have <b> (P x) :by (H1 x <a>))
-      (have <c> _ :discharge [x Hx <b>]))
-    (qed <c>)))
+      (have <b> (P x) :by (H1 x <a>)))
+    (qed <b>)))
 
 (definition seteq
   "Equality on sets.
@@ -263,8 +258,7 @@ Note that the identification with [[seteq]] is non-trivial,
           :by (H Qx))
     (have b (==> (elem T x s1) (elem T x s2))
           :by ((p/iff-elim-if (elem T x s1) (elem T x s2)) a))
-    (have c (subset T s1 s2) :discharge [x b])
-    (qed c)))
+    (qed b)))
 
 (defthm set-equal-implies-seteq
   "Subset-based equality implies *Leibniz*-style equality on sets."
@@ -338,22 +332,12 @@ sets are distinct, i.e. `s1`⊂`s2` (or more explicitely `s1`⊊`s2`)."
                  (elem T x s2)) :by H)
     (have a2 _ :by (p/or-sym (elem T x s1) (elem T x s2)))
     (have a3 (or (elem T x s2)
-                (elem T x s1)) :by (a2 a1))
-    (have a4 (elem T x (union T s2 s1)) :by a3)
-    (have a5 (==> (elem T x (union T s1 s2))
-                  (elem T x (union T s2 s1))) :discharge [H a4])
-    (have a (subset T
-                      (union T s1 s2)
-                      (union T s2 s1)) :discharge [x a5]))
+                 (elem T x s1)) :by (a2 a1))
+    (have a (elem T x (union T s2 s1)) :by a3))
   (assume [x T
            H (elem T x (union T s2 s1))]
-    (have b1 (elem T x (union T s1 s2))
-          :by ((p/or-sym (elem T x s2) (elem T x s1)) H))
-    (have b2 (==> (elem T x (union T s2 s1))
-                  (elem T x (union T s1 s2))) :discharge [H b1])
-    (have b (subset T
-                      (union T s2 s1)
-                      (union T s1 s2)) :discharge [x b2]))
+    (have b (elem T x (union T s1 s2))
+          :by ((p/or-sym (elem T x s2) (elem T x s1)) H)))
   (have c (seteq T
                  (union T s1 s2)
                  (union T s2 s1))
@@ -402,22 +386,12 @@ sets are distinct, i.e. `s1`⊂`s2` (or more explicitely `s1`⊊`s2`)."
 (proof intersection-commute :script
   (assume [x T
            H (elem T x (intersection T s1 s2))]
-    (have a1 (elem T x (intersection T s2 s1))
-          :by ((p/and-sym (elem T x s1) (elem T x s2)) H))
-    (have a2 (==> (elem T x (intersection T s1 s2))
-                  (elem T x (intersection T s2 s1))) :discharge [H a1])
-    (have a (subset T
-                      (intersection T s1 s2)
-                      (intersection T s2 s1)) :discharge [x a2]))
+    (have a (elem T x (intersection T s2 s1))
+          :by ((p/and-sym (elem T x s1) (elem T x s2)) H)))
   (assume [x T
            H (elem T x (intersection T s2 s1))]
-    (have b1 (elem T x (intersection T s1 s2))
-          :by ((p/and-sym (elem T x s2) (elem T x s1)) H))
-    (have b2 (==> (elem T x (intersection T s2 s1))
-                  (elem T x (intersection T s1 s2))) :discharge [H b1])
-    (have b (subset T
-                      (intersection T s2 s1)
-                      (intersection T s1 s2)) :discharge [x b2]))
+    (have b (elem T x (intersection T s1 s2))
+          :by ((p/and-sym (elem T x s2) (elem T x s1)) H)))
   (have c (seteq T
                  (intersection T s1 s2)
                  (intersection T s2 s1))
@@ -449,8 +423,7 @@ of the full set)."
 (proof fullset-intro :script
   (assume [x T]
     (have a (elem T x (fullset T)) :by p/truth-is-true)
-    (have b _ :discharge [x a])
-    (qed b)))
+    (qed a)))
 
 (definition emptyset
   "The empty set of a type."
@@ -467,9 +440,7 @@ of the full set)."
   (assume [x T
            H (elem T x (emptyset T))]
     (have a p/absurd :by H)
-    (have b (not (elem T x (emptyset T))) :discharge [H a])
-    (have c _ :discharge [x b])
-    (qed c)))
+    (qed a)))
 
 (defthm emptyset-subset-lower-bound
   "The emptyset is a subset of every other sets."
