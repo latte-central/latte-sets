@@ -19,7 +19,7 @@ natural translation to the typed setting.
 
   (:require [latte.core :as latte :refer [definition defthm defaxiom defnotation
                                           forall lambda ==>
-                                          assume have proof lambda forall]]
+                                          assume have pose proof lambda forall]]
             [latte.quant :as q :refer [exists]]
             [latte.prop :as p :refer [<=> and or not]]
             [latte.equal :as eq :refer [equal]]))
@@ -252,7 +252,7 @@ Note that the identification with [[seteq]] is non-trivial,
 (proof set-equal-implies-subset :script
   (assume [H (set-equal T s1 s2)
            x T]
-    (have Qx _ :term (lambda [s (set T)]
+    (pose Qx := (lambda [s (set T)]
                        (elem T x s)))
     (have a (<=> (elem T x s1) (elem T x s2))
           :by (H Qx))

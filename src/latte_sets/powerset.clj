@@ -146,9 +146,9 @@ the subset relation."
            Hx (set-elem T x X)]
     (assume [y T
              Hy (elem T y x)]
-      (have I _ :by (lambda [x (set T)]
-                      (and (set-elem T x X)
-                           (elem T y x))))
+      (pose I := (lambda [x (set T)]
+                   (and (set-elem T x X)
+                        (elem T y x))))
       (have a (set-elem T x I) :by (p/and-intro% Hx Hy))
       (have b (elem T y (unions T X)) :by ((set-ex-intro T I x) a)))
     (qed b)))
