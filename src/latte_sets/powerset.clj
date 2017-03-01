@@ -6,7 +6,7 @@
  the powerset construction (i.e. building a set of sets) is
 not immediate. The reason is that the set constructor `(set T)'
  is not itself a type (but a kind). Hence we need to replicate
- some part of the type theory (e.g. the existential quantifier) 
+ some part of the type theory (e.g. the existential quantifier)
 to deal with powersets."
 
     (:refer-clojure :exclude [and or not set])
@@ -21,9 +21,9 @@ to deal with powersets."
               [latte-sets.core :as s :refer [set elem seteq subset]]))
 
 (definition powerset
-  "The powerset constructor. 
+  "The powerset constructor.
 
-The term `(powerset T)' is the type 
+The term `(powerset T)' is the type
 of sets whose elements are sets of type `T`."
   [[T :type]]
   (==> (set T) :type))
@@ -205,5 +205,85 @@ This is the set {y:T | ∀x∈X, y∈x}."
             :by ((intersections-lower-bound T X) x H1 z Hz))
       (have <c> (P z) :by (<a> <b>)))
     (qed <c>)))
+
+
+(definition full-powerset
+  "The powerset containing all the subsets of type `T`."
+  [[T :type]]
+  (lambda [x (set T)]
+    p/truth))
+
+(defthm full-powerset-prop
+  [[T :type]]
+  (forall [x (set T)]
+    (set-elem T x (full-powerset T))))
+
+(proof full-powerset-prop
+    :script
+  (assume [x (set T)]
+    (have <a> ((full-powerset T) x) :by p/truth-is-true)
+    (qed <a>)))
+
+(definition empty-powerset
+  "The empty powerset."
+  [[T :type]]
+  (lambda [x (set T)]
+    p/absurd))
+
+(defthm empty-powerset-prop
+  [[T :type]]
+  (forall [x (set T)]
+    (not (set-elem T x (empty-powerset T)))))
+
+(proof empty-powerset-prop
+    :script
+  (assume [x (set T)
+           H (set-elem T x (empty-powerset T))]
+    (have <a> p/absurd :by H)
+    (qed <a>)))
+
+(definition powerset1
+  "The powerset of all the non-empty subsets of type `T`."
+  [[T :type]]
+  (lambda [x (set T)]
+    (not (s/set-equal T x (s/emptyset T)))))
+
+(defthm powerset1-prop
+  [[T :type] [x (set T)]]
+  (==> (not (s/set-equal T x (s/emptyset T)))
+       (set-elem T x (powerset1 T))))
+
+(proof powerset1-prop
+    :script
+  (assume [H (not (s/set-equal T x (s/emptyset T)))]
+    (have <a> (set-elem T x (powerset1 T)) :by H)
+    (qed <a>)))
+
+(defthm powerset1-prop-conv
+  [[T :type] [x (set T)]]
+  (==> (set-elem T x (powerset1 T))
+       (not (s/set-equal T x (s/emptyset T)))))
+
+(proof powerset1-prop-conv
+    :script
+  (assume [H (set-elem T x (powerset1 T))]
+    (assume [Heq (s/set-equal T x (s/emptyset T))]
+      (have <a> (not (s/set-equal T x (s/emptyset T)))
+            :by H)
+      (have <b> p/absurd :by (<a> Heq))
+      (qed <b>))))
+
+(defthm powerset1-prop-equiv
+  [[T :type] [x (set T)]]
+  (<=> (set-elem T x (powerset1 T))
+       (not (s/set-equal T x (s/emptyset T)))))
+
+(proof powerset1-prop-equiv
+    :script
+  (have <a> _ :by (p/and-intro% (powerset1-prop T x)
+                                (powerset1-prop-conv T x)))
+  (qed <a>))
+
+
 
 

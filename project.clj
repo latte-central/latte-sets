@@ -1,4 +1,4 @@
-(defproject latte-sets "0.1.1-SNAPSHOT"
+(defproject latte-sets "0.1.2-SNAPSHOT"
   :description "A formalization of (typed) Set theory in LaTTe."
   :url "https://github.com/fredokun/latte-sets.git"
   :license {:name "MIT Licence"

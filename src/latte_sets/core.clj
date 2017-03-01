@@ -72,6 +72,42 @@ shortcut for `(exists [x T]
 
 (alter-meta! #'exists-in update-in [:style/indent] (fn [_] [1 :form :form]))
 
+(definition fullset
+  "The full set of a type
+(all the inhabitants of the type are element
+of the full set)."
+  [[T :type]]
+  (lambda [x T] p/truth))
+
+(defthm fullset-intro
+  "Introduction rule for the full set."
+  [[T :type]]
+  (forall [x T]
+    (elem T x (fullset T))))
+
+(proof fullset-intro :script
+  (assume [x T]
+    (have a (elem T x (fullset T)) :by p/truth-is-true)
+    (qed a)))
+
+(definition emptyset
+  "The empty set of a type."
+  [[T :type]]
+  (lambda [x T] p/absurd))
+
+(defthm emptyset-prop
+  "The main property of the empty set."
+  [[T :type]]
+  (forall [x T]
+    (not (elem T x (emptyset T)))))
+
+(proof emptyset-prop :script
+  (assume [x T
+           H (elem T x (emptyset T))]
+    (have a p/absurd :by H)
+    (qed a)))
+
+
 (definition subset
   "The subset relation for type `T`.
 
@@ -135,6 +171,19 @@ The expression `(subset T s1 s2)` means that
              Hx (elem T x s1)]
       (have <a> (elem T x s2) :by (H2 x Hx))
       (have <b> (P x) :by (H1 x <a>)))
+    (qed <b>)))
+
+(defthm emptyset-subset-lower-bound
+  "The emptyset is a subset of every other sets."
+  [[T :type] [s (set T)]]
+  (subset T (emptyset T) s))
+
+(proof emptyset-subset-lower-bound
+    :script
+  (assume [x T
+           Hx (elem T x (emptyset T))]
+    (have <a> p/absurd :by Hx)
+    (have <b> (elem T x s) :by ((p/ex-falso (elem T x s)) <a>))
     (qed <b>)))
 
 (definition seteq
@@ -277,6 +326,23 @@ Note that the identification with [[seteq]] is non-trivial,
     (have c (seteq T s1 s2) :by (p/and-intro% a b))
     (qed c)))
 
+(defthm set-equal-prop
+  [[T :type] [s1 (set T)] [s2 (set T)] [P (==> (set T) :type)]]
+  (==> (set-equal T s1 s2)
+       (P s1)
+       (P s2)))
+
+(proof set-equal-prop
+    :script
+  (assume [Heq (set-equal T s1 s2)
+           Hs1 (P s1)]
+    (have <a> (<=> (P s1) (P s2))
+          :by (Heq P))
+    (have <b> (==> (P s1) (P s2))
+          :by (p/and-elim-left% <a>))
+    (have <c> (P s2) :by (<b> Hs1))
+    (qed <c>)))
+
 (defaxiom seteq-implies-set-equal-ax
   "Going from subset-based equality to *Leibniz*-style equality
 requires this axiom. This is because we cannot lift membership
@@ -308,6 +374,112 @@ sets are distinct, i.e. `s1`⊂`s2` (or more explicitely `s1`⊊`s2`)."
   [[T :type] [s1 (set T)] [s2 (set T)]]
   (and (subset T s1 s2)
        (not (seteq T s1 s2))))
+
+(defthm proper-subset-antirefl
+  [[T :type] [s (set T)]]
+  (not (proper-subset T s s)))
+
+(proof proper-subset-antirefl
+    :script
+  (assume [H (proper-subset T s s)]
+    (have <a> (not (seteq T s s))
+          :by (p/and-elim-right% H))
+    (have <b> (seteq T s s) :by (seteq-refl T s))
+    (have <c> p/absurd :by (<a> <b>))
+    (qed <c>)))
+
+(defthm proper-subset-antisym
+  [[T :type] [s1 (set T)] [s2 (set T)]]
+  (not (and (proper-subset T s1 s2)
+            (proper-subset T s2 s1))))
+
+(proof proper-subset-antisym
+    :script
+  (assume [H (and (proper-subset T s1 s2)
+                  (proper-subset T s2 s1))]
+    (have <a> (not (seteq T s1 s2))
+          :by (p/and-elim-right% (p/and-elim-left% H)))
+    (have <b> (subset T s1 s2)
+          :by (p/and-elim-left% (p/and-elim-left% H)))
+    (have <c> (subset T s2 s1)
+          :by (p/and-elim-left% (p/and-elim-right% H)))
+    (have <d> (seteq T s1 s2)
+          :by (p/and-intro% <b> <c>))
+    (have <e> p/absurd :by (<a> <d>))
+    (qed <e>)))
+
+(defthm proper-subset-trans
+  "The proper subset relation is transitive."
+  [[T :type] [s1 (set T)] [s2 (set T)] [s3 (set T)]]
+  (==> (proper-subset T s1 s2)
+       (proper-subset T s2 s3)
+       (proper-subset T s1 s3)))
+
+(proof proper-subset-trans :script
+  (assume [H1 (proper-subset T s1 s2)
+           H2 (proper-subset T s2 s3)]
+    (have <a> (subset T s1 s3)
+          :by ((subset-trans T s1 s2 s3)
+               (p/and-elim-left% H1)
+               (p/and-elim-left% H2)))
+    (assume [H (seteq T s1 s3)]
+      (have <b> (set-equal T s1 s3)
+            :by ((seteq-implies-set-equal-ax T s1 s3)
+                 H))
+      (have <c> (proper-subset T s3 s2)
+            :by ((set-equal-prop T s1 s3 (lambda [x (set T)]
+                                           (proper-subset T x s2)))
+                 <b> H1))
+      (have <d> p/absurd
+            :by ((proper-subset-antisym T s2 s3)
+                 (p/and-intro% H2 <c>))))
+    (have <e> _ :by (p/and-intro% <a> <d>))
+    (qed <e>)))
+
+(defthm proper-subset-emptyset
+  [[T :type] [s (set T)]]
+  (==> (proper-subset T (emptyset T) s)
+       (not (seteq T s (emptyset T)))))
+
+(proof proper-subset-emptyset
+    :script
+  (assume [H (proper-subset T (emptyset T) s)]
+    (assume [H' (seteq T s (emptyset T))]
+      (have <a> (not (seteq T (emptyset T) s))
+            :by (p/and-elim-right% H))
+      (have <b> (seteq T (emptyset T) s)
+            :by ((seteq-sym T s (emptyset T)) H'))
+      (have <c> p/absurd :by (<a> <b>))
+      (qed <c>))))
+
+(defthm proper-subset-emptyset-conv
+  [[T :type] [s (set T)]]
+  (==> (not (seteq T s (emptyset T)))
+       (proper-subset T (emptyset T) s)))
+
+(proof proper-subset-emptyset-conv
+    :script
+  (assume [H (not (seteq T s (emptyset T)))]
+    (have <a> (subset T (emptyset T) s)
+          :by (emptyset-subset-lower-bound T s))
+    (assume [H' (seteq T (emptyset T) s)]
+      (have <b> (seteq T s (emptyset T))
+            :by ((seteq-sym T (emptyset T) s) H'))
+      (have <c> p/absurd :by (H <b>)))
+    (have <d> (proper-subset T (emptyset T) s)
+          :by (p/and-intro% <a> <c>))
+    (qed <d>)))
+
+(defthm proper-subset-emptyset-equiv
+  [[T :type] [s (set T)]]
+  (<=> (proper-subset T (emptyset T) s)
+       (not (seteq T s (emptyset T)))))
+
+(proof proper-subset-emptyset-equiv
+    :script
+  (have <a> _ :by (p/and-intro% (proper-subset-emptyset T s)
+                                (proper-subset-emptyset-conv T s)))
+  (qed <a>))
 
 (definition union
   "Set union.
@@ -407,52 +579,5 @@ sets are distinct, i.e. `s1`⊂`s2` (or more explicitely `s1`⊊`s2`)."
     (and (elem T x s1)
          (not (elem T x s2)))))
 
-(definition fullset
-  "The full set of a type
-(all the inhabitants of the type are element
-of the full set)."
-  [[T :type]]
-  (lambda [x T] p/truth))
-
-(defthm fullset-intro
-  "Introduction rule for the full set."
-  [[T :type]]
-  (forall [x T]
-    (elem T x (fullset T))))
-
-(proof fullset-intro :script
-  (assume [x T]
-    (have a (elem T x (fullset T)) :by p/truth-is-true)
-    (qed a)))
-
-(definition emptyset
-  "The empty set of a type."
-  [[T :type]]
-  (lambda [x T] p/absurd))
-
-(defthm emptyset-prop
-  "The main property of the empty set."
-  [[T :type]]
-  (forall [x T]
-    (not (elem T x (emptyset T)))))
-
-(proof emptyset-prop :script
-  (assume [x T
-           H (elem T x (emptyset T))]
-    (have a p/absurd :by H)
-    (qed a)))
-
-(defthm emptyset-subset-lower-bound
-  "The emptyset is a subset of every other sets."
-  [[T :type] [s (set T)]]
-  (subset T (emptyset T) s))
-
-(proof emptyset-subset-lower-bound
-    :script
-  (assume [x T
-           Hx (elem T x (emptyset T))]
-    (have <a> p/absurd :by Hx)
-    (have <b> (elem T x s) :by ((p/ex-falso (elem T x s)) <a>))
-    (qed <b>)))
 
 
