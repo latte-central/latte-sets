@@ -1,7 +1,7 @@
 (ns latte-sets.algebra
   "The boolean algebra operators for sets."
 
-  (:refer-clojure :exclude [and or not set])
+  (:refer-clojure :exclude [and or not set complement])
 
   (:require [latte.core :as latte
              :refer [definition defthm defaxiom defnotation
@@ -13,7 +13,7 @@
             [latte.equal :as eq :refer [equal]]
 
             [latte-sets.core :as sets
-             :refer [set elem subset seteq set-equal emptyset]]))
+             :refer [set elem subset seteq set-equal emptyset fullset]]))
 
 (definition union
   "Set union.
@@ -539,7 +539,7 @@
   (qed <b>))
 
 
-(definition difference
+(definition diff
   "Set difference
 
 `(difference T s1 s2)` is the set `s1`∖`s2`."
@@ -547,6 +547,123 @@
   (lambda [x T]
     (and (elem T x s1)
          (not (elem T x s2)))))
+
+(defthm diff-empty-right
+  [[T :type] [s (set T)]]
+  (seteq T (diff T s (emptyset T)) s))
+
+(proof diff-empty-right
+    :script
+  "Subset case"
+  (assume [x T
+           Hx (elem T x (diff T s (emptyset T)))]
+    (have <a> (and (elem T x s)
+                   (not (elem T x (emptyset T)))) :by Hx)
+    (have <b> (elem T x s) :by (p/and-elim-left% <a>)))
+  "Superset case"
+  (assume [x T
+           Hx (elem T x s)]
+    (have <c> (not (elem T x (emptyset T)))
+          :by ((sets/emptyset-prop T) x))
+    (have <d> (and (elem T x s)
+                   (not (elem T x (emptyset T))))
+          :by (p/and-intro% Hx <c>)))
+  (have <e> _ :by (p/and-intro% <b> <d>))
+  (qed <e>))
+
+(defthm diff-empty-left
+  [[T :type] [s (set T)]]
+  (seteq T (diff T (emptyset T) s) (emptyset T)))
+
+(proof diff-empty-left
+    :script
+  "Subset case"
+  (assume [x T
+           Hx (elem T x (diff T (emptyset T) s))]
+    (have <a> (elem T x (emptyset T))
+          :by (p/and-elim-left% Hx)))
+  "Superset case"
+  (assume [x T
+           Hx (elem T x (emptyset T))]
+    (have <b> p/absurd :by (((sets/emptyset-prop T) x) Hx))
+    (have <c> _ :by (<b> (elem T x (diff T (emptyset T) s)))))
+  (have <d> _ :by (p/and-intro% <a> <c>))
+  (qed <d>))
+
+(defthm diff-cancel
+  [[T :type] [s (set T)]]
+  (seteq T (diff T s s) (emptyset T)))
+
+(proof diff-cancel
+    :script
+  "Subset case"
+  (assume [x T
+           Hx (elem T x (diff T s s))]
+    (have <a1> (elem T x s) :by (p/and-elim-left% Hx))
+    (have <a2> (not (elem T x s)) :by (p/and-elim-right% Hx))
+    (have <b> (elem T x (emptyset T)) :by (<a2> <a1>)))
+  "Superset case"
+  (assume [x T
+           Hx (elem T x (emptyset T))]
+    (have <c> p/absurd :by (((sets/emptyset-prop T) x) Hx))
+    (have <d> _ :by (<c> (elem T x (diff T s s)))))
+  (have <e> _ :by (p/and-intro% <b> <d>))
+  (qed <e>))
+
+
+(definition complement
+  "The complement of set `s`.
+
+Note that the definition is more self-contained
+in type theory than with classical sets. The complement
+is here wrt. a type `T` which is well defined,
+ wherease in classical set theory one has to introduce
+a somewhat unsatisfying notion of \"a universe of discourse\"."
+  [[T :type] [s (set T)]]
+  (lambda [x T]
+    (not (elem T x s))))
+
+(defthm comp-full-empty
+  [[T :type]]
+  (seteq T
+         (complement T (fullset T))
+         (emptyset T)))
+
+(proof comp-full-empty
+    :script
+  "Subset case"
+  (assume [x T
+           Hx (elem T x (complement T (fullset T)))]
+    (have <a> (not (elem T x (fullset T))) :by Hx)
+    (have <b> p/absurd :by (<a> ((sets/fullset-intro T) x))))
+  "Superset case"
+  (assume [x T
+           Hx (elem T x (emptyset T))]
+    (have <c> p/absurd :by (((sets/emptyset-prop T) x) Hx))
+    (have <d> _ :by (<c> (elem T x (complement T (fullset T))))))
+  (have <e> _ :by (p/and-intro% <b> <d>))
+  (qed <e>))
+
+(defthm comp-empty-full
+  [[T :type]]
+  (seteq T
+         (complement T (emptyset T))
+         (fullset T)))
+
+(proof comp-empty-full
+    :script
+  "Subset case"
+  (assume [x T
+           Hx (elem T x (complement T (emptyset T)))]
+    (have <a> (elem T x (fullset T))
+          :by ((sets/fullset-intro T) x)))
+  "Superset case"
+  (assume [x T
+           Hx (elem T x (fullset T))]
+    (have <b> (not (elem T x (emptyset T)))
+          :by ((sets/emptyset-prop T) x)))
+  (have <c> _ :by (p/and-intro% <a> <b>))
+  (qed <c>))
 
 
 

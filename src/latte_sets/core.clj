@@ -474,7 +474,7 @@ sets are distinct, i.e. `s1`⊂`s2` (or more explicitely `s1`⊊`s2`)."
     :script
   (assume [H (not (seteq T s (emptyset T)))]
     (have <a> (subset T (emptyset T) s)
-          :by (emptyset-subset-lower-bound T s))
+          :by (subset-emptyset-lower-bound T s))
     (assume [H' (seteq T (emptyset T) s)]
       (have <b> (seteq T s (emptyset T))
             :by ((seteq-sym T (emptyset T) s) H'))

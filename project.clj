@@ -8,5 +8,6 @@
   :codox {:output-path "docs"
           :metadata {:doc/format :markdown}
           :namespaces [latte-sets.core
+                       latte-sets.algebra
                        latte-sets.powerset]}
   :plugins [[lein-codox "0.10.2"]])
