@@ -9,5 +9,6 @@
           :metadata {:doc/format :markdown}
           :namespaces [latte-sets.core
                        latte-sets.algebra
-                       latte-sets.powerset]}
+                       latte-sets.powerset
+                       latte-sets.rel]}
   :plugins [[lein-codox "0.10.2"]])
