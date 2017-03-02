@@ -173,18 +173,31 @@ The expression `(subset T s1 s2)` means that
       (have <b> (P x) :by (H1 x <a>)))
     (qed <b>)))
 
-(defthm emptyset-subset-lower-bound
+(defthm subset-emptyset-lower-bound
   "The emptyset is a subset of every other sets."
   [[T :type] [s (set T)]]
   (subset T (emptyset T) s))
 
-(proof emptyset-subset-lower-bound
+(proof subset-emptyset-lower-bound
     :script
   (assume [x T
            Hx (elem T x (emptyset T))]
     (have <a> p/absurd :by Hx)
     (have <b> (elem T x s) :by ((p/ex-falso (elem T x s)) <a>))
     (qed <b>)))
+
+(defthm subset-fullset-upper-bound
+  "The fullset is a superset of every other sets."
+  [[T :type] [s (set T)]]
+  (subset T s (fullset T)))
+
+(proof subset-fullset-upper-bound
+    :script
+  (assume [x T
+           Hx (elem T x s)]
+    (have <a> (elem T x (fullset T))
+          :by p/truth-is-true)
+    (qed <a>)))
 
 (definition seteq
   "Equality on sets.
@@ -480,104 +493,4 @@ sets are distinct, i.e. `s1`⊂`s2` (or more explicitely `s1`⊊`s2`)."
   (have <a> _ :by (p/and-intro% (proper-subset-emptyset T s)
                                 (proper-subset-emptyset-conv T s)))
   (qed <a>))
-
-(definition union
-  "Set union.
-
-`(union T s1 s2)` is the set `s1`∪`s2`."
-  [[T :type] [s1 (set T)] [s2 (set T)]]
-  (lambda [x T]
-    (or (elem T x s1)
-        (elem T x s2))))
-
-(defthm union-commute
-  "Set union commutes."
-  [[T :type] [s1 (set T)] [s2 (set T)]]
-  (seteq T
-         (union T s1 s2)
-         (union T s2 s1)))
-
-(proof union-commute :script
-  (assume [x T
-           H (elem T x (union T s1 s2))]
-    (have a1 (or (elem T x s1)
-                 (elem T x s2)) :by H)
-    (have a2 _ :by (p/or-sym (elem T x s1) (elem T x s2)))
-    (have a3 (or (elem T x s2)
-                 (elem T x s1)) :by (a2 a1))
-    (have a (elem T x (union T s2 s1)) :by a3))
-  (assume [x T
-           H (elem T x (union T s2 s1))]
-    (have b (elem T x (union T s1 s2))
-          :by ((p/or-sym (elem T x s2) (elem T x s1)) H)))
-  (have c (seteq T
-                 (union T s1 s2)
-                 (union T s2 s1))
-        :by (p/and-intro% a b))
-  (qed c))
-
-(definition intersection
-  "Set intersection.
-
-`(intersection T s1 s2)` is the set `s1`∩`s2`."
-
-  [[T :type] [s1 (set T)] [s2 (set T)]]
-  (lambda [x T]
-    (and (elem T x s1)
-         (elem T x s2))))
-
-(defthm intersection-elim-left
-  "Elimination rule for intersection (left operand)."
-  [[T :type] [s1 (set T)] [s2 (set T)] [x T]]
-  (==> (elem T x (intersection T s1 s2))
-       (elem T x s1)))
-
-(proof intersection-elim-left :script
-  (assume [H (elem T x (intersection T s1 s2))]
-    (have a (elem T x s1) :by (p/and-elim-left% H))
-    (qed a)))
-
-(defthm intersection-elim-right
-  "Elimination rule for intersection (right operand)."
-  [[T :type] [s1 (set T)] [s2 (set T)] [x T]]
-  (==> (elem T x (intersection T s1 s2))
-       (elem T x s2)))
-
-(proof intersection-elim-right :script
-  (assume [H (elem T x (intersection T s1 s2))]
-    (have a (elem T x s2) :by (p/and-elim-right% H))
-    (qed a)))
-
-(defthm intersection-commute
-  "Set intersection commutes."
-  [[T :type] [s1 (set T)] [s2 (set T)]]
-  (seteq T
-         (intersection T s1 s2)
-         (intersection T s2 s1)))  
-
-(proof intersection-commute :script
-  (assume [x T
-           H (elem T x (intersection T s1 s2))]
-    (have a (elem T x (intersection T s2 s1))
-          :by ((p/and-sym (elem T x s1) (elem T x s2)) H)))
-  (assume [x T
-           H (elem T x (intersection T s2 s1))]
-    (have b (elem T x (intersection T s1 s2))
-          :by ((p/and-sym (elem T x s2) (elem T x s1)) H)))
-  (have c (seteq T
-                 (intersection T s1 s2)
-                 (intersection T s2 s1))
-        :by (p/and-intro% a b))
-  (qed c))
-
-(definition difference
-  "Set difference
-
-`(difference T s1 s2)` is the set `s1`∖`s2`."
-  [[T :type] [s1 (set T)] [s2 (set T)]]
-  (lambda [x T]
-    (and (elem T x s1)
-         (not (elem T x s2)))))
-
-
 
