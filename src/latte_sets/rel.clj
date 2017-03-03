@@ -115,6 +115,132 @@ a given type `T` to elements of `U` is formalized with type `(==> T U :type)`.
                                               (ident-trans T))))
   (qed <a>))
 
+
+(definition fullrel
+  "The full (total) relation between `T` and `U`."
+  [[T :type] [U :type]]
+  (lambda [x T]
+    (lambda [y U] p/truth)))
+
+(defthm fullrel-prop
+  [[T :type] [U :type]]
+  (forall [x T]
+    (forall [y U]
+      ((fullrel T U) x y))))
+
+(proof fullrel-prop
+    :script
+  (assume [x T
+           y U]
+    (have <a> ((fullrel T U) x y) :by p/truth-is-true)
+    (qed <a>)))
+
+(definition emptyrel
+  "The empty relation."
+  [[T :type] [U :type]]
+  (lambda [x T]
+    (lambda [y U]
+      p/absurd)))
+
+(defthm emptyrel-prop
+  [[T :type] [U :type]]
+  (forall [x T]
+    (forall [y U]
+      (not ((emptyrel T U) x y)))))
+
+(proof emptyrel-prop
+    :script
+  (assume [x T
+           y U
+           H ((emptyrel T U) x y)]
+    (have <a> p/absurd :by H)
+    (qed <a>)))
+
+(definition subrel
+  "The subser ordering for relations."
+  [[T :type] [U :type] [R1 (rel T U)] [R2 (rel T U)]]
+  (forall [x T]
+    (forall [y U]
+      (==> (R1 x y)
+           (R2 x y)))))
+
+(defthm subrel-refl
+  [[T :type] [U :type] [R (rel T U)]]
+  (subrel T U R R))
+
+(proof subrel-refl
+    :script
+  (assume [x T
+           y U
+           H1 (R x y)]
+    (have <a> (R x y) :by H1)
+    (qed <a>)))
+
+(defthm subrel-trans
+  [[T :type] [U :type] [R1 (rel T U)] [R2 (rel T U)] [R3 (rel T U)]]
+  (==> (subrel T U R1 R2)
+       (subrel T U R2 R3)
+       (subrel T U R1 R3)))
+
+(proof subrel-trans
+    :script
+  (assume [H1 (subrel T U R1 R2)
+           H2 (subrel T U R2 R3)]
+    (assume [x T
+             y U]
+      (have <a> (==> (R1 x y) (R2 x y)) :by (H1 x y))
+      (have <b> (==> (R2 x y) (R3 x y)) :by (H2 x y))
+      (have <c> (==> (R1 x y) (R3 x y))
+            :by (p/impl-trans% <a> <b>))
+      (qed <c>))))
+
+(definition releq
+  "Subset-based equality on relations."
+  [[T :type] [U :type] [R1 (rel T U)] [R2 (rel T U)]]
+  (and (subrel T U R1 R2)
+       (subrel T U R2 R1)))
+
+(defthm releq-refl
+  [[T :type] [U :type] [R (rel T U)]]
+  (releq T U R R))
+
+(proof releq-refl
+    :script
+  (have <a> (subrel T U R R) :by (subrel-refl T U R))
+  (have <b> _ :by (p/and-intro% <a> <a>))
+  (qed <b>))
+
+(defthm releq-sym
+  [[T :type] [U :type] [R1 (rel T U)] [R2 (rel T U)]]
+  (==> (releq T U R1 R2)
+       (releq T U R2 R1)))
+
+(proof releq-sym
+    :script
+  (assume [H (releq T U R1 R2)]
+    (have <a> _ :by (p/and-intro% (p/and-elim-right% H)
+                                  (p/and-elim-left% H)))
+    (qed <a>)))
+
+(defthm releq-trans
+  [[T :type] [U :type] [R1 (rel T U)] [R2 (rel T U)] [R3 (rel T U)]]
+  (==> (releq T U R1 R2)
+       (releq T U R2 R3)
+       (releq T U R1 R3)))
+
+(proof releq-trans
+    :script
+  (assume [H1 (releq T U R1 R2)
+           H2 (releq T U R2 R3)]
+    (have <a> (subrel T U R1 R2) :by (p/and-elim-left% H1))
+    (have <b> (subrel T U R2 R3) :by (p/and-elim-left% H2))
+    (have <c> (subrel T U R1 R3) :by ((subrel-trans T U R1 R2 R3) <a> <b>))
+    (have <d> (subrel T U R3 R2) :by (p/and-elim-right% H2))
+    (have <e> (subrel T U R2 R1) :by (p/and-elim-right% H1))
+    (have <f> (subrel T U R3 R1) :by ((subrel-trans T U R3 R2 R1) <d> <e>))
+    (have <g> _ :by (p/and-intro% <c> <f>))
+    (qed <g>)))
+
 (definition rel-equal
   "A *Leibniz*-stype equality for relations.
 
@@ -126,6 +252,23 @@ Note that the identification with [[seteq]] is non-trivial,
   [[T :type] [U :type] [R1 (rel T U)] [R2 (rel T U)]]
   (forall [P (==> (rel T U) :type)]
     (<=> (P R1) (P R2))))
+
+(defthm rel-equal-prop
+  [[T :type] [U :type] [R1 (rel T U)] [R2 (rel T U)] [P (==> (rel T U) :type)]]
+  (==> (rel-equal T U R1 R2)
+       (P R1)
+       (P R2)))
+
+(proof rel-equal-prop
+    :script
+  (assume [H (rel-equal T U R1 R2)
+           HR1 (P R1)]
+    (have <a> (<=> (P R1) (P R2))
+          :by (H P))
+    (have <b> (==> (P R1) (P R2))
+          :by (p/and-elim-left% <a>))
+    (have <c> (P R2) :by (<b> HR1))
+    (qed <c>)))
 
 (defthm rel-equal-refl
   [[T :type] [U :type] [R (rel T U)]]
@@ -186,6 +329,61 @@ Note that the identification with [[seteq]] is non-trivial,
         (have <h> (P R1) :by (<g> <f>)))
       (have <i> _ :by (p/and-intro% <d> <h>))
       (qed <i>))))
+
+(defthm rel-equal-implies-subrel
+  [[T :type] [U :type] [R1 (rel T U)] [R2 (rel T U)]]
+  (==> (rel-equal T U R1 R2)
+       (subrel T U R1 R2)))
+
+(proof rel-equal-implies-subrel
+    :script
+  (assume [H (rel-equal T U R1 R2)
+           x T
+           y U]
+    (pose Qxy := (lambda [R (rel T U)]
+                   (R x y)))
+    (have <a> (<=> (R1 x y) (R2 x y))
+          :by (H Qxy))
+    (have <b> (==> (R1 x y) (R2 x y))
+          :by (p/and-elim-left% <a>))
+    (qed <b>)))
+
+(defthm rel-equal-implies-releq
+  [[T :type] [U :type] [R1 (rel T U)] [R2 (rel T U)]]
+  (==> (rel-equal T U R1 R2)
+       (releq T U R1 R2)))
+
+(proof rel-equal-implies-releq
+    :script
+  (assume [H (rel-equal T U R1 R2)]
+    (have <a> (subrel T U R1 R2)
+          :by ((rel-equal-implies-subrel T U R1 R2) H))
+    (have <b> (rel-equal T U R2 R1)
+          :by ((rel-equal-sym T U R1 R2) H))
+    (have <c> (subrel T U R2 R1)
+          :by ((rel-equal-implies-subrel T U R2 R1) <b>))
+    (have <d> _ :by (p/and-intro% <a> <c>))
+    (qed <d>)))
+
+(defaxiom releq-implies-rel-equal-ax
+  "As for the set case (cf. [[sets/seteq-implies-set-equal-ax]]),
+going from the subset-based equality to the (thus more general) *leibniz*-style
+one requires an axiom."
+  [[T :type] [U :type] [R1 (rel T U)] [R2 (rel T U)]]
+  (==> (releq T U R1 R2)
+       (rel-equal T U R1 R2)))
+
+(defthm rel-equal-releq
+  "Coincidence of *Leibniz*-style and subset-based equality for relations."
+  [[T :type] [U :type] [R1 (rel T U)] [R2 (rel T U)]]
+  (<=> (rel-equal T U R1 R2)
+       (releq T U R1 R2)))
+
+(proof rel-equal-releq
+    :script
+  (have <a> _ :by (p/and-intro% (rel-equal-implies-releq T U R1 R2)
+                                (releq-implies-rel-equal-ax T U R1 R2)))
+  (qed <a>))
 
 (definition rcomp
   "Sequential relational composition."

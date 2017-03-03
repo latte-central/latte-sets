@@ -145,9 +145,7 @@ The expression `(subset T s1 s2)` means that
       (have b (==> (elem T x s2)
                    (elem T x s3)) :by (H2 x))
       (have c (==> (elem T x s1)
-                   (elem T x s3)) :by ((p/impl-trans (elem T x s1)
-                                                     (elem T x s2)
-                                                     (elem T x s3)) a b)))
+                   (elem T x s3)) :by (p/impl-trans% a b)))
     (qed c)))
 
 (defthm subset-prop
@@ -264,6 +262,23 @@ Note that the identification with [[seteq]] is non-trivial,
   (forall [P (==> (set T) :type)]
     (<=> (P s1) (P s2))))
 
+(defthm set-equal-prop
+  [[T :type] [s1 (set T)] [s2 (set T)] [P (==> (set T) :type)]]
+  (==> (set-equal T s1 s2)
+       (P s1)
+       (P s2)))
+
+(proof set-equal-prop
+    :script
+  (assume [Heq (set-equal T s1 s2)
+           Hs1 (P s1)]
+    (have <a> (<=> (P s1) (P s2))
+          :by (Heq P))
+    (have <b> (==> (P s1) (P s2))
+          :by (p/and-elim-left% <a>))
+    (have <c> (P s2) :by (<b> Hs1))
+    (qed <c>)))
+
 (defthm set-equal-refl
   "Reflexivity of set equality."
   [[T :type] [s (set T)]]
@@ -338,23 +353,6 @@ Note that the identification with [[seteq]] is non-trivial,
     ;; "... and we can now conclude"
     (have c (seteq T s1 s2) :by (p/and-intro% a b))
     (qed c)))
-
-(defthm set-equal-prop
-  [[T :type] [s1 (set T)] [s2 (set T)] [P (==> (set T) :type)]]
-  (==> (set-equal T s1 s2)
-       (P s1)
-       (P s2)))
-
-(proof set-equal-prop
-    :script
-  (assume [Heq (set-equal T s1 s2)
-           Hs1 (P s1)]
-    (have <a> (<=> (P s1) (P s2))
-          :by (Heq P))
-    (have <b> (==> (P s1) (P s2))
-          :by (p/and-elim-left% <a>))
-    (have <c> (P s2) :by (<b> Hs1))
-    (qed <c>)))
 
 (defaxiom seteq-implies-set-equal-ax
   "Going from subset-based equality to *Leibniz*-style equality
