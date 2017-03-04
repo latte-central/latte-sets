@@ -394,13 +394,13 @@ one requires an axiom."
         (and (R1 x y) (R2 y z))))))
 
 
-(deflemma rcomp-assoc-aux1
+(deflemma rcomp-assoc-subrel-aux
   [[T :type] [U :type] [V :type] [W :type]
    [R1 (rel T U)] [R2 (rel U V)] [R3 (rel V W)] [x T] [z W]]
   (==> ((rcomp T U W R1 (rcomp U V W R2 R3)) x z)
        ((rcomp T V W (rcomp T U V R1 R2) R3) x z)))
 
-(proof rcomp-assoc-aux1
+(proof rcomp-assoc-subrel-aux
     :script
   (assume [H ((rcomp T U W R1 (rcomp U V W R2 R3)) x z)]
     (have <a> (exists [y U]
@@ -432,17 +432,93 @@ one requires an axiom."
                      <a> <h>))
     (qed <i>)))
 
-(comment  ;; XXX: probably need a subset-based equality (cf. sets)
-  (defthm rcomp-assoc
-    "Relational composition is associative."
-    [[T :type] [U :type] [V :type] [W :type]
-     [R1 (rel T U)] [R2 (rel U V)] [R3 (rel V W)]]
-    (rel-equal T W
-               (rcomp T U W R1 (rcomp U V W R2 R3))
-               (rcomp T V W (rcomp T U V R1 R2) R3)))
+(deflemma rcomp-assoc-subrel
+  [[T :type] [U :type] [V :type] [W :type]
+   [R1 (rel T U)] [R2 (rel U V)] [R3 (rel V W)]]
+  (subrel T W
+          (rcomp T U W R1 (rcomp U V W R2 R3))
+          (rcomp T V W (rcomp T U V R1 R2) R3)))
 
-  (proof rcomp-assoc
-      :script
-    (assume [P (==> (rel T W) :type)]
-      (assume [H1 (P (rcomp T U W R1 (rcomp U V W R2 R3)))]
-        ))))
+(proof rcomp-assoc-subrel
+    :script
+  (assume [x T
+           y W
+           H ((rcomp T U W R1 (rcomp U V W R2 R3)) x y)]
+    (have <a> ((rcomp T V W (rcomp T U V R1 R2) R3) x y)
+          :by ((rcomp-assoc-subrel-aux
+                T U V W R1 R2 R3)
+               x y H))
+    (qed <a>)))
+
+(deflemma rcomp-assoc-suprel-aux
+  [[T :type] [U :type] [V :type] [W :type]
+   [R1 (rel T U)] [R2 (rel U V)] [R3 (rel V W)] [x T] [z W]]
+  (==> ((rcomp T V W (rcomp T U V R1 R2) R3) x z)
+       ((rcomp T U W R1 (rcomp U V W R2 R3)) x z)))
+
+(proof rcomp-assoc-suprel-aux
+    :script
+  (assume [H ((rcomp T V W (rcomp T U V R1 R2) R3) x z)]
+    (have <a> (exists [y V]
+                (and ((rcomp T U V R1 R2) x y)
+                     (R3 y z))) :by H)
+    (assume [y V
+             Hy (and ((rcomp T U V R1 R2) x y)
+                     (R3 y z))]
+      (have <b> (exists [t U] (and (R1 x t) (R2 t y)))
+            :by (p/and-elim-left% Hy))
+      (assume [t U
+               Ht (and (R1 x t) (R2 t y))]
+        (have <c1> (R1 x t) :by (p/and-elim-left% Ht))
+        (have <c2> (and (R2 t y) (R3 y z))
+              :by (p/and-intro% (p/and-elim-right% Ht)
+                                (p/and-elim-right% Hy)))
+        (have <c3> ((rcomp U V W R2 R3) t z)
+              :by ((q/ex-intro V (lambda [k V]
+                                   (and (R2 t k) (R3 k z))) y)
+                   <c2>))
+        (have <c> ((rcomp T U W R1 (rcomp U V W R2 R3)) x z)
+              :by ((q/ex-intro U (lambda [k U]
+                                   (and (R1 x k)
+                                        ((rcomp U V W R2 R3) k z))) t)
+                   (p/and-intro% <c1> <c3>))))
+      (have <d> _ :by ((q/ex-elim U (lambda [t U] (and (R1 x t) (R2 t y)))
+                                  ((rcomp T U W R1 (rcomp U V W R2 R3)) x z))
+                       <b> <c>)))
+    (have <e> _ :by ((q/ex-elim V (lambda [y V]
+                                    (and ((rcomp T U V R1 R2) x y)
+                                         (R3 y z)))
+                                ((rcomp T U W R1 (rcomp U V W R2 R3)) x z))
+                     <a> <d>))
+    (qed <e>)))
+
+(deflemma rcomp-assoc-suprel
+  [[T :type] [U :type] [V :type] [W :type]
+   [R1 (rel T U)] [R2 (rel U V)] [R3 (rel V W)]]
+  (subrel T W
+          (rcomp T V W (rcomp T U V R1 R2) R3)
+          (rcomp T U W R1 (rcomp U V W R2 R3))))
+
+
+(proof rcomp-assoc-suprel
+    :script
+  (assume [x T
+           z W]
+    (have <a> _ :by (rcomp-assoc-suprel-aux
+                     T U V W
+                     R1 R2 R3 x z))
+    (qed <a>)))
+
+(defthm rcomp-assoc
+  "Relational composition is associative."
+  [[T :type] [U :type] [V :type] [W :type]
+   [R1 (rel T U)] [R2 (rel U V)] [R3 (rel V W)]]
+  (releq T W
+         (rcomp T U W R1 (rcomp U V W R2 R3))
+         (rcomp T V W (rcomp T U V R1 R2) R3)))
+
+(proof rcomp-assoc
+    :script
+  (have <a> _ :by (p/and-intro% (rcomp-assoc-subrel T U V W R1 R2 R3)
+                                (rcomp-assoc-suprel T U V W R1 R2 R3)))
+  (qed <a>))

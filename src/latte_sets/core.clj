@@ -376,38 +376,38 @@ requires this axiom. This is because we cannot lift membership
   (qed ((p/iff-intro (seteq T s1 s2)
                      (set-equal T s1 s2)) a b)))
 
-(definition proper-subset
+(definition psubset
   "The anti-reflexive variant of the subset relation.
 
-The expression `(proper-subset T s1 s2)` means that
+The expression `(psubset T s1 s2)` means that
  the set `s1` is a subset of `s2`, but that the two
 sets are distinct, i.e. `s1`⊂`s2` (or more explicitely `s1`⊊`s2`)."
   [[T :type] [s1 (set T)] [s2 (set T)]]
   (and (subset T s1 s2)
        (not (seteq T s1 s2))))
 
-(defthm proper-subset-antirefl
+(defthm psubset-antirefl
   [[T :type] [s (set T)]]
-  (not (proper-subset T s s)))
+  (not (psubset T s s)))
 
-(proof proper-subset-antirefl
+(proof psubset-antirefl
     :script
-  (assume [H (proper-subset T s s)]
+  (assume [H (psubset T s s)]
     (have <a> (not (seteq T s s))
           :by (p/and-elim-right% H))
     (have <b> (seteq T s s) :by (seteq-refl T s))
     (have <c> p/absurd :by (<a> <b>))
     (qed <c>)))
 
-(defthm proper-subset-antisym
+(defthm psubset-antisym
   [[T :type] [s1 (set T)] [s2 (set T)]]
-  (not (and (proper-subset T s1 s2)
-            (proper-subset T s2 s1))))
+  (not (and (psubset T s1 s2)
+            (psubset T s2 s1))))
 
-(proof proper-subset-antisym
+(proof psubset-antisym
     :script
-  (assume [H (and (proper-subset T s1 s2)
-                  (proper-subset T s2 s1))]
+  (assume [H (and (psubset T s1 s2)
+                  (psubset T s2 s1))]
     (have <a> (not (seteq T s1 s2))
           :by (p/and-elim-right% (p/and-elim-left% H)))
     (have <b> (subset T s1 s2)
@@ -419,16 +419,16 @@ sets are distinct, i.e. `s1`⊂`s2` (or more explicitely `s1`⊊`s2`)."
     (have <e> p/absurd :by (<a> <d>))
     (qed <e>)))
 
-(defthm proper-subset-trans
+(defthm psubset-trans
   "The proper subset relation is transitive."
   [[T :type] [s1 (set T)] [s2 (set T)] [s3 (set T)]]
-  (==> (proper-subset T s1 s2)
-       (proper-subset T s2 s3)
-       (proper-subset T s1 s3)))
+  (==> (psubset T s1 s2)
+       (psubset T s2 s3)
+       (psubset T s1 s3)))
 
-(proof proper-subset-trans :script
-  (assume [H1 (proper-subset T s1 s2)
-           H2 (proper-subset T s2 s3)]
+(proof psubset-trans :script
+  (assume [H1 (psubset T s1 s2)
+           H2 (psubset T s2 s3)]
     (have <a> (subset T s1 s3)
           :by ((subset-trans T s1 s2 s3)
                (p/and-elim-left% H1)
@@ -437,24 +437,24 @@ sets are distinct, i.e. `s1`⊂`s2` (or more explicitely `s1`⊊`s2`)."
       (have <b> (set-equal T s1 s3)
             :by ((seteq-implies-set-equal-ax T s1 s3)
                  H))
-      (have <c> (proper-subset T s3 s2)
+      (have <c> (psubset T s3 s2)
             :by ((set-equal-prop T s1 s3 (lambda [x (set T)]
-                                           (proper-subset T x s2)))
+                                           (psubset T x s2)))
                  <b> H1))
       (have <d> p/absurd
-            :by ((proper-subset-antisym T s2 s3)
+            :by ((psubset-antisym T s2 s3)
                  (p/and-intro% H2 <c>))))
     (have <e> _ :by (p/and-intro% <a> <d>))
     (qed <e>)))
 
-(defthm proper-subset-emptyset
+(defthm psubset-emptyset
   [[T :type] [s (set T)]]
-  (==> (proper-subset T (emptyset T) s)
+  (==> (psubset T (emptyset T) s)
        (not (seteq T s (emptyset T)))))
 
-(proof proper-subset-emptyset
+(proof psubset-emptyset
     :script
-  (assume [H (proper-subset T (emptyset T) s)]
+  (assume [H (psubset T (emptyset T) s)]
     (assume [H' (seteq T s (emptyset T))]
       (have <a> (not (seteq T (emptyset T) s))
             :by (p/and-elim-right% H))
@@ -463,12 +463,12 @@ sets are distinct, i.e. `s1`⊂`s2` (or more explicitely `s1`⊊`s2`)."
       (have <c> p/absurd :by (<a> <b>))
       (qed <c>))))
 
-(defthm proper-subset-emptyset-conv
+(defthm psubset-emptyset-conv
   [[T :type] [s (set T)]]
   (==> (not (seteq T s (emptyset T)))
-       (proper-subset T (emptyset T) s)))
+       (psubset T (emptyset T) s)))
 
-(proof proper-subset-emptyset-conv
+(proof psubset-emptyset-conv
     :script
   (assume [H (not (seteq T s (emptyset T)))]
     (have <a> (subset T (emptyset T) s)
@@ -477,18 +477,18 @@ sets are distinct, i.e. `s1`⊂`s2` (or more explicitely `s1`⊊`s2`)."
       (have <b> (seteq T s (emptyset T))
             :by ((seteq-sym T (emptyset T) s) H'))
       (have <c> p/absurd :by (H <b>)))
-    (have <d> (proper-subset T (emptyset T) s)
+    (have <d> (psubset T (emptyset T) s)
           :by (p/and-intro% <a> <c>))
     (qed <d>)))
 
-(defthm proper-subset-emptyset-equiv
+(defthm psubset-emptyset-equiv
   [[T :type] [s (set T)]]
-  (<=> (proper-subset T (emptyset T) s)
+  (<=> (psubset T (emptyset T) s)
        (not (seteq T s (emptyset T)))))
 
-(proof proper-subset-emptyset-equiv
+(proof psubset-emptyset-equiv
     :script
-  (have <a> _ :by (p/and-intro% (proper-subset-emptyset T s)
-                                (proper-subset-emptyset-conv T s)))
+  (have <a> _ :by (p/and-intro% (psubset-emptyset T s)
+                                (psubset-emptyset-conv T s)))
   (qed <a>))
 
