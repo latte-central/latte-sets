@@ -194,6 +194,62 @@ a given type `T` to elements of `U` is formalized with type `(==> T U :type)`.
             :by (p/impl-trans% <a> <b>))
       (qed <c>))))
 
+(defthm subrel-prop
+  "Preservation of properties on relational subsets."
+  [[T :type] [U :type] [P (==> T U :type)][R1 (rel T U)] [R2 (rel T U)]]
+  (==> (forall [x T]
+         (forall [y U]
+           (==> (R2 x y)
+                (P x y))))
+       (subrel T U R1 R2)
+       (forall [x T]
+         (forall [y U]
+           (==> (R1 x y)
+                (P x y))))))
+
+(proof subrel-prop
+    :script
+  (assume [H1 (forall [x T]
+         (forall [y U]
+           (==> (R2 x y)
+                (P x y))))
+           H2 (subrel T U R1 R2)]
+    (assume [x T
+             y U
+             Hxy (R1 x y)]
+      (have <a> (R2 x y) :by (H2 x y Hxy))
+      (have <b> (P x y) :by (H1 x y <a>)))
+    (qed <b>)))
+
+(defthm subrel-emptyrel-lower-bound
+  "The empty relation is a subset of every other relations."
+  [[T :type] [U :type] [R (rel T U)]]
+  (subrel T U (emptyrel T U) R))
+
+(proof subrel-emptyrel-lower-bound
+    :script
+  (assume [x T
+           y U
+           Hxy ((emptyrel T U) x y)]
+    (have <a> p/absurd :by Hxy)
+    (have <b> (R x y) :by (<a> (R x y)))
+    (qed <b>)))
+
+(defthm subrel-fullrel-upper-bound
+  "The full relation is a superset of every other relations."
+  [[T :type] [U :type] [R (rel T U)]]
+  (subrel T U R (fullrel T U)))
+
+(proof subrel-fullrel-upper-bound
+    :script
+  (assume [x T
+           y U
+           Hxy (R x y)]
+    (have <a> ((fullrel T U) x y)
+          :by p/truth-is-true)
+    (qed <a>)))
+
+
 (definition releq
   "Subset-based equality on relations."
   [[T :type] [U :type] [R1 (rel T U)] [R2 (rel T U)]]
@@ -522,3 +578,114 @@ one requires an axiom."
   (have <a> _ :by (p/and-intro% (rcomp-assoc-subrel T U V W R1 R2 R3)
                                 (rcomp-assoc-suprel T U V W R1 R2 R3)))
   (qed <a>))
+
+(definition psubrel
+  "The anti-reflexive variant of [[subrel]]."
+  [[T :type] [U :type] [R1 (rel T U)] [R2 (rel T U)]]
+  (and (subrel T U R1 R2)
+       (not (releq T U R1 R2))))
+
+
+(defthm psubrel-antirefl
+  [[T :type] [U :type] [R (rel T U)]]
+  (not (psubrel T U R R)))
+
+(proof psubrel-antirefl
+    :script
+  (assume [H (psubrel T U R R)]
+    (have <a> (not (releq T U R R))
+          :by (p/and-elim-right% H))
+    (have <b> p/absurd :by (<a> (releq-refl T U R)))
+    (qed <b>)))
+
+(defthm psubrel-antisym
+  [[T :type] [U :type] [R1 (rel T U)] [R2 (rel T U)]]
+  (not (and (psubrel T U R1 R2)
+            (psubrel T U R2 R1))))
+
+(proof psubrel-antisym
+    :script
+  (assume [H (and (psubrel T U R1 R2)
+                  (psubrel T U R2 R1))]
+    (have <a> (not (releq T U R1 R2))
+          :by (p/and-elim-right% (p/and-elim-left% H)))
+    (have <b> (releq T U R1 R2)
+          :by (p/and-intro% (p/and-elim-left% (p/and-elim-left% H))
+                            (p/and-elim-left% (p/and-elim-right% H))))
+    (have <c> p/absurd :by (<a> <b>))
+    (qed <c>)))
+
+(defthm psubrel-trans
+  [[T :type] [U :type] [R1 (rel T U)] [R2 (rel T U)] [R3 (rel T U)]]
+  (==> (psubrel T U R1 R2)
+       (psubrel T U R2 R3)
+       (psubrel T U R1 R3)))
+
+(proof psubrel-trans
+    :script
+  (assume [H1 (psubrel T U R1 R2)
+           H2 (psubrel T U R2 R3)]
+    (have <a> (subrel T U R1 R3)
+          :by ((subrel-trans T U R1 R2 R3)
+               (p/and-elim-left% H1)
+               (p/and-elim-left% H2)))
+    (assume [H3 (releq T U R1 R3)]
+      (have <b> (rel-equal T U R1 R3)
+            :by ((releq-implies-rel-equal-ax T U R1 R3)
+                 H3))
+      (have <c> (psubrel T U R3 R2)
+            :by ((rel-equal-prop T U R1 R3 (lambda [R (rel T U)]
+                                             (psubrel T U R R2)))
+                 <b> H1))
+      (have <d> p/absurd :by ((psubrel-antisym T U R2 R3)
+                              (p/and-intro% H2 <c>))))
+    (have <e> _ :by (p/and-intro% <a> <d>))
+    (qed <e>)))
+
+(defthm psubrel-emptyrel
+  [[T :type] [U :type] [R (rel T U)]]
+  (==> (psubrel T U (emptyrel T U) R)
+       (not (releq T U R (emptyrel T U)))))
+
+(proof psubrel-emptyrel
+    :script
+  (assume [H (psubrel T U (emptyrel T U) R)]
+    (assume [H' (releq T U R (emptyrel T U))]
+      (have <a> (not (releq T U (emptyrel T U) R))
+            :by (p/and-elim-right% H))
+      (have <b> (releq T U (emptyrel T U) R)
+            :by ((releq-sym T U R (emptyrel T U)) H'))
+      (have <c> p/absurd :by (<a> <b>))
+      (qed <c>))))
+
+
+(defthm psubrel-emptyrel-conv
+  [[T :type] [U :type] [R (rel T U)]]
+  (==> (not (releq T U R (emptyrel T U)))
+       (psubrel T U (emptyrel T U) R)))
+
+(proof psubrel-emptyrel-conv
+    :script
+  (assume [H (not (releq T U R (emptyrel T U)))]
+    (have <a> (subrel T U (emptyrel T U) R)
+          :by (subrel-emptyrel-lower-bound T U R))
+    (assume [H' (releq T U (emptyrel T U) R)]
+      (have <b> (releq T U R (emptyrel T U))
+            :by ((releq-sym T U (emptyrel T U) R) H'))
+      (have <c> p/absurd :by (H <b>)))
+    (have <d> (psubrel T U (emptyrel T U) R)
+          :by (p/and-intro% <a> <c>))
+    (qed <d>)))
+
+(defthm psubrel-emptyrel-equiv
+  [[T :type] [U :type] [R (rel T U)]]
+  (<=> (psubrel T U (emptyrel T U) R)
+       (not (releq T U R (emptyrel T U)))))
+
+(proof psubrel-emptyrel-equiv
+    :script
+  (have <a> _ :by (p/and-intro% (psubrel-emptyrel T U R)
+                                (psubrel-emptyrel-conv T U R)))
+  (qed <a>))
+
+
