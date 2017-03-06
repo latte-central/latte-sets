@@ -15,8 +15,10 @@
             [latte-sets.core :as sets
              :refer [set elem subset seteq set-equal emptyset fullset]]
 
+            [latte-sets.algebra :as alg]
+
             [latte-sets.rel :as rel
-             :refer [rel subrel releq rel-equal emptyrel fullrel]]))
+             :refer [rel dom ran subrel releq rel-equal emptyrel fullrel]]))
 
 (definition runion
   "Relational union."
@@ -199,23 +201,117 @@
   (have <l> _ :by (p/and-intro% <f> <k>))
   (qed <l>))
 
-(defthm union-assoc-sym
-  [[T :type] [s1 (set T)] [s2 (set T)] [s3 (set T)]]
-  (seteq T
-         (union T (union T s1 s2) s3)
-         (union T s1 (union T s2 s3))))
+(defthm runion-assoc-sym
+  [[T :type] [U :type] [R1 (rel T U)] [R2 (rel T U)] [R3 (rel T U)]]
+  (releq T U
+         (runion T U (runion T U R1 R2) R3)
+         (runion T U R1 (runion T U R2 R3))))
 
-(proof union-assoc-sym
+(proof runion-assoc-sym
     :script
-  (have <a> (seteq T
-                   (union T s1 (union T s2 s3))
-                   (union T (union T s1 s2) s3))
-        :by (union-assoc T s1 s2 s3))
-  (have <b> _ :by ((sets/seteq-sym T
-                                   (union T s1 (union T s2 s3))
-                                   (union T (union T s1 s2) s3))
+  (have <a> (releq T U
+                   (runion T U R1 (runion T U R2 R3))
+                   (runion T U (runion T U R1 R2) R3))
+        :by (runion-assoc T U R1 R2 R3))
+  (have <b> _ :by ((rel/releq-sym T U
+                                   (runion T U R1 (runion T U R2 R3))
+                                   (runion T U (runion T U R1 R2) R3))
                    <a>))
   (qed <b>))
+
+(defthm runion-dom
+  [[T :type] [U :type] [R1 (rel T U)] [R2 (rel T U)]]
+  (seteq T
+         (dom T U (runion T U R1 R2))
+         (alg/union T
+                    (dom T U R1)
+                    (dom T U R2))))
+
+(proof runion-dom
+    :script
+  "Subset case"
+  (assume [x T
+           Hx (elem T x (dom T U (runion T U R1 R2)))]
+    (have <a> (exists [y U] ((runion T U R1 R2) x y))
+          :by Hx)
+    (assume [y U
+             Hy ((runion T U R1 R2) x y)]
+      (have <b1> (or (R1 x y)
+                     (R2 x y)) :by Hy)
+      (assume [HR1 (R1 x y)]
+        (have <c1> (exists [y U] (R1 x y))
+              :by ((q/ex-intro U (lambda [k U] (R1 x k)) y)
+                   HR1))
+        (have <c2> (elem T x (dom T U R1)) :by <c1>)
+        (have <c3> (or (elem T x (dom T U R1))
+                       (elem T x (dom T U R2)))
+              :by (p/or-intro-left% <c2> (elem T x (dom T U R2))))
+        (have <c> (elem T x (alg/union T
+                                       (dom T U R1)
+                                       (dom T U R2))) :by <c3>))
+      (assume [HR2 (R2 x y)]
+        (have <d1> (exists [y U] (R2 x y))
+              :by ((q/ex-intro U (lambda [k U] (R2 x k)) y)
+                   HR2))
+        (have <d2> (elem T x (dom T U R2)) :by <d1>)
+        (have <d3> (or (elem T x (dom T U R1))
+                       (elem T x (dom T U R2)))
+              :by (p/or-intro-right% (elem T x (dom T U R1)) <d2>))
+        (have <d> (elem T x (alg/union T
+                                       (dom T U R1)
+                                       (dom T U R2))) :by <d3>))
+      (have <e> _ :by (p/or-elim% <b1> 
+                                  (elem T x (alg/union T
+                                                       (dom T U R1)
+                                                       (dom T U R2)))
+                                  <c> <d>)))
+    (have <f> _ :by ((q/ex-elim U (lambda [k U]
+                                    ((runion T U R1 R2) x k))
+                                (elem T x (alg/union T
+                                                     (dom T U R1)
+                                                     (dom T U R2))))
+                     <a> <e>)))
+  "Supset case"
+  (assume [x T
+           Hx (elem T x (alg/union T
+                                   (dom T U R1)
+                                   (dom T U R2)))]
+    (have <g> (or (elem T x (dom T U R1))
+                  (elem T x (dom T U R2))) :by Hx)
+    (assume [HR1 (elem T x (dom T U R1))]
+      (have <h> (exists [y U] (R1 x y)) :by HR1)
+      (assume [y U
+               Hy (R1 x y)]
+        (have <i1> (or (R1 x y) (R2 x y))
+              :by (p/or-intro-left% Hy (R2 x y)))
+        (have <i2> ((runion T U R1 R2) x y) :by <i1>)
+        (have <i> (elem T x (dom T U (runion T U R1 R2)))
+              :by ((q/ex-intro U (lambda [k U]
+                                   ((runion T U R1 R2) x k))
+                               y)
+                   <i2>)))
+      (have <j> _ :by ((q/ex-elim U (lambda [k U] (R1 x k))
+                                  (elem T x (dom T U (runion T U R1 R2))))
+                       <h> <i>)))
+    (assume [HR2 (elem T x (dom T U R2))]
+      (have <k> (exists [y U] (R2 x y)) :by HR2)
+      (assume [y U
+               Hy (R2 x y)]
+        (have <l1> (or (R1 x y) (R2 x y))
+              :by (p/or-intro-right% (R1 x y) Hy))
+        (have <l2> ((runion T U R1 R2) x y) :by <l1>)
+        (have <l> (elem T x (dom T U (runion T U R1 R2)))
+              :by ((q/ex-intro U (lambda [k U]
+                                   ((runion T U R1 R2) x k))
+                               y)
+                   <l2>)))
+      (have <m> _ :by ((q/ex-elim U (lambda [k U] (R2 x k))
+                                  (elem T x (dom T U (runion T U R1 R2))))
+                       <k> <l>)))
+    (have <n> _ :by (p/or-elim% <g> (elem T x (dom T U (runion T U R1 R2)))
+                                <j> <m>)))
+  (have <o> _ :by (p/and-intro% <f> <n>))
+  (qed <o>))
 
 (definition inter
   "Set intersection.
