@@ -1,5 +1,5 @@
-(ns latte-sets.algebra
-  "The boolean algebra operators for sets."
+(ns latte-sets.ralgebra
+  "The relation algebra operators."
 
   (:refer-clojure :exclude [and or not set complement])
 
@@ -13,180 +13,188 @@
             [latte.equal :as eq :refer [equal]]
 
             [latte-sets.core :as sets
-             :refer [set elem subset seteq set-equal emptyset fullset]]))
+             :refer [set elem subset seteq set-equal emptyset fullset]]
 
-(definition union
-  "Set union.
-`(union T s1 s2)` is the set `s1`∪`s2`."
-  [[T :type] [s1 (set T)] [s2 (set T)]]
+            [latte-sets.rel :as rel
+             :refer [rel subrel releq rel-equal emptyrel fullrel]]))
+
+(definition runion
+  "Relational union."
+  [[T :type] [U :type] [R1 (rel T U)] [R2 (rel T U)]]
   (lambda [x T]
-    (or (elem T x s1)
-        (elem T x s2))))
+    (lambda [y U]
+      (or (R1 x y)
+          (R2 x y)))))
 
-(defthm union-idem
-  [[T :type] [s (set T)]]
-  (seteq T (union T s s) s))
+(defthm runion-idem
+  [[T :type] [U :type] [R (rel T U)]]
+  (releq T U (runion T U R R) R))
 
-(proof union-idem
+(proof runion-idem
     :script
-  "We first prove that `s`∪`s`⊆`s`."
+  "We first prove that `R`∪`R`⊆`R`."
   (assume [x T
-           Hx (elem T x (union T s s))]
-    (have <a> (or (elem T x s)
-                  (elem T x s)) :by Hx)
-    (assume [Hor (elem T x s)]
-      (have <b> (elem T x s) :by Hor))
-    (have <c> (elem T x s)
-          :by (p/or-elim% <a> (elem T x s) <b> <b>)))
-  "We next prove that `s`⊆ `s`∪`s`"
+           y U
+           Hxy ((runion T U R R) x y)]
+    (have <a> (or (R x y)
+                  (R x y)) :by Hxy)
+    (assume [Hor (R x y)]
+      (have <b> (R x y) :by Hor))
+    (have <c> (R x y)
+          :by (p/or-elim% <a> (R x y) <b> <b>)))
+  "We next prove that `R`⊆ `R`∪`R`"
   (assume [x T
-           Hx (elem T x s)]
-    (have <d> (or (elem T x s)
-                  (elem T x s))
-          :by (p/or-intro-left% Hx (elem T x s))))
+           y U
+           Hxy (R x y)]
+    (have <d> (or (R x y)
+                  (R x y))
+          :by (p/or-intro-left% Hxy (R x y))))
   (have <e> _ :by (p/and-intro% <c> <d>))
   (qed <e>))
 
-(defthm union-empty
-  [[T :type] [s (set T)]]
-  (seteq T
-         (union T s (emptyset T))
-         s))
+(defthm runion-empty
+  [[T :type] [U :type] [R (rel T U)]]
+  (releq T U
+         (runion T U R (emptyrel T U))
+         R))
 
-(proof union-empty
+(proof runion-empty
     :script
   "subset case"
   (assume [x T
-           Hx (elem T x (union T s (emptyset T)))]
-    (have <a> (or (elem T x s)
-                  (elem T x (emptyset T))) :by Hx)
-    (assume [H1 (elem T x s)]
-      (have <b> (elem T x s) :by H1))
-    (assume [H2 (elem T x (emptyset T))]
+           y U
+           Hxy ((runion T U R (emptyrel T U)) x y)]
+    (have <a> (or (R x y)
+                  ((emptyrel T U) x y)) :by Hxy)
+    (assume [H1 (R x y)]
+      (have <b> (R x y) :by H1))
+    (assume [H2 ((emptyrel T U) x y)]
       (have <c> p/absurd :by H2)
-      (have <d> (elem T x s) :by (<c> (elem T x s))))
-    (have <e> _ :by (p/or-elim% <a> (elem T x s) <b> <d>)))
+      (have <d> (R x y) :by (<c> (R x y))))
+    (have <e> _ :by (p/or-elim% <a> (R x y) <b> <d>)))
   "superset case"
   (assume [x T
-           Hx (elem T x s)]
-    (have <f> (or (elem T x s)
-                  (elem T x (emptyset T)))
-          :by (p/or-intro-left% Hx (elem T x (emptyset T)))))
+           y U
+           Hxy (R x y)]
+    (have <f> (or (R x y)
+                  ((emptyrel T U) x y))
+          :by (p/or-intro-left% Hxy ((emptyrel T U) x y))))
   (have <g> _ :by (p/and-intro% <e> <f>))
   (qed <g>))
 
-(defthm union-commute
+(defthm runion-commute
   "Set union commutes."
-  [[T :type] [s1 (set T)] [s2 (set T)]]
-  (seteq T
-         (union T s1 s2)
-         (union T s2 s1)))
+  [[T :type] [U :type] [R1 (rel T U)] [R2 (rel T U)]]
+  (releq T U
+         (runion T U R1 R2)
+         (runion T U R2 R1)))
 
-(proof union-commute :script
+(proof runion-commute :script
   (assume [x T
-           H (elem T x (union T s1 s2))]
-    (have a1 (or (elem T x s1)
-                 (elem T x s2)) :by H)
-    (have a2 _ :by (p/or-sym (elem T x s1) (elem T x s2)))
-    (have a3 (or (elem T x s2)
-                 (elem T x s1)) :by (a2 a1))
-    (have a (elem T x (union T s2 s1)) :by a3))
+           y U
+           H ((runion T U R1 R2) x y)]
+    (have <a1> (or (R1 x y)
+                   (R2 x y)) :by H)
+    (have <a> _ :by (p/or-sym% <a1>)))
   (assume [x T
-           H (elem T x (union T s2 s1))]
-    (have b (elem T x (union T s1 s2))
-          :by ((p/or-sym (elem T x s2) (elem T x s1)) H)))
-  (have c (seteq T
-                 (union T s1 s2)
-                 (union T s2 s1))
-        :by (p/and-intro% a b))
-  (qed c))
+           y U
+           H ((runion T U R2 R1) x y)]
+    (have <b1> (or (R2 x y)
+                   (R1 x y)) :by H)
+    (have <b> _
+          :by (p/or-sym% <b1>)))
+  (have <c> _
+        :by (p/and-intro% <a> <b>))
+  (qed <c>))
 
-(defthm union-assoc
-  [[T :type] [s1 (set T)] [s2 (set T)] [s3 (set T)]]
-  (seteq T
-         (union T s1 (union T s2 s3))
-         (union T (union T s1 s2) s3)))
+(defthm runion-assoc
+  [[T :type] [U :type] [R1 (rel T U)] [R2 (rel T U)] [R3 (rel T U)]]
+  (releq T U
+         (runion T U R1 (runion T U R2 R3))
+         (runion T U (runion T U R1 R2) R3)))
 
-(proof union-assoc
+(proof runion-assoc
     :script
   "Subset case"
   (assume [x T
-           Hx (elem T x (union T s1 (union T s2 s3)))]
-    (have <a> (or (elem T x s1)
-                  (elem T x (union T s2 s3))) :by Hx)
-    (assume [H1 (elem T x s1)]
-      (have <b1> (or (elem T x s1)
-                     (elem T x s2))
-            :by (p/or-intro-left% H1 (elem T x s2)))
-      (have <b> (or (or (elem T x s1)
-                        (elem T x s2))
-                    (elem T x s3))
-            :by (p/or-intro-left% <b1> (elem T x s3))))
-    (assume [H2 (elem T x (union T s2 s3))]
-      (have <c1> (or (elem T x s2)
-                     (elem T x s3)) :by H2)
-      (assume [H3 (elem T x s2)]
-        (have <d1> (or (elem T x s1)
-                       (elem T x s2))
-              :by (p/or-intro-right% (elem T x s1) H3))
-        (have <d> (or (or (elem T x s1)
-                          (elem T x s2))
-                      (elem T x s3))
-              :by (p/or-intro-left% <d1> (elem T x s3))))
-      (assume [H3 (elem T x s3)]
-        (have <e> (or (or (elem T x s1)
-                          (elem T x s2))
-                      (elem T x s3))
-              :by (p/or-intro-right% (or (elem T x s1)
-                                         (elem T x s2))
+           y U
+           Hxy ((runion T U R1 (runion T U R2 R3)) x y)]
+    (have <a> (or (R1 x y)
+                  ((runion T U R2 R3) x y)) :by Hxy)
+    (assume [H1 (R1 x y)]
+      (have <b1> (or (R1 x y)
+                     (R2 x y))
+            :by (p/or-intro-left% H1 (R2 x y)))
+      (have <b> (or (or (R1 x y)
+                        (R2 x y))
+                    (R3 x y))
+            :by (p/or-intro-left% <b1> (R3 x y))))
+    (assume [H2 ((runion T U R2 R3) x y)]
+      (have <c1> (or (R2 x y)
+                     (R3 x y)) :by H2)
+      (assume [H3 (R2 x y)]
+        (have <d1> (or (R1 x y)
+                       (R2 x y))
+              :by (p/or-intro-right% (R1 x y) H3))
+        (have <d> (or (or (R1 x y)
+                          (R2 x y))
+                      (R3 x y))
+              :by (p/or-intro-left% <d1> (R3 x y))))
+      (assume [H3 (R3 x y)]
+        (have <e> (or (or (R1 x y)
+                          (R2 x y))
+                      (R3 x y))
+              :by (p/or-intro-right% (or (R1 x y)
+                                         (R2 x y))
                                      H3)))
-      (have <c> _ :by (p/or-elim% <c1> (or (or (elem T x s1)
-                                               (elem T x s2))
-                                           (elem T x s3))
+      (have <c> _ :by (p/or-elim% <c1> (or (or (R1 x y)
+                                               (R2 x y))
+                                           (R3 x y))
                                   <d> <e>)))
-    (have <f> (elem T x (union T (union T s1 s2) s3))
-          :by (p/or-elim% <a> (or (or (elem T x s1)
-                                      (elem T x s2))
-                                  (elem T x s3))
+    (have <f> ((runion T U (runion T U R1 R2) R3) x y)
+          :by (p/or-elim% <a> (or (or (R1 x y)
+                                               (R2 x y))
+                                           (R3 x y))
                           <b> <c>)))
   "Superset case"
   (assume [x T
-           Hx (elem T x (union T (union T s1 s2) s3))]
-    (have <g> (or (elem T x (union T s1 s2))
-                  (elem T x s3)) :by Hx)
-    (assume [H1 (elem T x (union T s1 s2))]
-      (have <h1> (or (elem T x s1)
-                     (elem T x s2)) :by H1)
-      (assume [H2 (elem T x s1)]
-        (have <i> (or (elem T x s1)
-                      (or (elem T x s2)
-                          (elem T x s3)))
-              :by (p/or-intro-left% H2 (or (elem T x s2)
-                                           (elem T x s3)))))
-      (assume [H3 (elem T x s2)]
-        (have <j1> (or (elem T x s2)
-                       (elem T x s3))
-              :by (p/or-intro-left% H3 (elem T x s3)))
-        (have <j> (or (elem T x s1)
-                      (or (elem T x s2)
-                          (elem T x s3)))
-              :by (p/or-intro-right% (elem T x s1) <j1>)))
-      (have <h> _ :by (p/or-elim% <h1> (or (elem T x s1)
-                                           (or (elem T x s2)
-                                               (elem T x s3)))
+           y U
+           Hxy ((runion T U (runion T U R1 R2) R3) x y)]
+    (have <g> (or ((runion T U R1 R2) x y)
+                  (R3 x y)) :by Hxy)
+    (assume [H1 ((runion T U R1 R2) x y)]
+      (have <h1> (or (R1 x y)
+                     (R2 x y)) :by H1)
+      (assume [H2 (R1 x y)]
+        (have <i> (or (R1 x y)
+                      (or (R2 x y)
+                          (R3 x y)))
+              :by (p/or-intro-left% H2 (or (R2 x y)
+                          (R3 x y)))))
+      (assume [H3 (R2 x y)]
+        (have <j1> (or (R2 x y)
+                       (R3 x y))
+              :by (p/or-intro-left% H3 (R3 x y)))
+        (have <j> (or (R1 x y)
+                      (or (R2 x y)
+                          (R3 x y)))
+              :by (p/or-intro-right% (R1 x y) <j1>)))
+      (have <h> _ :by (p/or-elim% <h1> (or (R1 x y)
+                                           (or (R2 x y)
+                                               (R3 x y)))
                                   <i> <j>)))
-    (assume [H2 (elem T x s3)]
-      (have <j1> (or (elem T x s2)
-                     (elem T x s3))
-            :by (p/or-intro-right% (elem T x s2) H2))
-      (have <j> (or (elem T x s1)
-                    (or (elem T x s2)
-                        (elem T x s3)))
-            :by (p/or-intro-right% (elem T x s1) <j1>)))
-    (have <k> (elem T x (union T s1 (union T s2 s3)))
-          :by (p/or-elim% <g> (or (elem T x s1)
-                                  (or (elem T x s2)
-                                      (elem T x s3)))
+    (assume [H2 (R3 x y)]
+      (have <j1> (or (R2 x y)
+                     (R3 x y))
+            :by (p/or-intro-right% (R2 x y) H2))
+      (have <j> (or (R1 x y)
+                    (or (R2 x y)
+                        (R3 x y)))
+            :by (p/or-intro-right% (R1 x y) <j1>)))
+    (have <k> ((runion T U R1 (runion T U R2 R3)) x y)
+          :by (p/or-elim% <g> (or (R1 x y)
+                                  (or (R2 x y)
+                                      (R3 x y)))
                           <h> <j>)))
   (have <l> _ :by (p/and-intro% <f> <k>))
   (qed <l>))
