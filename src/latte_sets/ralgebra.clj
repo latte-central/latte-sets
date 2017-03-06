@@ -313,6 +313,7 @@
   (have <o> _ :by (p/and-intro% <f> <n>))
   (qed <o>))
 
+(comment
 (definition inter
   "Set intersection.
 
@@ -770,4 +771,4 @@ a somewhat unsatisfying notion of \"a universe of discourse\"."
   (qed <c>))
 
 
-
+)
