@@ -10,5 +10,6 @@
           :namespaces [latte-sets.core
                        latte-sets.algebra
                        latte-sets.powerset
-                       latte-sets.rel]}
+                       latte-sets.rel
+                       latte-sets.ralgebra]}
   :plugins [[lein-codox "0.10.2"]])
