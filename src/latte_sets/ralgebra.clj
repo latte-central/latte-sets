@@ -883,5 +883,66 @@
   (qed <c>))
 
 
+(definition restrict-dom
+  "Restriction of domain of relation `R` to
+the subset `s`."
+  [[T :type] [U :type] [R (rel T U)] [s (set T)]]
+  (lambda [x T]
+    (lambda [y U]
+      (and (elem T x s)
+           (R x y)))))
+
+(definition subtract-dom
+  "Subtraction of set `s` from the domain of relation `R`"
+  [[T :type] [U :type] [R (rel T U)] [s (set T)]]
+  (lambda [x T]
+    (lambda [y U]
+      (and (not (elem T x s))
+           (R x y)))))
+
+(definition restrict-ran
+  "Restriction of range of relation `R` to
+the subset `s`."
+  [[T :type] [U :type] [R (rel T U)] [s (set U)]]
+  (lambda [x T]
+    (lambda [y U]
+      (and (elem U y s)
+           (R x y)))))
+
+(definition subtract-ran
+  "Subtraction of set `s` from the range of relation `R`"
+  [[T :type] [U :type] [R (rel T U)] [s (set U)]]
+  (lambda [x T]
+    (lambda [y U]
+      (and (not (elem U y s))
+           (R x y)))))
+
+(definition rimage
+  "Relational image of set `s` for relation `R`."
+  [[T :type] [U :type] [R (rel T U)] [s (set T)]]
+  (lambda [y U]
+    (exists [x T]
+      (and (elem T x s)
+           (R x y)))))
+
+(definition rinverse
+  "The relational inverse of `R`."
+  [[T :type] [U :type] [R (rel T U)]]
+  (lambda [y U]
+    (lambda [x T]
+      (R x y))))
+
+(defthm rinverse-prop
+  [[T :type] [U :type] [R (rel T U)] [x T] [y U]]
+  (==> (R x y)
+       ((rinverse T U R) y x)))
+
+(proof rinverse-prop
+    :script
+  (assume [H (R x y)]
+    (have <a> ((rinverse T U R) y x) :by H)
+    (qed <a>)))
+
+
 
 
