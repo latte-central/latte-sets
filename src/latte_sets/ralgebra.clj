@@ -313,6 +313,102 @@
   (have <o> _ :by (p/and-intro% <f> <n>))
   (qed <o>))
 
+
+(defthm runion-ran
+  [[T :type] [U :type] [R1 (rel T U)] [R2 (rel T U)]]
+  (seteq U
+         (ran T U (runion T U R1 R2))
+         (alg/union U
+                    (ran T U R1)
+                    (ran T U R2))))
+
+(proof runion-ran
+    :script
+  "Subset case"
+  (assume [y U
+           Hy (elem U y (ran T U (runion T U R1 R2)))]
+    (have <a> (exists [x T] ((runion T U R1 R2) x y))
+          :by Hy)
+    (assume [x T
+             Hx ((runion T U R1 R2) x y)]
+      (have <b1> (or (R1 x y)
+                     (R2 x y)) :by Hx)
+      (assume [HR1 (R1 x y)]
+        (have <c1> (exists [x T] (R1 x y))
+              :by ((q/ex-intro T (lambda [k T] (R1 k y)) x)
+                   HR1))
+        (have <c2> (elem U y (ran T U R1)) :by <c1>)
+        (have <c3> (or (elem U y (ran T U R1))
+                       (elem U y (ran T U R2)))
+              :by (p/or-intro-left% <c2> (elem U y (ran T U R2))))
+        (have <c> (elem U y (alg/union U
+                                       (ran T U R1)
+                                       (ran T U R2))) :by <c3>))
+      (assume [HR2 (R2 x y)]
+        (have <d1> (exists [x T] (R2 x y))
+              :by ((q/ex-intro T (lambda [k T] (R2 k y)) x)
+                   HR2))
+        (have <d2> (elem U y (ran T U R2)) :by <d1>)
+        (have <d3> (or (elem U y (ran T U R1))
+                       (elem U y (ran T U R2)))
+              :by (p/or-intro-right% (elem U y (ran T U R1)) <d2>))
+        (have <d> (elem U y (alg/union U
+                                       (ran T U R1)
+                                       (ran T U R2))) :by <d3>))
+      (have <e> _ :by (p/or-elim% <b1> 
+                                  (elem U y (alg/union U
+                                                       (ran T U R1)
+                                                       (ran T U R2)))
+                                  <c> <d>)))
+    (have <f> _ :by ((q/ex-elim T (lambda [k T]
+                                    ((runion T U R1 R2) k y))
+                                (elem U y (alg/union U
+                                                     (ran T U R1)
+                                                     (ran T U R2))))
+                     <a> <e>)))
+
+  "Supset case"
+   (assume [y U
+            Hy (elem U y (alg/union U
+                                    (ran T U R1)
+                                    (ran T U R2)))]
+     (have <g> (or (elem U y (ran T U R1))
+                   (elem U y (ran T U R2))) :by Hy)
+     (assume [HR1 (elem U y (ran T U R1))]
+       (have <h> (exists [x T] (R1 x y)) :by HR1)
+       (assume [x T
+                Hx (R1 x y)]
+         (have <i1> (or (R1 x y) (R2 x y))
+               :by (p/or-intro-left% Hx (R2 x y)))
+         (have <i2> ((runion T U R1 R2) x y) :by <i1>)
+         (have <i> (elem U y (ran T U (runion T U R1 R2)))
+               :by ((q/ex-intro T (lambda [k T]
+                                    ((runion T U R1 R2) k y))
+                                x)
+                    <i2>)))
+       (have <j> _ :by ((q/ex-elim T (lambda [k T] (R1 k y))
+                                   (elem U y (ran T U (runion T U R1 R2))))
+                        <h> <i>)))
+     (assume [HR2 (elem U y (ran T U R2))]
+       (have <k> (exists [x T] (R2 x y)) :by HR2)
+       (assume [x T
+                Hx (R2 x y)]
+         (have <l1> (or (R1 x y) (R2 x y))
+               :by (p/or-intro-right% (R1 x y) Hx))
+         (have <l2> ((runion T U R1 R2) x y) :by <l1>)
+         (have <l> (elem U y (ran T U (runion T U R1 R2)))
+               :by ((q/ex-intro T (lambda [k T]
+                                    ((runion T U R1 R2) k y))
+                                x)
+                    <l2>)))
+       (have <m> _ :by ((q/ex-elim T (lambda [k T] (R2 k y))
+                                   (elem U y (ran T U (runion T U R1 R2))))
+                        <k> <l>)))
+     (have <n> _ :by (p/or-elim% <g> (elem U y (ran T U (runion T U R1 R2)))
+                                 <j> <m>)))
+   (have <o> _ :by (p/and-intro% <f> <n>))
+   (qed <o>))
+
 (comment
 (definition inter
   "Set intersection.
