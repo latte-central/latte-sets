@@ -15,7 +15,8 @@
             [latte-sets.core :as sets
              :refer [set elem subset seteq set-equal emptyset fullset]]
 
-            [latte-sets.algebra :as alg]
+            [latte-sets.algebra :as alg
+             :refer [union inter diff]]
 
             [latte-sets.rel :as rel
              :refer [rel dom ran subrel releq rel-equal emptyrel fullrel]]))
@@ -828,7 +829,6 @@
   (have <e> _ :by (p/and-intro% <b> <d>))
   (qed <e>))
 
-
 (definition rcomplement
   "The complement of relation `R`."
   [[T :type] [U :type] [R (rel T U)]]
@@ -891,6 +891,55 @@ the subset `s`."
     (lambda [y U]
       (and (elem T x s)
            (R x y)))))
+
+(defthm restrict-dom-dom
+  [[T :type] [U :type] [R (rel T U)] [s (set T)]]
+  (seteq T
+         (dom T U (restrict-dom T U R s))
+         (inter T s (dom T U R))))
+
+(proof restrict-dom-dom
+    :script
+  "Subset case"
+  (assume [x T
+           Hx (elem T x (dom T U (restrict-dom T U R s)))]
+    (assume [y U
+             Hy ((restrict-dom T U R s) x y)]
+      (have <a> (elem T x s) :by (p/and-elim-left% Hy))
+      (have <b1> (R x y) :by (p/and-elim-right% Hy))
+      (have <b> (exists [z U] (R x z))
+            :by ((q/ex-intro U (lambda [z U] (R x z)) y)
+                 <b1>))
+      (have <c> (elem T x (inter T s (dom T U R)))
+            :by (p/and-intro% <a> <b>)))
+    (have <d> _ :by
+          ((q/ex-elim U (lambda [z U]
+                          ((restrict-dom T U R s) x z))
+                      (elem T x (inter T s (dom T U R))))
+           Hx <c>)))
+  "Superset case"
+  (assume [x T
+           Hx (elem T x (inter T s (dom T U R)))]
+    (have <e> (and (elem T x s)
+                   (exists [y U] (R x y))) :by Hx)
+    (assume [y U
+             Hy (R x y)]
+      (have <f1> ((restrict-dom T U R s) x y)
+            :by (p/and-intro% (p/and-elim-left% <e>)
+                              Hy))
+      (have <f> (exists [z U] ((restrict-dom T U R s) x z))
+            :by ((q/ex-intro U (lambda [z U]
+                                 ((restrict-dom T U R s) x z)) y)
+                 <f1>)))
+    (have <g> _ :by ((q/ex-elim U (lambda [z U] (R x z))
+                                (exists [y U]
+                                  ((restrict-dom T U R s) x y)))
+                     (p/and-elim-right% <e>)
+                     <f>))
+    (have <h> (elem T x (dom T U (restrict-dom T U R s)))
+          :by <g>))
+  (have <i> _ :by (p/and-intro% <d> <h>))
+  (qed <i>))
 
 (definition subtract-dom
   "Subtraction of set `s` from the domain of relation `R`"

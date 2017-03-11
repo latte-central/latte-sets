@@ -610,6 +610,43 @@
   (have <e> _ :by (p/and-intro% <b> <d>))
   (qed <e>))
 
+(definition symdiff
+  "Symmetric difference."
+  [[T :type] [s1 (set T)] [s2 (set T)]]
+  (lambda [x T]
+    (or (and (elem T x s1) (not (elem T x s2)))
+        (and (elem T x s2) (not (elem T x s1))))))
+
+(defthm symdiff-alt
+  "An alternative caracterisation of the symmetric difference."
+  [[T :type] [s1 (set T)] [s2 (set T)]]
+  (seteq T
+         (symdiff T s1 s2)
+         (union T
+                (diff T s1 s2)
+                (diff T s2 s1))))
+
+(proof symdiff-alt
+    :script
+  "Subset case"
+  (assume [x T
+           Hx (elem T x (symdiff T s1 s2))]
+    (have <a> (or (and (elem T x s1) (not (elem T x s2)))
+                  (and (elem T x s2) (not (elem T x s1))))
+          :by Hx)
+    (have <b> (elem T x (union T
+                               (diff T s1 s2)
+                               (diff T s2 s1))) :by <a>))
+  "Superset case."
+  (assume [x T
+           Hx (elem T x (union T
+                               (diff T s1 s2)
+                               (diff T s2 s1)))]
+    (have <c> (or (elem T x (diff T s1 s2))
+                  (elem T x (diff T s2 s1))) :by Hx)
+    (have <d> (elem T x (symdiff T s1 s2)) :by <c>))
+  (have <e> _ :by (p/and-intro% <b> <d>))
+  (qed <e>))
 
 (definition complement
   "The complement of set `s`.

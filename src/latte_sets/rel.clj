@@ -5,14 +5,15 @@ a given type `T` to elements of `U` is formalized with type `(==> T U :type)`.
   This namespace provides some important properties about such
   relations."
 
-  (:refer-clojure :exclude [and or not identity])
+  (:refer-clojure :exclude [and or not identity set])
 
   (:require [latte.core :as latte :refer [definition defaxiom defthm
                                           deflemma forall lambda ==>
                                           proof assume have]]
             [latte.prop :as p :refer [and or not <=>]]
             [latte.equal :as eq :refer [equal]]
-            [latte.quant :as q :refer [exists]]))
+            [latte.quant :as q :refer [exists]]
+            [latte-sets.core :as sets :refer [set elem]]))
 
 (definition rel
   "The type of relations."
@@ -687,5 +688,13 @@ one requires an axiom."
   (have <a> _ :by (p/and-intro% (psubrel-emptyrel T U R)
                                 (psubrel-emptyrel-conv T U R)))
   (qed <a>))
+
+(definition prod
+  "The cartersian product of sets `s1` and `s2`."
+  [[T :type] [U :type] [s1 (set T)] [s2 (set U)]]
+  (lambda [x T]
+    (lambda [y U]
+      (and (elem T x s1)
+           (elem U y s2)))))
 
 
