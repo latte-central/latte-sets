@@ -18,8 +18,9 @@ natural translation to the typed setting.
   (:refer-clojure :exclude [and or not set])
 
   (:require [latte.core :as latte :refer [definition defthm defaxiom defnotation
+                                          defimplicit
                                           forall lambda
-                                          assume have pose proof]]
+                                          assume have pose proof qed]]
             [latte.quant :as q :refer [exists]]
             [latte.prop :as p :refer [<=> and or not]]
             [latte.equal :as eq :refer [equal]]))
@@ -29,6 +30,10 @@ natural translation to the typed setting.
   [[T :type]]
   (==> T :type))
 
+(defn fetch-set-type [def-env ctx s-type]
+  (let [[T _] (p/decompose-impl-type def-env ctx s-type)]
+    T))
+
 (definition elem-def
   "Set membership. 
 
@@ -37,6 +42,11 @@ Given a type `T`, a value `x` of type `T` and
  The standard mathematical notation is: `x`∊`s` (leaving the type `T` implicit)."
   [[T :type] [x T] [s (set T)]]
   (s x))
+
+(defimplicit elem
+  "Object `x` is member of set `s`, cf. [[elem-def]]."
+  [def-env ctx [x x-ty] [s s-ty]]
+  (list #'elem-def x-ty x s))
 
 (defnotation forall-in
   "Universal quantification over sets.
@@ -83,12 +93,12 @@ of the full set)."
   "Introduction rule for the full set."
   [[T :type]]
   (forall [x T]
-    (elem T x (fullset T))))
+    (elem x (fullset T))))
 
-(proof fullset-intro :script
+(proof 'fullset-intro :script
   (assume [x T]
-    (have a (elem T x (fullset T)) :by p/truth-is-true)
-    (qed a)))
+    (have <a> (elem x (fullset T)) :by p/truth-is-true))
+  (qed <a>))
 
 (definition emptyset
   "The empty set of a type."
@@ -99,137 +109,171 @@ of the full set)."
   "The main property of the empty set."
   [[T :type]]
   (forall [x T]
-    (not (elem T x (emptyset T)))))
+    (not (elem x (emptyset T)))))
 
-(proof emptyset-prop :script
+(proof 'emptyset-prop :script
   (assume [x T
-           H (elem T x (emptyset T))]
-    (have a p/absurd :by H)
-    (qed a)))
+           H (elem x (emptyset T))]
+    (have <a> p/absurd :by H))
+  (qed <a>))
 
-
-(definition subset
+(definition subset-def
   "The subset relation for type `T`.
 
 The expression `(subset T s1 s2)` means that
  the set `s1` is a subset of `s2`, i.e. `s1`⊆`s2`."
   [[T :type] [s1 (set T)] [s2 (set T)]]
   (forall [x T]
-    (==> (elem T x s1)
-         (elem T x s2))))
+    (==> (elem x s1)
+         (elem x s2))))
 
-(defthm subset-refl
+(defimplicit subset
+  "Set `s1` is a subset of `s2`, cf. [[subset-def]]."
+  [def-env ctx [s1 s1-ty] [s2 s2-ty]]
+  (let [T (fetch-set-type def-env ctx s1-ty)]
+    (list #'subset-def T s1 s2)))
+
+(defthm subset-refl-thm
   "The subset relation is reflexive."
   [[T :type] [s (set T)]]
-  (subset T s s))
+  (subset s s))
 
-(proof subset-refl :script
+(proof 'subset-refl-thm :script
   (assume [x T
-           H (elem T x s)]
-    (have a (elem T x s) :by H)
-    (qed a)))
+           H (elem x s)]
+    (have <a> (elem x s) :by H))
+  (qed <a>))
 
-(defthm subset-trans
+(defimplicit subset-refl
+  "The subset relation is reflexive, cf. [[subset-refl-thm]]."
+  [def-env ctx [s s-ty]]
+  (let [T (fetch-set-type def-env ctx s-ty)]
+    (list #'subset-refl-thm T s)))
+
+(defthm subset-trans-thm
   "The subset relation is transitive."
   [[T :type] [s1 (set T)] [s2 (set T)] [s3 (set T)]]
-  (==> (subset T s1 s2)
-       (subset T s2 s3)
-       (subset T s1 s3)))
+  (==> (subset s1 s2)
+       (subset s2 s3)
+       (subset s1 s3)))
 
-(proof subset-trans :script
-  (assume [H1 (subset T s1 s2)
-           H2 (subset T s2 s3)]
+(proof 'subset-trans-thm :script
+  (assume [H1 (subset s1 s2)
+           H2 (subset s2 s3)]
     (assume [x T]
-      (have a (==> (elem T x s1)
-                   (elem T x s2)) :by (H1 x))
-      (have b (==> (elem T x s2)
-                   (elem T x s3)) :by (H2 x))
-      (have c (==> (elem T x s1)
-                   (elem T x s3)) :by (p/impl-trans% a b)))
-    (qed c)))
+      (have <a> (==> (elem x s1)
+                     (elem x s2)) :by (H1 x))
+      (have <b> (==> (elem x s2)
+                     (elem x s3)) :by (H2 x))
+      (have <c> (==> (elem x s1)
+                     (elem x s3)) :by (p/impl-trans <a> <b>))))
+  (qed <c>))
+
+(defimplicit subset-trans
+  "The subset relation is transitive, cf. [[subset-trans-thm]]."
+  [def-env ctx [s1 s1-ty] [s2 s2-ty] [s3 s3-ty]]
+  (let [T (fetch-set-type def-env ctx s1-ty)]
+    (list #'subset-trans-thm T s1 s2 s3)))
 
 (defthm subset-prop
   "Preservation of properties on subsets."
   [[T :type] [P (==> T :type)][s1 (set T)] [s2 (set T)]]
   (==> (forall [x T]
-         (==> (elem T x s2)
+         (==> (elem x s2)
               (P x)))
-       (subset T s1 s2)
+       (subset s1 s2)
        (forall [x T]
-         (==> (elem T x s1)
+         (==> (elem x s1)
               (P x)))))
 
-(proof subset-prop
+(proof 'subset-prop
     :script
   (assume [H1 (forall [x T]
-                (==> (elem T x s2)
-                     (P x)))
-           H2 (subset T s1 s2)]
+                      (==> (elem x s2)
+                           (P x)))
+           H2 (subset s1 s2)]
     (assume [x T
-             Hx (elem T x s1)]
-      (have <a> (elem T x s2) :by (H2 x Hx))
-      (have <b> (P x) :by (H1 x <a>)))
-    (qed <b>)))
+             Hx (elem x s1)]
+      (have <a> (elem x s2) :by (H2 x Hx))
+      (have <b> (P x) :by (H1 x <a>))))
+  (qed <b>))
 
 (defthm subset-emptyset-lower-bound
   "The emptyset is a subset of every other sets."
   [[T :type] [s (set T)]]
-  (subset T (emptyset T) s))
+  (subset (emptyset T) s))
 
-(proof subset-emptyset-lower-bound
+(proof 'subset-emptyset-lower-bound
     :script
   (assume [x T
-           Hx (elem T x (emptyset T))]
+           Hx (elem x (emptyset T))]
     (have <a> p/absurd :by Hx)
-    (have <b> (elem T x s) :by ((p/ex-falso (elem T x s)) <a>))
-    (qed <b>)))
+    (have <b> (elem x s) :by ((p/ex-falso (elem x s)) <a>)))
+  (qed <b>))
 
 (defthm subset-fullset-upper-bound
   "The fullset is a superset of every other sets."
   [[T :type] [s (set T)]]
-  (subset T s (fullset T)))
+  (subset s (fullset T)))
 
-(proof subset-fullset-upper-bound
+(proof 'subset-fullset-upper-bound
     :script
   (assume [x T
-           Hx (elem T x s)]
-    (have <a> (elem T x (fullset T))
-          :by p/truth-is-true)
-    (qed <a>)))
+           Hx (elem x s)]
+    (have <a> (elem x (fullset T))
+          :by p/truth-is-true))
+  (qed <a>))
 
-(definition seteq
+(definition seteq-def
   "Equality on sets.
 
 This is a natural equality on sets based on the subset relation."
   [[T :type] [s1 (set T)] [s2 (set T)]]
-  (and (subset T s1 s2)
-       (subset T s2 s1)))
+  (and (subset s1 s2)
+       (subset s2 s1)))
 
-(defthm seteq-refl
+(defimplicit seteq
+  "Set `s1` is equal to `s2`, cf. [[seteq-def]]."
+  [def-env ctx [s1 s1-ty] [s2 s2-ty]]
+  (let [T (fetch-set-type def-env ctx s1-ty)]
+    (list #'seteq-def T s1 s2)))
+
+(defthm seteq-refl-thm
   "Set equality is reflexive."
   [[T :type] [s (set T)]]
-  (seteq T s s))
+  (seteq s s))
 
-(proof seteq-refl :script
-  (have a (subset T s s) :by (subset-refl T s))
-  (have b (and (subset T s s)
-               (subset T s s))
-        :by ((p/and-intro (subset T s s)
-                          (subset T s s)) a a))
-  (qed b))
+(proof 'seteq-refl-thm :script
+  (have <a> (subset s s) :by (subset-refl s))
+  (have <b> (and (subset s s)
+                 (subset s s))
+        :by (p/and-intro <a> <a>))
+  (qed <b>))
 
-(defthm seteq-sym
+(defimplicit seteq-refl
+  "Set `s` is equal to itself, cf. [[seteq-refl-thm]]."
+  [def-env ctx [s s-ty]]
+  (let [T (fetch-set-type def-env ctx s-ty)]
+    (list #'seteq-refl-thm T s)))
+
+(defthm seteq-sym-thm
   "Set equality is symmetric."
   [[T :type] [s1 (set T)] [s2 (set T)]]
-  (==> (seteq T s1 s2)
-       (seteq T s2 s1)))
+  (==> (seteq s1 s2)
+       (seteq s2 s1)))
 
-(proof seteq-sym :script
-  (assume [H (seteq T s1 s2)]
-    (have a (subset T s1 s2) :by (p/and-elim-left% H))
-    (have b (subset T s2 s1) :by (p/and-elim-right% H))
-    (have c (seteq T s2 s1) :by (p/and-intro% b a))
-    (qed c)))
+(proof 'seteq-sym-thm :script
+  (assume [H (seteq s1 s2)]
+    (have <a> (subset s1 s2) :by (p/and-elim-left H))
+    (have <b> (subset s2 s1) :by (p/and-elim-right H))
+    (have <c> (seteq s2 s1) :by (p/and-intro <b> <a>)))
+  (qed <c>))
+
+(defimplicit seteq-sym
+  "Set equality is symmetric, cf. [[seteq-sym-thm]]."
+  [def-env ctx [s1 s1-ty] [s2 s2-ty]]
+  (let [T (fetch-set-type def-env ctx s1-ty)]
+    (list #'seteq-sym-thm T s1 s2)))
 
 (defthm seteq-trans
   "Set equality is transitive."
