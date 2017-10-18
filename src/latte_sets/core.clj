@@ -18,8 +18,8 @@ natural translation to the typed setting.
   (:refer-clojure :exclude [and or not set])
 
   (:require [latte.core :as latte :refer [definition defthm defaxiom defnotation
-                                          forall lambda ==>
-                                          assume have pose proof lambda forall]]
+                                          forall lambda
+                                          assume have pose proof]]
             [latte.quant :as q :refer [exists]]
             [latte.prop :as p :refer [<=> and or not]]
             [latte.equal :as eq :refer [equal]]))
@@ -29,7 +29,7 @@ natural translation to the typed setting.
   [[T :type]]
   (==> T :type))
 
-(definition elem
+(definition elem-def
   "Set membership. 
 
 Given a type `T`, a value `x` of type `T` and
