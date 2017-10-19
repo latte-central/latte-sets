@@ -275,27 +275,33 @@ This is a natural equality on sets based on the subset relation."
   (let [T (fetch-set-type def-env ctx s1-ty)]
     (list #'seteq-sym-thm T s1 s2)))
 
-(defthm seteq-trans
+(defthm seteq-trans-thm
   "Set equality is transitive."
   [[T :type] [s1 (set T)] [s2 (set T)] [s3 (set T)]]
-  (==> (seteq T s1 s2)
-       (seteq T s2 s3)
-       (seteq T s1 s3)))
+  (==> (seteq s1 s2)
+       (seteq s2 s3)
+       (seteq s1 s3)))
 
-(proof seteq-trans :script
-  (assume [H1 (seteq T s1 s2)
-           H2 (seteq T s2 s3)]
-    (have a1 (subset T s1 s2) :by (p/and-elim-left% H1))
-    (have b1 (subset T s2 s3) :by (p/and-elim-left% H2))
-    (have c1 (subset T s1 s3) :by ((subset-trans T s1 s2 s3) a1 b1))
-    (have a2 (subset T s2 s1) :by (p/and-elim-right% H1))
-    (have b2 (subset T s3 s2) :by (p/and-elim-right% H2))
-    (have c2 (subset T s3 s1) :by ((subset-trans T s3 s2 s1) b2 a2))
-    (have d (seteq T s1 s3) :by (p/and-intro% c1 c2))
-    (qed d)))
+(proof 'seteq-trans-thm :script
+  (assume [H1 (seteq s1 s2)
+           H2 (seteq s2 s3)]
+    (have <a1> (subset s1 s2) :by (p/and-elim-left H1))
+    (have <b1> (subset s2 s3) :by (p/and-elim-left H2))
+    (have <c1> (subset s1 s3) :by ((subset-trans s1 s2 s3) <a1> <b1>))
+    (have <a2> (subset s2 s1) :by (p/and-elim-right H1))
+    (have <b2> (subset s3 s2) :by (p/and-elim-right H2))
+    (have <c2> (subset s3 s1) :by ((subset-trans s3 s2 s1) <b2> <a2>))
+    (have <d> (seteq s1 s3) :by (p/and-intro <c1> <c2>)))
+  (qed <d>))
 
-(definition set-equal
-  "A *Leibniz*-stype equality for sets.
+(defimplicit seteq-trans
+  "Set equality is transitive, cf. [[seteq-trans-thm]]."
+  [def-env ctx [s1 s1-ty] [s2 s2-ty] [s3 s3-ty]]
+  (let [T (fetch-set-type def-env ctx s1-ty)]
+    (list #'seteq-trans-thm T s1 s2 s3)))
+
+(definition set-equality
+  "A *Leibniz*-style equality for sets.
 
 It says that two sets `s1` and `s2` are equal iff for 
 any predicate `P` then `(P s1)` if and only if `(P s2)`.
@@ -304,35 +310,49 @@ Note that the identification with [[seteq]] is non-trivial,
  and requires an axiom."
   [[T :type] [s1 (set T)] [s2 (set T)]]
   (forall [P (==> (set T) :type)]
-    (<=> (P s1) (P s2))))
+          (<=> (P s1) (P s2))))
+
+(defimplicit set-equal
+  "The *Leibniz*-style equality for sets, cf. [[set-equality]]."
+  [def-env ctx [s1 s1-ty] [s2 s2-ty]]
+  (let [T (fetch-set-type def-env ctx s1-ty)]
+    (list #'set-equality T s1 s2)))
 
 (defthm set-equal-prop
   [[T :type] [s1 (set T)] [s2 (set T)] [P (==> (set T) :type)]]
-  (==> (set-equal T s1 s2)
+  (==> (set-equal s1 s2)
        (P s1)
        (P s2)))
 
-(proof set-equal-prop
+(proof 'set-equal-prop
     :script
-  (assume [Heq (set-equal T s1 s2)
+  (assume [Heq (set-equal s1 s2)
            Hs1 (P s1)]
     (have <a> (<=> (P s1) (P s2))
           :by (Heq P))
     (have <b> (==> (P s1) (P s2))
-          :by (p/and-elim-left% <a>))
-    (have <c> (P s2) :by (<b> Hs1))
-    (qed <c>)))
+          :by (p/and-elim-left <a>))
+    (have <c> (P s2) :by (<b> Hs1)))
+  (qed <c>))
 
-(defthm set-equal-refl
+(defthm set-equal-refl-thm
   "Reflexivity of set equality."
   [[T :type] [s (set T)]]
-  (set-equal T s s))
+  (set-equal s s))
 
-(proof set-equal-refl :script
+(proof 'set-equal-refl-thm :script
   (assume [P (==> (set T) :type)]
     (have a (<=> (P s) (P s))
-          :by (p/iff-refl (P s)))
-    (qed a)))
+          :by (p/iff-refl (P s))))
+  (qed a))
+
+(defimplicit set-equal-refl
+  "Reflexivity of set equality, cf. [[set-equal-refl-thm]]."
+  [def-env ctx [s s-ty]]
+  (let [T (fetch-set-type def-env ctx s-ty)]
+    (list #'set-equal-refl-thm T s)))
+
+;;; <<<< UNTIL HERE >>>>
 
 (defthm set-equal-sym
   "Symmetry of set equality."
