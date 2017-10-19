@@ -352,93 +352,104 @@ Note that the identification with [[seteq]] is non-trivial,
   (let [T (fetch-set-type def-env ctx s-ty)]
     (list #'set-equal-refl-thm T s)))
 
-;;; <<<< UNTIL HERE >>>>
-
-(defthm set-equal-sym
+(defthm set-equal-sym-thm
   "Symmetry of set equality."
   [[T :type] [s1 (set T)] [s2 (set T)]]
-  (==> (set-equal T s1 s2)
-       (set-equal T s2 s1)))
+  (==> (set-equal s1 s2)
+       (set-equal s2 s1)))
 
-(proof set-equal-sym :script
-  (assume [H (set-equal T s1 s2)
+(proof 'set-equal-sym-thm :script
+  (assume [H (set-equal s1 s2)
            Q (==> (set T) :type)]
-    (have a (<=> (Q s1) (Q s2)) :by (H Q))
-    (have b (<=> (Q s2) (Q s1)) :by ((p/iff-sym (Q s1) (Q s2)) a))
-    (qed b)))
+    (have <a> (<=> (Q s1) (Q s2)) :by (H Q))
+    (have <b> (<=> (Q s2) (Q s1)) :by (p/iff-sym <a>)))
+  (qed <b>))
 
-(defthm set-equal-trans
+(defimplicit set-equal-sym
+  "Symmetry of set equality, cf. [[set-equal-sym-thm]]."
+  [def-env ctx [s1 s1-ty] [s2 s2-ty]]
+  (let [T (fetch-set-type def-env ctx s1-ty)]
+    (list #'set-equal-sym-thm T s1 s2)))
+
+(defthm set-equal-trans-thm
   "Transitivity of set equality."
   [[T :type] [s1 (set T)] [s2 (set T)] [s3 (set T)]]
-  (==> (set-equal T s1 s2)
-       (set-equal T s2 s3)
-       (set-equal T s1 s3)))
+  (==> (set-equal s1 s2)
+       (set-equal s2 s3)
+       (set-equal s1 s3)))
 
-(proof set-equal-trans :script
-  (assume [H1 (set-equal T s1 s2)
-           H2 (set-equal T s2 s3)
+(proof 'set-equal-trans-thm :script
+  (assume [H1 (set-equal s1 s2)
+           H2 (set-equal s2 s3)
            Q (==> (set T) :type)]
-    (have a (<=> (Q s1) (Q s2)) :by (H1 Q))
-    (have b (<=> (Q s2) (Q s3)) :by (H2 Q))
-    (have c (<=> (Q s1) (Q s3))
-          :by ((p/iff-trans (Q s1) (Q s2) (Q s3)) a b))
-    (qed c)))
+    (have <a> (<=> (Q s1) (Q s2)) :by (H1 Q))
+    (have <b> (<=> (Q s2) (Q s3)) :by (H2 Q))
+    (have <c> (<=> (Q s1) (Q s3))
+          :by (p/iff-trans <a> <b>)))
+  (qed <c>))
+
+(defimplicit set-equal-trans
+  "Transitivity of set equality, cf. [[set-equal-trans-thm]]."
+  [def-env ctx [s1 s1-ty] [s2 s2-ty] [s3 s3-ty]]
+  (let [T (fetch-set-type def-env ctx s1-ty)]
+    (list #'set-equal-trans-thm T s1 s2 s3)))
 
 (defthm set-equal-implies-subset
   "Going from *Leibniz* equality on sets to the subset relation is easy."
   [[T :type] [s1 (set T)] [s2 (set T)]]
-  (==> (set-equal T s1 s2)
-       (subset T s1 s2)))
+  (==> (set-equal s1 s2)
+       (subset s1 s2)))
 
-(proof set-equal-implies-subset :script
-  (assume [H (set-equal T s1 s2)
+(proof 'set-equal-implies-subset :script
+  (assume [H (set-equal s1 s2)
            x T]
     (pose Qx := (lambda [s (set T)]
-                       (elem T x s)))
-    (have a (<=> (elem T x s1) (elem T x s2))
+                        (elem x s)))
+    (have <a> (<=> (elem x s1) (elem x s2))
           :by (H Qx))
-    (have b (==> (elem T x s1) (elem T x s2))
-          :by ((p/iff-elim-if (elem T x s1) (elem T x s2)) a))
-    (qed b)))
+    (have <b> (==> (elem x s1) (elem x s2))
+          :by (p/iff-elim-if <a>)))
+  (qed <b>))
 
 (defthm set-equal-implies-seteq
   "Subset-based equality implies *Leibniz*-style equality on sets."
   [[T :type] [s1 (set T)] [s2 (set T)]]
-  (==> (set-equal T s1 s2)
-       (seteq T s1 s2)))
+  (==> (set-equal s1 s2)
+       (seteq s1 s2)))
 
-(proof set-equal-implies-seteq :script
-  (assume [H (set-equal T s1 s2)]
+(proof 'set-equal-implies-seteq :script
+  (assume [H (set-equal s1 s2)]
     ;; "First we get s1⊆s2."
-    (have a (subset T s1 s2) :by ((set-equal-implies-subset T s1 s2) H))
+    (have <a> (subset s1 s2) :by ((set-equal-implies-subset T s1 s2) H))
     ;; "Then we get s2⊆s1."
-    (have b1 (set-equal T s2 s1) :by ((set-equal-sym T s1 s2) H))
-    (have b (subset T s2 s1) :by ((set-equal-implies-subset T s2 s1) b1))
+    (have <b1> (set-equal s2 s1) :by ((set-equal-sym s1 s2) H))
+    (have <b> (subset s2 s1) :by ((set-equal-implies-subset T s2 s1) <b1>))
     ;; "... and we can now conclude"
-    (have c (seteq T s1 s2) :by (p/and-intro% a b))
-    (qed c)))
+    (have <c> (seteq s1 s2) :by (p/and-intro <a> <b>)))
+  (qed <c>))
 
 (defaxiom seteq-implies-set-equal-ax
   "Going from subset-based equality to *Leibniz*-style equality
 requires this axiom. This is because we cannot lift membership
  to an arbitrary predicate."
   [[T :type] [s1 (set T)] [s2 (set T)]]
-  (==> (seteq T s1 s2)
-       (set-equal T s1 s2)))
+  (==> (seteq s1 s2)
+       (set-equal s1 s2)))
 
 (defthm set-equal-seteq
   "Set equality and subset-based equality (should) coincide (axiomatically)."
   [[T :type] [s1 (set T)] [s2 (set T)]]
-  (<=> (seteq T s1 s2)
-       (set-equal T s1 s2)))
+  (<=> (seteq s1 s2)
+       (set-equal s1 s2)))
 
-(proof set-equal-seteq :script
-  (have a (==> (seteq T s1 s2)
-               (set-equal T s1 s2)) :by (seteq-implies-set-equal-ax T s1 s2))
-  (have b (==> (set-equal T s1 s2)
-               (seteq T s1 s2)) :by (set-equal-implies-seteq T s1 s2))
-  (qed ((p/iff-intro (seteq T s1 s2)
-                     (set-equal T s1 s2)) a b)))
+(proof 'set-equal-seteq :script
+  (have <a> (==> (seteq s1 s2)
+                 (set-equal s1 s2)) :by (seteq-implies-set-equal-ax T s1 s2))
+  (have <b> (==> (set-equal s1 s2)
+                 (seteq s1 s2)) :by (set-equal-implies-seteq T s1 s2))
+  (qed (p/iff-intro <a> <b>)))
+
+;;; <<<< UNTIL HERE >>>>
 
 (definition psubset
   "The anti-reflexive variant of the subset relation.
