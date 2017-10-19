@@ -31,6 +31,8 @@ natural translation to the typed setting.
   (==> T :type))
 
 (defn fetch-set-type [def-env ctx s-type]
+  "Fetch the `T` in a set-type `s-type` of the form `(set T)` (fails otherwise).
+This function is used for implicit in sets."
   (let [[T _] (p/decompose-impl-type def-env ctx s-type)]
     T))
 
