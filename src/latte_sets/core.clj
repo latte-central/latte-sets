@@ -449,121 +449,133 @@ requires this axiom. This is because we cannot lift membership
                  (seteq s1 s2)) :by (set-equal-implies-seteq T s1 s2))
   (qed (p/iff-intro <a> <b>)))
 
-;;; <<<< UNTIL HERE >>>>
-
-(definition psubset
+(definition psubset-def
   "The anti-reflexive variant of the subset relation.
 
 The expression `(psubset T s1 s2)` means that
  the set `s1` is a subset of `s2`, but that the two
 sets are distinct, i.e. `s1`⊂`s2` (or more explicitely `s1`⊊`s2`)."
   [[T :type] [s1 (set T)] [s2 (set T)]]
-  (and (subset T s1 s2)
-       (not (seteq T s1 s2))))
+  (and (subset s1 s2)
+       (not (seteq s1 s2))))
+
+(defimplicit psubset
+  "`s1` is a propre subset of `s2`, cf. [[psubset-def]]."
+  [def-env ctx [s1 s1-ty] [s2 s2-ty]]
+  (let [T (fetch-set-type def-env ctx s1-ty)]
+    (list #'psubset-def T s1 s2)))
 
 (defthm psubset-antirefl
   [[T :type] [s (set T)]]
-  (not (psubset T s s)))
+  (not (psubset s s)))
 
-(proof psubset-antirefl
+(proof 'psubset-antirefl
     :script
-  (assume [H (psubset T s s)]
-    (have <a> (not (seteq T s s))
-          :by (p/and-elim-right% H))
-    (have <b> (seteq T s s) :by (seteq-refl T s))
-    (have <c> p/absurd :by (<a> <b>))
-    (qed <c>)))
+  (assume [H (psubset s s)]
+    (have <a> (not (seteq s s))
+          :by (p/and-elim-right H))
+    (have <b> (seteq s s) :by (seteq-refl s))
+    (have <c> p/absurd :by (<a> <b>)))
+  (qed <c>))
 
 (defthm psubset-antisym
   [[T :type] [s1 (set T)] [s2 (set T)]]
-  (not (and (psubset T s1 s2)
-            (psubset T s2 s1))))
+  (not (and (psubset s1 s2)
+            (psubset s2 s1))))
 
-(proof psubset-antisym
+(proof 'psubset-antisym
     :script
-  (assume [H (and (psubset T s1 s2)
-                  (psubset T s2 s1))]
-    (have <a> (not (seteq T s1 s2))
-          :by (p/and-elim-right% (p/and-elim-left% H)))
-    (have <b> (subset T s1 s2)
-          :by (p/and-elim-left% (p/and-elim-left% H)))
-    (have <c> (subset T s2 s1)
-          :by (p/and-elim-left% (p/and-elim-right% H)))
-    (have <d> (seteq T s1 s2)
-          :by (p/and-intro% <b> <c>))
-    (have <e> p/absurd :by (<a> <d>))
-    (qed <e>)))
+  (assume [H (and (psubset s1 s2)
+                  (psubset s2 s1))]
+    (have <a> (not (seteq s1 s2))
+          :by (p/and-elim-right (p/and-elim-left H)))
+    (have <b> (subset s1 s2)
+          :by (p/and-elim-left (p/and-elim-left H)))
+    (have <c> (subset s2 s1)
+          :by (p/and-elim-left (p/and-elim-right H)))
+    (have <d> (seteq s1 s2)
+          :by (p/and-intro <b> <c>))
+    (have <e> p/absurd :by (<a> <d>)))
+  (qed <e>))
 
-(defthm psubset-trans
+(defthm psubset-trans-thm
   "The proper subset relation is transitive."
   [[T :type] [s1 (set T)] [s2 (set T)] [s3 (set T)]]
-  (==> (psubset T s1 s2)
-       (psubset T s2 s3)
-       (psubset T s1 s3)))
+  (==> (psubset s1 s2)
+       (psubset s2 s3)
+       (psubset s1 s3)))
 
-(proof psubset-trans :script
-  (assume [H1 (psubset T s1 s2)
-           H2 (psubset T s2 s3)]
-    (have <a> (subset T s1 s3)
-          :by ((subset-trans T s1 s2 s3)
-               (p/and-elim-left% H1)
-               (p/and-elim-left% H2)))
-    (assume [H (seteq T s1 s3)]
-      (have <b> (set-equal T s1 s3)
+(proof 'psubset-trans-thm :script
+  (assume [H1 (psubset s1 s2)
+           H2 (psubset s2 s3)]
+    (have <a> (subset s1 s3)
+          :by ((subset-trans s1 s2 s3)
+               (p/and-elim-left H1)
+               (p/and-elim-left H2)))
+    (assume [H (seteq s1 s3)]
+      (have <b> (set-equal s1 s3)
             :by ((seteq-implies-set-equal-ax T s1 s3)
                  H))
-      (have <c> (psubset T s3 s2)
+      (have <c> (psubset s3 s2)
             :by ((set-equal-prop T s1 s3 (lambda [x (set T)]
-                                           (psubset T x s2)))
+                                           (psubset x s2)))
                  <b> H1))
       (have <d> p/absurd
             :by ((psubset-antisym T s2 s3)
-                 (p/and-intro% H2 <c>))))
-    (have <e> _ :by (p/and-intro% <a> <d>))
-    (qed <e>)))
+                 (p/and-intro H2 <c>))))
+    (have <e> _ :by (p/and-intro <a> <d>)))
+  (qed <e>))
+
+(defimplicit psubset-trans
+  "The subset relation is transitive, cf. [[psubset-trans-thm]]."
+  [def-env ctx [s1 s1-ty] [s2 s2-ty] [s3 s3-ty]]
+  (let [T (fetch-set-type def-env ctx s1-ty)]
+    (list #'psubset-trans-thm T s1 s2 s3)))
 
 (defthm psubset-emptyset
   [[T :type] [s (set T)]]
-  (==> (psubset T (emptyset T) s)
-       (not (seteq T s (emptyset T)))))
+  (==> (psubset (emptyset T) s)
+       (not (seteq s (emptyset T)))))
 
-(proof psubset-emptyset
+(proof 'psubset-emptyset
     :script
-  (assume [H (psubset T (emptyset T) s)]
-    (assume [H' (seteq T s (emptyset T))]
-      (have <a> (not (seteq T (emptyset T) s))
-            :by (p/and-elim-right% H))
-      (have <b> (seteq T (emptyset T) s)
-            :by ((seteq-sym T s (emptyset T)) H'))
-      (have <c> p/absurd :by (<a> <b>))
-      (qed <c>))))
+  (assume [H (psubset (emptyset T) s)]
+    (assume [H' (seteq s (emptyset T))]
+      (have <a> (not (seteq (emptyset T) s))
+            :by (p/and-elim-right H))
+      (have <b> (seteq (emptyset T) s)
+            :by ((seteq-sym s (emptyset T)) H'))
+      (have <c> p/absurd :by (<a> <b>))))
+  (qed <c>))
 
 (defthm psubset-emptyset-conv
   [[T :type] [s (set T)]]
-  (==> (not (seteq T s (emptyset T)))
-       (psubset T (emptyset T) s)))
+  (==> (not (seteq s (emptyset T)))
+       (psubset (emptyset T) s)))
 
-(proof psubset-emptyset-conv
+(proof 'psubset-emptyset-conv
     :script
-  (assume [H (not (seteq T s (emptyset T)))]
-    (have <a> (subset T (emptyset T) s)
+  (assume [H (not (seteq s (emptyset T)))]
+    (have <a> (subset (emptyset T) s)
           :by (subset-emptyset-lower-bound T s))
-    (assume [H' (seteq T (emptyset T) s)]
-      (have <b> (seteq T s (emptyset T))
-            :by ((seteq-sym T (emptyset T) s) H'))
+    (assume [H' (seteq (emptyset T) s)]
+      (have <b> (seteq s (emptyset T))
+            :by ((seteq-sym (emptyset T) s) H'))
       (have <c> p/absurd :by (H <b>)))
-    (have <d> (psubset T (emptyset T) s)
-          :by (p/and-intro% <a> <c>))
-    (qed <d>)))
+    (have <d> (psubset (emptyset T) s)
+          :by (p/and-intro <a> <c>)))
+  (qed <d>))
 
 (defthm psubset-emptyset-equiv
   [[T :type] [s (set T)]]
-  (<=> (psubset T (emptyset T) s)
-       (not (seteq T s (emptyset T)))))
+  (<=> (psubset (emptyset T) s)
+       (not (seteq s (emptyset T)))))
 
-(proof psubset-emptyset-equiv
+(proof 'psubset-emptyset-equiv
     :script
-  (have <a> _ :by (p/and-intro% (psubset-emptyset T s)
-                                (psubset-emptyset-conv T s)))
+  (have <a> _ :by (p/and-intro (psubset-emptyset T s)
+                               (psubset-emptyset-conv T s)))
   (qed <a>))
+
+
 
