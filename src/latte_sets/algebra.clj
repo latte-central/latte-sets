@@ -5,101 +5,105 @@
 
   (:require [latte.core :as latte
              :refer [definition defthm defaxiom defnotation
-                     forall lambda ==>
-                     assume have pose proof lambda forall]]
+                     defimplicit forall lambda 
+                     assume have pose qed proof]]
  
             [latte.quant :as q :refer [exists]]
             [latte.prop :as p :refer [<=> and or not]]
             [latte.equal :as eq :refer [equal]]
 
             [latte-sets.core :as sets
-             :refer [set elem subset seteq set-equal emptyset fullset]]))
+             :refer [set elem subset seteq set-equal emptyset fullset
+                     fetch-set-type]]))
 
-(definition union
+(definition union-def
   "Set union.
-`(union T s1 s2)` is the set `s1`∪`s2`."
+`(union-def T s1 s2)` is the set `s1`∪`s2`."
   [[T :type] [s1 (set T)] [s2 (set T)]]
   (lambda [x T]
-    (or (elem T x s1)
-        (elem T x s2))))
+    (or (elem x s1)
+        (elem x s2))))
+
+(defimplicit union
+  "Set union, `(union s1 s2)` is the set `s1`∪`s2`, cf. [[union-def]]."
+  [def-env ctx [s1 s1-ty] [s2 s2-ty]]
+  (let [T (fetch-set-type def-env ctx s1-ty)]
+    (list #'union-def T s1 s2)))
 
 (defthm union-idem
   [[T :type] [s (set T)]]
-  (seteq T (union T s s) s))
+  (seteq (union s s) s))
 
-(proof union-idem
+(proof 'union-idem
     :script
   "We first prove that `s`∪`s`⊆`s`."
   (assume [x T
-           Hx (elem T x (union T s s))]
-    (have <a> (or (elem T x s)
-                  (elem T x s)) :by Hx)
-    (assume [Hor (elem T x s)]
-      (have <b> (elem T x s) :by Hor))
-    (have <c> (elem T x s)
-          :by (p/or-elim% <a> (elem T x s) <b> <b>)))
+           Hx (elem x (union s s))]
+    (have <a> (or (elem x s)
+                  (elem x s)) :by Hx)
+    (assume [Hor (elem x s)]
+      (have <b> (elem x s) :by Hor))
+    (have <c> (elem x s)
+          :by (p/or-elim <a> (elem x s) <b> <b>)))
   "We next prove that `s`⊆ `s`∪`s`"
   (assume [x T
-           Hx (elem T x s)]
-    (have <d> (or (elem T x s)
-                  (elem T x s))
-          :by (p/or-intro-left% Hx (elem T x s))))
-  (have <e> _ :by (p/and-intro% <c> <d>))
+           Hx (elem x s)]
+    (have <d> (or (elem x s)
+                  (elem x s))
+          :by (p/or-intro-left Hx (elem x s))))
+  (have <e> _ :by (p/and-intro <c> <d>))
   (qed <e>))
 
 (defthm union-empty
   [[T :type] [s (set T)]]
-  (seteq T
-         (union T s (emptyset T))
+  (seteq (union s (emptyset T))
          s))
 
-(proof union-empty
+(proof 'union-empty
     :script
   "subset case"
   (assume [x T
-           Hx (elem T x (union T s (emptyset T)))]
-    (have <a> (or (elem T x s)
-                  (elem T x (emptyset T))) :by Hx)
-    (assume [H1 (elem T x s)]
-      (have <b> (elem T x s) :by H1))
-    (assume [H2 (elem T x (emptyset T))]
+           Hx (elem x (union s (emptyset T)))]
+    (have <a> (or (elem x s)
+                  (elem x (emptyset T))) :by Hx)
+    (assume [H1 (elem x s)]
+      (have <b> (elem x s) :by H1))
+    (assume [H2 (elem x (emptyset T))]
       (have <c> p/absurd :by H2)
-      (have <d> (elem T x s) :by (<c> (elem T x s))))
-    (have <e> _ :by (p/or-elim% <a> (elem T x s) <b> <d>)))
+      (have <d> (elem x s) :by (<c> (elem x s))))
+    (have <e> _ :by (p/or-elim <a> (elem x s) <b> <d>)))
   "superset case"
   (assume [x T
-           Hx (elem T x s)]
-    (have <f> (or (elem T x s)
-                  (elem T x (emptyset T)))
-          :by (p/or-intro-left% Hx (elem T x (emptyset T)))))
-  (have <g> _ :by (p/and-intro% <e> <f>))
+           Hx (elem x s)]
+    (have <f> (or (elem x s)
+                  (elem x (emptyset T)))
+          :by (p/or-intro-left Hx (elem x (emptyset T)))))
+  (have <g> _ :by (p/and-intro <e> <f>))
   (qed <g>))
 
 (defthm union-commute
   "Set union commutes."
   [[T :type] [s1 (set T)] [s2 (set T)]]
-  (seteq T
-         (union T s1 s2)
-         (union T s2 s1)))
+  (seteq (union s1 s2)
+         (union s2 s1)))
 
-(proof union-commute :script
+(proof 'union-commute :script
   (assume [x T
-           H (elem T x (union T s1 s2))]
-    (have a1 (or (elem T x s1)
-                 (elem T x s2)) :by H)
-    (have a2 _ :by (p/or-sym (elem T x s1) (elem T x s2)))
-    (have a3 (or (elem T x s2)
-                 (elem T x s1)) :by (a2 a1))
-    (have a (elem T x (union T s2 s1)) :by a3))
+           H (elem x (union s1 s2))]
+    (have <a1> (or (elem x s1)
+                   (elem x s2)) :by H)
+    (have <a2> _ :by (p/or-sym-thm (elem x s1) (elem x s2)))
+    (have <a3> (or (elem x s2)
+                   (elem x s1)) :by (<a2> <a1>))
+    (have <a> (elem x (union s2 s1)) :by <a3>))
   (assume [x T
-           H (elem T x (union T s2 s1))]
-    (have b (elem T x (union T s1 s2))
-          :by ((p/or-sym (elem T x s2) (elem T x s1)) H)))
-  (have c (seteq T
-                 (union T s1 s2)
-                 (union T s2 s1))
-        :by (p/and-intro% a b))
-  (qed c))
+           H (elem x (union s2 s1))]
+    (have <b> (elem x (union s1 s2))
+          :by (p/or-sym H)))
+  (have <c> (seteq (union s1 s2)
+                   (union s2 s1))
+        :by (p/and-intro <a> <b>))
+  (qed <c>))
 
 (defthm union-assoc
   [[T :type] [s1 (set T)] [s2 (set T)] [s3 (set T)]]
