@@ -130,7 +130,7 @@ The expression `(subset T s1 s2)` means that
          (elem x s2))))
 
 (defimplicit subset
-  "Set `s1` is a subset of `s2`, cf. [[subset-def]]."
+  "`(subset s1 s2)` mens set `s1` is a subset of `s2` i.e. `s1`⊆`s2`, cf. [[subset-def]]."
   [def-env ctx [s1 s1-ty] [s2 s2-ty]]
   (let [T (fetch-set-type def-env ctx s1-ty)]
     (list #'subset-def T s1 s2)))
@@ -297,7 +297,8 @@ This is a natural equality on sets based on the subset relation."
   (qed <d>))
 
 (defimplicit seteq-trans
-  "Set equality is transitive, cf. [[seteq-trans-thm]]."
+  "`(seteq-trans s1 s2 s3)`.
+Set equality is transitive, cf. [[seteq-trans-thm]]."
   [def-env ctx [s1 s1-ty] [s2 s2-ty] [s3 s3-ty]]
   (let [T (fetch-set-type def-env ctx s1-ty)]
     (list #'seteq-trans-thm T s1 s2 s3)))
@@ -467,11 +468,11 @@ sets are distinct, i.e. `s1`⊂`s2` (or more explicitely `s1`⊊`s2`)."
   (let [T (fetch-set-type def-env ctx s1-ty)]
     (list #'psubset-def T s1 s2)))
 
-(defthm psubset-antirefl
+(defthm psubset-antirefl-thm
   [[T :type] [s (set T)]]
   (not (psubset s s)))
 
-(proof 'psubset-antirefl
+(proof 'psubset-antirefl-thm
     :script
   (assume [H (psubset s s)]
     (have <a> (not (seteq s s))
@@ -480,12 +481,18 @@ sets are distinct, i.e. `s1`⊂`s2` (or more explicitely `s1`⊊`s2`)."
     (have <c> p/absurd :by (<a> <b>)))
   (qed <c>))
 
-(defthm psubset-antisym
+(defimplicit psubset-antirefl
+  "`(psubset-antirefl s)` means proper subset relation is antireflexive, cf. [[psubset-antirefl-thm]]."
+  [def-env ctx [s s-ty]]
+  (let [T (fetch-set-type def-env ctx s-ty)]
+    (list #'psubset-antirefl-thm T s)))
+
+(defthm psubset-antisym-thm
   [[T :type] [s1 (set T)] [s2 (set T)]]
   (not (and (psubset s1 s2)
             (psubset s2 s1))))
 
-(proof 'psubset-antisym
+(proof 'psubset-antisym-thm
     :script
   (assume [H (and (psubset s1 s2)
                   (psubset s2 s1))]
@@ -499,6 +506,13 @@ sets are distinct, i.e. `s1`⊂`s2` (or more explicitely `s1`⊊`s2`)."
           :by (p/and-intro <b> <c>))
     (have <e> p/absurd :by (<a> <d>)))
   (qed <e>))
+
+(defimplicit psubset-antisym
+  "`(psubset-antisym s1 s2)` means proper subset relation is antisymmetric, 
+cf. [[psubset-antisym-thm]]."
+  [def-env ctx [s1 s1-ty] [s2 s2-ty]]
+  (let [T (fetch-set-type def-env ctx s1-ty)]
+    (list #'psubset-antisym-thm T s1 s2)))
 
 (defthm psubset-trans-thm
   "The proper subset relation is transitive."
@@ -523,13 +537,14 @@ sets are distinct, i.e. `s1`⊂`s2` (or more explicitely `s1`⊊`s2`)."
                                            (psubset x s2)))
                  <b> H1))
       (have <d> p/absurd
-            :by ((psubset-antisym T s2 s3)
+            :by ((psubset-antisym s2 s3)
                  (p/and-intro H2 <c>))))
     (have <e> _ :by (p/and-intro <a> <d>)))
   (qed <e>))
 
 (defimplicit psubset-trans
-  "The subset relation is transitive, cf. [[psubset-trans-thm]]."
+  "`(psubset-trans s1 s2 s3)`.
+The proper subset relation is transitive, cf. [[psubset-trans-thm]]."
   [def-env ctx [s1 s1-ty] [s2 s2-ty] [s3 s3-ty]]
   (let [T (fetch-set-type def-env ctx s1-ty)]
     (list #'psubset-trans-thm T s1 s2 s3)))
@@ -575,9 +590,10 @@ sets are distinct, i.e. `s1`⊂`s2` (or more explicitely `s1`⊊`s2`)."
 
 (proof 'psubset-emptyset-equiv
     :script
-  (have <a> _ :by (p/and-intro (psubset-emptyset T s)
-                               (psubset-emptyset-conv T s)))
-  (qed <a>))
+  (qed (p/and-intro (psubset-emptyset T s)
+                    (psubset-emptyset-conv T s))))
+
+
 
 
 

@@ -344,7 +344,6 @@ This is the set {y:T | ∀x∈X, y∈x}."
 
 (proof 'powerset1-prop-equiv
     :script
-  (have <a> _ :by (p/and-intro (powerset1-prop T x)
-                               (powerset1-prop-conv T x)))
-  (qed <a>))
+  (qed (p/and-intro (powerset1-prop T x)
+                    (powerset1-prop-conv T x))))
 
