@@ -5,8 +5,8 @@
 
   (:require [latte.core :as latte
              :refer [definition defthm defaxiom defnotation
-                     forall lambda ==>
-                     assume have pose proof lambda forall]]
+                     forall lambda defimplicit
+                     assume have pose qed proof lambda forall]]
  
             [latte.quant :as q :refer [exists]]
             [latte.prop :as p :refer [<=> and or not]]
@@ -19,9 +19,10 @@
              :refer [union inter diff]]
 
             [latte-sets.rel :as rel
-             :refer [rel dom ran subrel releq rel-equal emptyrel fullrel]]))
+             :refer [rel dom ran subrel releq rel-equal emptyrel fullrel
+                     fetch-rel-type]]))
 
-(definition runion
+(definition runion-def
   "Relational union."
   [[T :type] [U :type] [R1 (rel T U)] [R2 (rel T U)]]
   (lambda [x T]
@@ -29,44 +30,47 @@
       (or (R1 x y)
           (R2 x y)))))
 
+(defimplicit runion
+  "`(runion R1 R2)` is the relational union of `R1` and `R2`, cf. [[union-def]]."
+  [def-env ctx [R1 R1-ty] [R2 R2-ty]]
+  (let [[T U] (fetch-rel-type def-env ctx R1-ty)]
+    (list #'runion-def T U R1 R2)))
+
 (defthm runion-idem
   [[T :type] [U :type] [R (rel T U)]]
-  (releq T U (runion T U R R) R))
+  (releq (runion R R) R))
 
-(proof runion-idem
+(proof 'runion-idem
     :script
   "We first prove that `R`∪`R`⊆`R`."
   (assume [x T
            y U
-           Hxy ((runion T U R R) x y)]
+           Hxy ((runion R R) x y)]
     (have <a> (or (R x y)
                   (R x y)) :by Hxy)
     (assume [Hor (R x y)]
       (have <b> (R x y) :by Hor))
     (have <c> (R x y)
-          :by (p/or-elim% <a> (R x y) <b> <b>)))
+          :by (p/or-elim <a> (R x y) <b> <b>)))
   "We next prove that `R`⊆ `R`∪`R`"
   (assume [x T
            y U
            Hxy (R x y)]
     (have <d> (or (R x y)
                   (R x y))
-          :by (p/or-intro-left% Hxy (R x y))))
-  (have <e> _ :by (p/and-intro% <c> <d>))
-  (qed <e>))
+          :by (p/or-intro-left Hxy (R x y))))
+  (qed (p/and-intro <c> <d>)))
 
 (defthm runion-empty
   [[T :type] [U :type] [R (rel T U)]]
-  (releq T U
-         (runion T U R (emptyrel T U))
-         R))
+  (releq (runion R (emptyrel T U)) R))
 
-(proof runion-empty
+(proof 'runion-empty
     :script
   "subset case"
   (assume [x T
            y U
-           Hxy ((runion T U R (emptyrel T U)) x y)]
+           Hxy ((runion R (emptyrel T U)) x y)]
     (have <a> (or (R x y)
                   ((emptyrel T U) x y)) :by Hxy)
     (assume [H1 (R x y)]
@@ -74,344 +78,307 @@
     (assume [H2 ((emptyrel T U) x y)]
       (have <c> p/absurd :by H2)
       (have <d> (R x y) :by (<c> (R x y))))
-    (have <e> _ :by (p/or-elim% <a> (R x y) <b> <d>)))
+    (have <e> _ :by (p/or-elim <a> (R x y) <b> <d>)))
   "superset case"
   (assume [x T
            y U
            Hxy (R x y)]
     (have <f> (or (R x y)
                   ((emptyrel T U) x y))
-          :by (p/or-intro-left% Hxy ((emptyrel T U) x y))))
-  (have <g> _ :by (p/and-intro% <e> <f>))
-  (qed <g>))
+          :by (p/or-intro-left Hxy ((emptyrel T U) x y))))
+  (qed (p/and-intro <e> <f>)))
 
 (defthm runion-commute
-  "Set union commutes."
+  "Relational union commutes."
   [[T :type] [U :type] [R1 (rel T U)] [R2 (rel T U)]]
-  (releq T U
-         (runion T U R1 R2)
-         (runion T U R2 R1)))
+  (releq (runion R1 R2)
+         (runion R2 R1)))
 
-(proof runion-commute :script
+(proof 'runion-commute :script
   (assume [x T
            y U
-           H ((runion T U R1 R2) x y)]
+           H ((runion R1 R2) x y)]
     (have <a1> (or (R1 x y)
                    (R2 x y)) :by H)
-    (have <a> _ :by (p/or-sym% <a1>)))
+    (have <a> _ :by (p/or-sym <a1>)))
   (assume [x T
            y U
-           H ((runion T U R2 R1) x y)]
+           H ((runion R2 R1) x y)]
     (have <b1> (or (R2 x y)
                    (R1 x y)) :by H)
     (have <b> _
-          :by (p/or-sym% <b1>)))
-  (have <c> _
-        :by (p/and-intro% <a> <b>))
-  (qed <c>))
+          :by (p/or-sym <b1>)))
+  (qed (p/and-intro <a> <b>)))
 
 (defthm runion-assoc
   [[T :type] [U :type] [R1 (rel T U)] [R2 (rel T U)] [R3 (rel T U)]]
-  (releq T U
-         (runion T U R1 (runion T U R2 R3))
-         (runion T U (runion T U R1 R2) R3)))
+  (releq (runion R1 (runion R2 R3))
+         (runion (runion R1 R2) R3)))
 
-(proof runion-assoc
+(proof 'runion-assoc
     :script
   "Subset case"
   (assume [x T
            y U
-           Hxy ((runion T U R1 (runion T U R2 R3)) x y)]
+           Hxy ((runion R1 (runion R2 R3)) x y)]
     (have <a> (or (R1 x y)
-                  ((runion T U R2 R3) x y)) :by Hxy)
+                  ((runion R2 R3) x y)) :by Hxy)
     (assume [H1 (R1 x y)]
       (have <b1> (or (R1 x y)
                      (R2 x y))
-            :by (p/or-intro-left% H1 (R2 x y)))
+            :by (p/or-intro-left H1 (R2 x y)))
       (have <b> (or (or (R1 x y)
                         (R2 x y))
                     (R3 x y))
-            :by (p/or-intro-left% <b1> (R3 x y))))
-    (assume [H2 ((runion T U R2 R3) x y)]
+            :by (p/or-intro-left <b1> (R3 x y))))
+    (assume [H2 ((runion R2 R3) x y)]
       (have <c1> (or (R2 x y)
                      (R3 x y)) :by H2)
       (assume [H3 (R2 x y)]
         (have <d1> (or (R1 x y)
                        (R2 x y))
-              :by (p/or-intro-right% (R1 x y) H3))
+              :by (p/or-intro-right (R1 x y) H3))
         (have <d> (or (or (R1 x y)
                           (R2 x y))
                       (R3 x y))
-              :by (p/or-intro-left% <d1> (R3 x y))))
+              :by (p/or-intro-left <d1> (R3 x y))))
       (assume [H3 (R3 x y)]
         (have <e> (or (or (R1 x y)
                           (R2 x y))
                       (R3 x y))
-              :by (p/or-intro-right% (or (R1 x y)
-                                         (R2 x y))
-                                     H3)))
-      (have <c> _ :by (p/or-elim% <c1> (or (or (R1 x y)
-                                               (R2 x y))
-                                           (R3 x y))
-                                  <d> <e>)))
-    (have <f> ((runion T U (runion T U R1 R2) R3) x y)
-          :by (p/or-elim% <a> (or (or (R1 x y)
-                                               (R2 x y))
-                                           (R3 x y))
-                          <b> <c>)))
+              :by (p/or-intro-right (or (R1 x y)
+                                        (R2 x y))
+                                    H3)))
+      (have <c> _ :by (p/or-elim <c1> (or (or (R1 x y)
+                                              (R2 x y))
+                                          (R3 x y))
+                                 <d> <e>)))
+    (have <f> ((runion (runion R1 R2) R3) x y)
+          :by (p/or-elim <a> (or (or (R1 x y)
+                                     (R2 x y))
+                                 (R3 x y))
+                         <b> <c>)))
   "Superset case"
   (assume [x T
            y U
-           Hxy ((runion T U (runion T U R1 R2) R3) x y)]
-    (have <g> (or ((runion T U R1 R2) x y)
+           Hxy ((runion (runion R1 R2) R3) x y)]
+    (have <g> (or ((runion R1 R2) x y)
                   (R3 x y)) :by Hxy)
-    (assume [H1 ((runion T U R1 R2) x y)]
+    (assume [H1 ((runion R1 R2) x y)]
       (have <h1> (or (R1 x y)
                      (R2 x y)) :by H1)
       (assume [H2 (R1 x y)]
         (have <i> (or (R1 x y)
                       (or (R2 x y)
                           (R3 x y)))
-              :by (p/or-intro-left% H2 (or (R2 x y)
+              :by (p/or-intro-left H2 (or (R2 x y)
                           (R3 x y)))))
       (assume [H3 (R2 x y)]
         (have <j1> (or (R2 x y)
                        (R3 x y))
-              :by (p/or-intro-left% H3 (R3 x y)))
+              :by (p/or-intro-left H3 (R3 x y)))
         (have <j> (or (R1 x y)
                       (or (R2 x y)
                           (R3 x y)))
-              :by (p/or-intro-right% (R1 x y) <j1>)))
-      (have <h> _ :by (p/or-elim% <h1> (or (R1 x y)
-                                           (or (R2 x y)
-                                               (R3 x y)))
-                                  <i> <j>)))
+              :by (p/or-intro-right (R1 x y) <j1>)))
+      (have <h> _ :by (p/or-elim <h1> (or (R1 x y)
+                                          (or (R2 x y)
+                                              (R3 x y)))
+                                 <i> <j>)))
     (assume [H2 (R3 x y)]
-      (have <j1> (or (R2 x y)
+      (have <k1> (or (R2 x y)
                      (R3 x y))
-            :by (p/or-intro-right% (R2 x y) H2))
-      (have <j> (or (R1 x y)
+            :by (p/or-intro-right (R2 x y) H2))
+      (have <k> (or (R1 x y)
                     (or (R2 x y)
                         (R3 x y)))
-            :by (p/or-intro-right% (R1 x y) <j1>)))
-    (have <k> ((runion T U R1 (runion T U R2 R3)) x y)
-          :by (p/or-elim% <g> (or (R1 x y)
-                                  (or (R2 x y)
-                                      (R3 x y)))
-                          <h> <j>)))
-  (have <l> _ :by (p/and-intro% <f> <k>))
-  (qed <l>))
+            :by (p/or-intro-right (R1 x y) <k1>)))
+    (have <l> ((runion R1 (runion R2 R3)) x y)
+          :by (p/or-elim <g> (or (R1 x y)
+                                 (or (R2 x y)
+                                     (R3 x y)))
+                         <h> <k>)))
+  (qed (p/and-intro <f> <l>)))
 
 (defthm runion-assoc-sym
   [[T :type] [U :type] [R1 (rel T U)] [R2 (rel T U)] [R3 (rel T U)]]
-  (releq T U
-         (runion T U (runion T U R1 R2) R3)
-         (runion T U R1 (runion T U R2 R3))))
+  (releq (runion (runion R1 R2) R3)
+         (runion R1 (runion R2 R3))))
 
-(proof runion-assoc-sym
+(proof 'runion-assoc-sym
     :script
-  (have <a> (releq T U
-                   (runion T U R1 (runion T U R2 R3))
-                   (runion T U (runion T U R1 R2) R3))
+  (have <a> (releq (runion R1 (runion R2 R3))
+                   (runion (runion R1 R2) R3))
         :by (runion-assoc T U R1 R2 R3))
-  (have <b> _ :by ((rel/releq-sym T U
-                                   (runion T U R1 (runion T U R2 R3))
-                                   (runion T U (runion T U R1 R2) R3))
+  (have <b> _ :by ((rel/releq-sym (runion R1 (runion R2 R3))
+                                  (runion (runion R1 R2) R3))
                    <a>))
   (qed <b>))
 
 (defthm runion-dom
   [[T :type] [U :type] [R1 (rel T U)] [R2 (rel T U)]]
-  (seteq T
-         (dom T U (runion T U R1 R2))
-         (alg/union T
-                    (dom T U R1)
-                    (dom T U R2))))
+  (seteq (dom (runion R1 R2))
+         (alg/union (dom R1) (dom R2))))
 
-(proof runion-dom
+(proof 'runion-dom
     :script
   "Subset case"
   (assume [x T
-           Hx (elem T x (dom T U (runion T U R1 R2)))]
-    (have <a> (exists [y U] ((runion T U R1 R2) x y))
+           Hx (elem x (dom (runion R1 R2)))]
+    (have <a> (exists [y U] ((runion R1 R2) x y))
           :by Hx)
     (assume [y U
-             Hy ((runion T U R1 R2) x y)]
+             Hy ((runion R1 R2) x y)]
       (have <b1> (or (R1 x y)
                      (R2 x y)) :by Hy)
       (assume [HR1 (R1 x y)]
         (have <c1> (exists [y U] (R1 x y))
-              :by ((q/ex-intro U (lambda [k U] (R1 x k)) y)
+              :by ((q/ex-intro (lambda [k U] (R1 x k)) y)
                    HR1))
-        (have <c2> (elem T x (dom T U R1)) :by <c1>)
-        (have <c3> (or (elem T x (dom T U R1))
-                       (elem T x (dom T U R2)))
-              :by (p/or-intro-left% <c2> (elem T x (dom T U R2))))
-        (have <c> (elem T x (alg/union T
-                                       (dom T U R1)
-                                       (dom T U R2))) :by <c3>))
+        (have <c2> (elem x (dom R1)) :by <c1>)
+        (have <c3> (or (elem x (dom R1))
+                       (elem x (dom R2)))
+              :by (p/or-intro-left <c2> (elem x (dom R2))))
+        (have <c> (elem x (alg/union (dom R1) (dom R2))) :by <c3>))
       (assume [HR2 (R2 x y)]
         (have <d1> (exists [y U] (R2 x y))
-              :by ((q/ex-intro U (lambda [k U] (R2 x k)) y)
+              :by ((q/ex-intro (lambda [k U] (R2 x k)) y)
                    HR2))
-        (have <d2> (elem T x (dom T U R2)) :by <d1>)
-        (have <d3> (or (elem T x (dom T U R1))
-                       (elem T x (dom T U R2)))
-              :by (p/or-intro-right% (elem T x (dom T U R1)) <d2>))
-        (have <d> (elem T x (alg/union T
-                                       (dom T U R1)
-                                       (dom T U R2))) :by <d3>))
-      (have <e> _ :by (p/or-elim% <b1> 
-                                  (elem T x (alg/union T
-                                                       (dom T U R1)
-                                                       (dom T U R2)))
-                                  <c> <d>)))
-    (have <f> _ :by ((q/ex-elim U (lambda [k U]
-                                    ((runion T U R1 R2) x k))
-                                (elem T x (alg/union T
-                                                     (dom T U R1)
-                                                     (dom T U R2))))
+        (have <d2> (elem x (dom R2)) :by <d1>)
+        (have <d3> (or (elem x (dom R1))
+                       (elem x (dom R2)))
+              :by (p/or-intro-right (elem x (dom R1)) <d2>))
+        (have <d> (elem x (alg/union (dom R1) (dom R2))) :by <d3>))
+      (have <e> _ :by (p/or-elim <b1> 
+                                 (elem x (alg/union (dom R1) (dom R2)))
+                                 <c> <d>)))
+    (have <f> _ :by ((q/ex-elim (lambda [k U]
+                                        ((runion R1 R2) x k))
+                                (elem x (alg/union (dom R1) (dom R2))))
                      <a> <e>)))
   "Supset case"
   (assume [x T
-           Hx (elem T x (alg/union T
-                                   (dom T U R1)
-                                   (dom T U R2)))]
-    (have <g> (or (elem T x (dom T U R1))
-                  (elem T x (dom T U R2))) :by Hx)
-    (assume [HR1 (elem T x (dom T U R1))]
+           Hx (elem x (alg/union (dom R1) (dom R2)))]
+    (have <g> (or (elem x (dom R1))
+                  (elem x (dom R2))) :by Hx)
+    (assume [HR1 (elem x (dom R1))]
       (have <h> (exists [y U] (R1 x y)) :by HR1)
       (assume [y U
                Hy (R1 x y)]
         (have <i1> (or (R1 x y) (R2 x y))
-              :by (p/or-intro-left% Hy (R2 x y)))
-        (have <i2> ((runion T U R1 R2) x y) :by <i1>)
-        (have <i> (elem T x (dom T U (runion T U R1 R2)))
-              :by ((q/ex-intro U (lambda [k U]
-                                   ((runion T U R1 R2) x k))
+              :by (p/or-intro-left Hy (R2 x y)))
+        (have <i2> ((runion R1 R2) x y) :by <i1>)
+        (have <i> (elem x (dom (runion R1 R2)))
+              :by ((q/ex-intro (lambda [k U]
+                                       ((runion R1 R2) x k))
                                y)
                    <i2>)))
-      (have <j> _ :by ((q/ex-elim U (lambda [k U] (R1 x k))
-                                  (elem T x (dom T U (runion T U R1 R2))))
+      (have <j> _ :by ((q/ex-elim (lambda [k U] (R1 x k))
+                                  (elem x (dom (runion R1 R2))))
                        <h> <i>)))
-    (assume [HR2 (elem T x (dom T U R2))]
+    (assume [HR2 (elem x (dom R2))]
       (have <k> (exists [y U] (R2 x y)) :by HR2)
       (assume [y U
                Hy (R2 x y)]
         (have <l1> (or (R1 x y) (R2 x y))
-              :by (p/or-intro-right% (R1 x y) Hy))
-        (have <l2> ((runion T U R1 R2) x y) :by <l1>)
-        (have <l> (elem T x (dom T U (runion T U R1 R2)))
-              :by ((q/ex-intro U (lambda [k U]
-                                   ((runion T U R1 R2) x k))
+              :by (p/or-intro-right (R1 x y) Hy))
+        (have <l2> ((runion R1 R2) x y) :by <l1>)
+        (have <l> (elem x (dom (runion R1 R2)))
+              :by ((q/ex-intro (lambda [k U]
+                                       ((runion R1 R2) x k))
                                y)
                    <l2>)))
-      (have <m> _ :by ((q/ex-elim U (lambda [k U] (R2 x k))
-                                  (elem T x (dom T U (runion T U R1 R2))))
+      (have <m> _ :by ((q/ex-elim (lambda [k U] (R2 x k))
+                                  (elem x (dom (runion R1 R2))))
                        <k> <l>)))
-    (have <n> _ :by (p/or-elim% <g> (elem T x (dom T U (runion T U R1 R2)))
-                                <j> <m>)))
-  (have <o> _ :by (p/and-intro% <f> <n>))
-  (qed <o>))
+    (have <n> _ :by (p/or-elim <g> (elem x (dom (runion R1 R2)))
+                               <j> <m>)))
+  (qed (p/and-intro <f> <n>)))
 
 
 (defthm runion-ran
   [[T :type] [U :type] [R1 (rel T U)] [R2 (rel T U)]]
-  (seteq U
-         (ran T U (runion T U R1 R2))
-         (alg/union U
-                    (ran T U R1)
-                    (ran T U R2))))
+  (seteq (ran (runion R1 R2))
+         (alg/union (ran R1) (ran R2))))
 
-(proof runion-ran
+(proof 'runion-ran
     :script
   "Subset case"
   (assume [y U
-           Hy (elem U y (ran T U (runion T U R1 R2)))]
-    (have <a> (exists [x T] ((runion T U R1 R2) x y))
+           Hy (elem y (ran (runion R1 R2)))]
+    (have <a> (exists [x T] ((runion R1 R2) x y))
           :by Hy)
     (assume [x T
-             Hx ((runion T U R1 R2) x y)]
+             Hx ((runion R1 R2) x y)]
       (have <b1> (or (R1 x y)
                      (R2 x y)) :by Hx)
       (assume [HR1 (R1 x y)]
         (have <c1> (exists [x T] (R1 x y))
-              :by ((q/ex-intro T (lambda [k T] (R1 k y)) x)
+              :by ((q/ex-intro (lambda [k T] (R1 k y)) x)
                    HR1))
-        (have <c2> (elem U y (ran T U R1)) :by <c1>)
-        (have <c3> (or (elem U y (ran T U R1))
-                       (elem U y (ran T U R2)))
-              :by (p/or-intro-left% <c2> (elem U y (ran T U R2))))
-        (have <c> (elem U y (alg/union U
-                                       (ran T U R1)
-                                       (ran T U R2))) :by <c3>))
+        (have <c2> (elem y (ran R1)) :by <c1>)
+        (have <c3> (or (elem y (ran R1))
+                       (elem y (ran R2)))
+              :by (p/or-intro-left <c2> (elem y (ran R2))))
+        (have <c> (elem y (alg/union (ran R1) (ran R2))) :by <c3>))
       (assume [HR2 (R2 x y)]
         (have <d1> (exists [x T] (R2 x y))
-              :by ((q/ex-intro T (lambda [k T] (R2 k y)) x)
+              :by ((q/ex-intro (lambda [k T] (R2 k y)) x)
                    HR2))
-        (have <d2> (elem U y (ran T U R2)) :by <d1>)
-        (have <d3> (or (elem U y (ran T U R1))
-                       (elem U y (ran T U R2)))
-              :by (p/or-intro-right% (elem U y (ran T U R1)) <d2>))
-        (have <d> (elem U y (alg/union U
-                                       (ran T U R1)
-                                       (ran T U R2))) :by <d3>))
-      (have <e> _ :by (p/or-elim% <b1> 
-                                  (elem U y (alg/union U
-                                                       (ran T U R1)
-                                                       (ran T U R2)))
+        (have <d2> (elem y (ran R2)) :by <d1>)
+        (have <d3> (or (elem y (ran R1))
+                       (elem y (ran R2)))
+              :by (p/or-intro-right (elem y (ran R1)) <d2>))
+        (have <d> (elem y (alg/union (ran R1) (ran R2))) :by <d3>))
+      (have <e> _ :by (p/or-elim <b1> 
+                                 (elem y (alg/union (ran R1) (ran R2)))
                                   <c> <d>)))
-    (have <f> _ :by ((q/ex-elim T (lambda [k T]
-                                    ((runion T U R1 R2) k y))
-                                (elem U y (alg/union U
-                                                     (ran T U R1)
-                                                     (ran T U R2))))
+    (have <f> _ :by ((q/ex-elim (lambda [k T]
+                                        ((runion R1 R2) k y))
+                                (elem y (alg/union (ran R1) (ran R2))))
                      <a> <e>)))
 
   "Supset case"
    (assume [y U
-            Hy (elem U y (alg/union U
-                                    (ran T U R1)
-                                    (ran T U R2)))]
-     (have <g> (or (elem U y (ran T U R1))
-                   (elem U y (ran T U R2))) :by Hy)
-     (assume [HR1 (elem U y (ran T U R1))]
+            Hy (elem y (alg/union (ran R1) (ran R2)))]
+     (have <g> (or (elem y (ran R1))
+                   (elem y (ran R2))) :by Hy)
+     (assume [HR1 (elem y (ran R1))]
        (have <h> (exists [x T] (R1 x y)) :by HR1)
        (assume [x T
                 Hx (R1 x y)]
          (have <i1> (or (R1 x y) (R2 x y))
-               :by (p/or-intro-left% Hx (R2 x y)))
-         (have <i2> ((runion T U R1 R2) x y) :by <i1>)
-         (have <i> (elem U y (ran T U (runion T U R1 R2)))
-               :by ((q/ex-intro T (lambda [k T]
-                                    ((runion T U R1 R2) k y))
+               :by (p/or-intro-left Hx (R2 x y)))
+         (have <i2> ((runion R1 R2) x y) :by <i1>)
+         (have <i> (elem y (ran (runion R1 R2)))
+               :by ((q/ex-intro (lambda [k T]
+                                        ((runion R1 R2) k y))
                                 x)
                     <i2>)))
-       (have <j> _ :by ((q/ex-elim T (lambda [k T] (R1 k y))
-                                   (elem U y (ran T U (runion T U R1 R2))))
+       (have <j> _ :by ((q/ex-elim (lambda [k T] (R1 k y))
+                                   (elem y (ran (runion R1 R2))))
                         <h> <i>)))
-     (assume [HR2 (elem U y (ran T U R2))]
+     (assume [HR2 (elem y (ran R2))]
        (have <k> (exists [x T] (R2 x y)) :by HR2)
        (assume [x T
                 Hx (R2 x y)]
          (have <l1> (or (R1 x y) (R2 x y))
-               :by (p/or-intro-right% (R1 x y) Hx))
-         (have <l2> ((runion T U R1 R2) x y) :by <l1>)
-         (have <l> (elem U y (ran T U (runion T U R1 R2)))
-               :by ((q/ex-intro T (lambda [k T]
-                                    ((runion T U R1 R2) k y))
+               :by (p/or-intro-right (R1 x y) Hx))
+         (have <l2> ((runion R1 R2) x y) :by <l1>)
+         (have <l> (elem y (ran (runion R1 R2)))
+               :by ((q/ex-intro (lambda [k T]
+                                        ((runion R1 R2) k y))
                                 x)
                     <l2>)))
-       (have <m> _ :by ((q/ex-elim T (lambda [k T] (R2 k y))
-                                   (elem U y (ran T U (runion T U R1 R2))))
+       (have <m> _ :by ((q/ex-elim (lambda [k T] (R2 k y))
+                                   (elem y (ran (runion R1 R2))))
                         <k> <l>)))
-     (have <n> _ :by (p/or-elim% <g> (elem U y (ran T U (runion T U R1 R2)))
-                                 <j> <m>)))
-   (have <o> _ :by (p/and-intro% <f> <n>))
-   (qed <o>))
+     (have <n> _ :by (p/or-elim <g> (elem y (ran (runion R1 R2)))
+                                <j> <m>)))
+   (qed (p/and-intro <f> <n>)))
 
 
-(definition rinter
+(definition rinter-def
   "Relational intersection."
   [[T :type] [U :type] [R1 (rel T U)] [R2 (rel T U)]]
   (lambda [x T]
@@ -419,35 +386,41 @@
       (and (R1 x y)
            (R2 x y)))))
 
+(defimplicit rinter
+  "`(rinter R1 R2)` is the relational intersection of `R1` and `R2`, cf. [[rinter-def]]."
+  [def-env ctx [R1 R1-ty] [R2 R2-ty]]
+  (let [[T U] (fetch-rel-type def-env ctx R1-ty)]
+    (list #'rinter-def T U R1 R2)))
+
 (defthm rinter-elim-left
   "Elimination rule for intersection (left operand)."
   [[T :type] [U :type] [R1 (rel T U)] [R2 (rel T U)] [x T] [y U]]
-  (==> ((rinter T U R1 R2) x y)
+  (==> ((rinter R1 R2) x y)
        (R1 x y)))
 
 (proof rinter-elim-left
     :script
-  (assume [H ((rinter T U R1 R2) x y)]
+  (assume [H ((rinter R1 R2) x y)]
     (have <a> (R1 x y) :by (p/and-elim-left% H))
     (qed <a>)))
 
 (defthm rinter-elim-right
   "Elimination rule for intersection (right operand)."
   [[T :type] [U :type] [R1 (rel T U)] [R2 (rel T U)] [x T] [y U]]
-  (==> ((rinter T U R1 R2) x y)
+  (==> ((rinter R1 R2) x y)
        (R2 x y)))
 
 (proof rinter-elim-right
     :script
-  (assume [H ((rinter T U R1 R2) x y)]
+  (assume [H ((rinter R1 R2) x y)]
     (have <a> (R2 x y) :by (p/and-elim-right% H))
     (qed <a>)))
 
 
 (defthm rinter-idem
   [[T :type] [U :type] [R (rel T U)]]
-  (releq T U
-         (rinter T U R R)
+  (releq
+         (rinter R R)
          R))
 
 (proof rinter-idem
@@ -455,7 +428,7 @@
   "Subset case"
   (assume [x T
            y U
-           Hxy ((rinter T U R R) x y)]
+           Hxy ((rinter R R) x y)]
     (have <a> (and (R x y)
                    (R x y)) :by Hxy)
     (have <b> (R x y) :by (p/and-elim-left% <a>)))
@@ -471,8 +444,8 @@
 
 (defthm rinter-empty
   [[T :type] [U :type] [R (rel T U)]]
-  (releq T U
-         (rinter T U R (emptyrel T U))
+  (releq
+         (rinter R (emptyrel T U))
          (emptyrel T U)))
 
 (proof rinter-empty
@@ -480,7 +453,7 @@
   "Subset case."
   (assume [x T
            y U
-           Hxy ((rinter T U R (emptyrel T U)) x y)]
+           Hxy ((rinter R (emptyrel T U)) x y)]
     (have <a> ((emptyrel T U) x y)
           :by (p/and-elim-right% Hxy)))
   "Superset case"
@@ -488,27 +461,27 @@
            y U
            Hxy ((emptyrel T U) x y)]
     (have <b> p/absurd :by Hxy)
-    (have <c> _ :by (<b> ((rinter T U R (emptyrel T U)) x y))))
+    (have <c> _ :by (<b> ((rinter R (emptyrel T U)) x y))))
   (have <d> _ :by (p/and-intro% <a> <c>))
   (qed <d>))
 
 (defthm rinter-commute
   "Relation intersection commutes."
   [[T :type] [U :type] [R1 (rel T U)] [R2 (rel T U)]]
-  (releq T U
-         (rinter T U R1 R2)
-         (rinter T U R2 R1)))
+  (releq
+         (rinter R1 R2)
+         (rinter R2 R1)))
 
 (proof rinter-commute :script
   (assume [x T
            y U
-           Hxy ((rinter T U R1 R2) x y)]
-    (have <a> ((rinter T U R2 R1) x y)
+           Hxy ((rinter R1 R2) x y)]
+    (have <a> ((rinter R2 R1) x y)
           :by ((p/and-sym (R1 x y) (R2 x y)) Hxy)))
   (assume [x T
            y U
-           Hxy ((rinter T U R2 R1) x y)]
-    (have <b> ((rinter T U R1 R2) x y)
+           Hxy ((rinter R2 R1) x y)]
+    (have <b> ((rinter R1 R2) x y)
           :by ((p/and-sym (R2 x y) (R1 x y)) Hxy)))
   (have <c> _
         :by (p/and-intro% <a> <b>))
@@ -516,16 +489,16 @@
 
 (defthm rinter-assoc
   [[T :type] [U :type] [R1 (rel T U)] [R2 (rel T U)] [R3 (rel T U)]]
-  (releq T U
-         (rinter T U R1 (rinter T U R2 R3))
-         (rinter T U (rinter T U R1 R2) R3)))
+  (releq
+         (rinter R1 (rinter R2 R3))
+         (rinter (rinter R1 R2) R3)))
 
 (proof rinter-assoc
     :script
   "Subset case"
   (assume [x T
            y U
-           Hxy ((rinter T U R1 (rinter T U R2 R3)) x y)]
+           Hxy ((rinter R1 (rinter R2 R3)) x y)]
     (have <a1> (and (R1 x y)
                     (and (R2 x y)
                          (R3 x y))) :by Hxy)
@@ -536,7 +509,7 @@
   "Superset case"
   (assume [x T
            y U
-           Hxy ((rinter T U (rinter T U R1 R2) R3) x y)]
+           Hxy ((rinter (rinter R1 R2) R3) x y)]
     (have <b1> (and (and (R1 x y)
                          (R2 x y))
                     (R3 x y)) :by Hxy)
@@ -549,35 +522,35 @@
 
 (defthm rinter-assoc-sym
   [[T :type] [U :type] [R1 (rel T U)] [R2 (rel T U)] [R3 (rel T U)]]
-  (releq T U
-         (rinter T U (rinter T U R1 R2) R3)
-         (rinter T U R1 (rinter T U R2 R3))))
+  (releq
+         (rinter (rinter R1 R2) R3)
+         (rinter R1 (rinter R2 R3))))
 
 (proof rinter-assoc-sym
     :script
-  (have <a> (releq T U
-                   (rinter T U R1 (rinter T U R2 R3))
-                   (rinter T U (rinter T U R1 R2) R3))
+  (have <a> (releq
+                   (rinter R1 (rinter R2 R3))
+                   (rinter (rinter R1 R2) R3))
         :by (rinter-assoc T U R1 R2 R3))
   (have <b> _ :by ((rel/releq-sym T U
-                                   (rinter T U R1 (rinter T U R2 R3))
-                                   (rinter T U (rinter T U R1 R2) R3))
+                                   (rinter R1 (rinter R2 R3))
+                                   (rinter (rinter R1 R2) R3))
                    <a>))
   (qed <b>))
 
 (defthm dist-runion-rinter
   "Distributivity of union over intersection."
   [[T :type] [U :type] [R1 (rel T U)] [R2 (rel T U)] [R3 (rel T U)]]
-  (releq T U
-         (runion T U R1 (rinter T U R2 R3))
-         (rinter T U (runion T U R1 R2) (runion T U R1 R3))))
+  (releq
+         (runion R1 (rinter R2 R3))
+         (rinter (runion R1 R2) (runion R1 R3))))
 
 (proof dist-runion-rinter
     :script
   "Subset case"
   (assume [x T
            y U
-           Hxy ((runion T U R1 (rinter T U R2 R3)) x y)]
+           Hxy ((runion R1 (rinter R2 R3)) x y)]
     (have <a> (or (R1 x y)
                   (and (R2 x y)
                        (R3 x y))) :by Hxy)
@@ -600,14 +573,14 @@
             :by (p/or-intro-right% (R1 x y)
                                    (p/and-elim-right% H2)))
       (have <c> _ :by (p/and-intro% <c1> <c2>)))
-    (have <d> ((rinter T U (runion T U R1 R2) (runion T U R1 R3)) x y)
+    (have <d> ((rinter (runion R1 R2) (runion R1 R3)) x y)
           :by (p/or-elim% <a>
-                          ((rinter T U (runion T U R1 R2) (runion T U R1 R3)) x y)
+                          ((rinter (runion R1 R2) (runion R1 R3)) x y)
                           <b> <c>)))
   "Superset case"
   (assume [x T
            y U
-           Hxy ((rinter T U (runion T U R1 R2) (runion T U R1 R3)) x y)]
+           Hxy ((rinter (runion R1 R2) (runion R1 R3)) x y)]
     (have <e> (or (R1 x y)
                   (R2 x y))
           :by (p/and-elim-left% Hxy))
@@ -638,7 +611,7 @@
                                           (and (R2 x y)
                                                (R3 x y)))
                                   <h> <i>)))
-    (have <k> ((runion T U R1 (rinter T U R2 R3)) x y)
+    (have <k> ((runion R1 (rinter R2 R3)) x y)
           :by (p/or-elim% <e> (or (R1 x y)
                                           (and (R2 x y)
                                                (R3 x y)))
@@ -649,35 +622,35 @@
 (defthm dist-runion-rinter-sym
   "Symmetric case of [[dist-runion-rinter]]."
   [[T :type] [U :type] [R1 (rel T U)] [R2 (rel T U)] [R3 (rel T U)]]
-  (releq T U
-         (rinter T U (runion T U R1 R2) (runion T U R1 R3))
-         (runion T U R1 (rinter T U R2 R3))))
+  (releq
+         (rinter (runion R1 R2) (runion R1 R3))
+         (runion R1 (rinter R2 R3))))
 
 (proof dist-runion-rinter-sym
     :script
-  (have <a> (releq T U
-                   (runion T U R1 (rinter T U R2 R3))
-                   (rinter T U (runion T U R1 R2) (runion T U R1 R3)))
+  (have <a> (releq
+                   (runion R1 (rinter R2 R3))
+                   (rinter (runion R1 R2) (runion R1 R3)))
         :by (dist-runion-rinter T U R1 R2 R3))
   (have <b> _ :by ((rel/releq-sym
                     T U
-                    (runion T U R1 (rinter T U R2 R3))
-                    (rinter T U (runion T U R1 R2) (runion T U R1 R3))) <a>))
+                    (runion R1 (rinter R2 R3))
+                    (rinter (runion R1 R2) (runion R1 R3))) <a>))
   (qed <b>))
 
 (defthm dist-rinter-runion
   "Distributivity of intersection over union."
   [[T :type] [U :type] [R1 (rel T U)] [R2 (rel T U)] [R3 (rel T U)]]
-  (releq T U
-         (rinter T U R1 (runion T U R2 R3))
-         (runion T U (rinter T U R1 R2) (rinter T U R1 R3))))
+  (releq
+         (rinter R1 (runion R2 R3))
+         (runion (rinter R1 R2) (rinter R1 R3))))
 
 (proof dist-rinter-runion
     :script
   "Subset case"
   (assume [x T
            y U
-           Hxy ((rinter T U R1 (runion T U R2 R3)) x y)]
+           Hxy ((rinter R1 (runion R2 R3)) x y)]
     (have <a> (R1 x y) :by (p/and-elim-left% Hxy))
     (have <b> (or (R2 x y)
                   (R3 x y)) :by (p/and-elim-right% Hxy))
@@ -694,14 +667,14 @@
                     (and (R1 x y) (R3 x y)))
             :by (p/or-intro-right% (and (R1 x y) (R2 x y))
                                    <d1>)))
-    (have <e> ((runion T U (rinter T U R1 R2) (rinter T U R1 R3)) x y)
+    (have <e> ((runion (rinter R1 R2) (rinter R1 R3)) x y)
           :by (p/or-elim% <b> (or (and (R1 x y) (R2 x y))
                                   (and (R1 x y) (R3 x y)))
                           <c> <d>)))
   "Superset case"
   (assume [x T
            y U
-           Hxy ((runion T U (rinter T U R1 R2) (rinter T U R1 R3)) x y)]
+           Hxy ((runion (rinter R1 R2) (rinter R1 R3)) x y)]
     (have <f> (or (and (R1 x y) (R2 x y))
                   (and (R1 x y) (R3 x y))) :by Hxy)
     (assume [H1 (and (R1 x y) (R2 x y))]
@@ -724,7 +697,7 @@
                      (or (R2 x y)
                          (R3 x y)))
             :by (p/and-intro% <h1> <h2>)))
-    (have <i> ((rinter T U R1 (runion T U R2 R3)) x y)
+    (have <i> ((rinter R1 (runion R2 R3)) x y)
           :by (p/or-elim% <f> (and (R1 x y)
                                    (or (R2 x y)
                                        (R3 x y)))
@@ -736,20 +709,20 @@
 (defthm dist-rinter-runion-sym
   "Symmetric case of [[dist-rinter-runion]]."
   [[T :type] [U :type] [R1 (rel T U)] [R2 (rel T U)] [R3 (rel T U)]]
-  (releq T U
-         (runion T U (rinter T U R1 R2) (rinter T U R1 R3))
-         (rinter T U R1 (runion T U R2 R3))))
+  (releq
+         (runion (rinter R1 R2) (rinter R1 R3))
+         (rinter R1 (runion R2 R3))))
 
 (proof dist-rinter-runion-sym
     :script
-  (have <a> (releq T U
-                   (rinter T U R1 (runion T U R2 R3))
-                   (runion T U (rinter T U R1 R2) (rinter T U R1 R3)))
+  (have <a> (releq
+                   (rinter R1 (runion R2 R3))
+                   (runion (rinter R1 R2) (rinter R1 R3)))
         :by (dist-rinter-runion T U R1 R2 R3))
   (have <b> _ :by ((rel/releq-sym
                     T U
-                    (rinter T U R1 (runion T U R2 R3))
-                    (runion T U (rinter T U R1 R2) (rinter T U R1 R3))) <a>))
+                    (rinter R1 (runion R2 R3))
+                    (runion (rinter R1 R2) (rinter R1 R3))) <a>))
   (qed <b>))
 
 
@@ -763,7 +736,7 @@
 
 (defthm rdiff-empty-right
   [[T :type] [U :type] [R (rel T U)]]
-  (releq T U (rdiff T U R (emptyrel T U)) R))
+  (releq (rdiff T U R (emptyrel T U)) R))
 
 (proof rdiff-empty-right
     :script
@@ -788,7 +761,7 @@
 
 (defthm rdiff-empty-left
   [[T :type] [U :type] [R (rel T U)]]
-  (releq T U (rdiff T U (emptyrel T U) R) (emptyrel T U)))
+  (releq (rdiff T U (emptyrel T U) R) (emptyrel T U)))
 
 (proof rdiff-empty-left
     :script
@@ -809,7 +782,7 @@
 
 (defthm rdiff-cancel
   [[T :type] [U :type] [R (rel T U)]]
-  (releq T U (rdiff T U R R) (emptyrel T U)))
+  (releq (rdiff T U R R) (emptyrel T U)))
 
 (proof rdiff-cancel
     :script
@@ -838,7 +811,7 @@
 
 (defthm rcomp-full-empty
   [[T :type] [U :type]]
-  (releq T U
+  (releq
          (rcomplement T U (fullrel T U))
          (emptyrel T U)))
 
@@ -861,7 +834,7 @@
 
 (defthm rcomp-empty-full
   [[T :type] [U :type]]
-  (releq T U
+  (releq
          (rcomplement T U (emptyrel T U))
          (fullrel T U)))
 
@@ -889,7 +862,7 @@ the subset `s`."
   [[T :type] [U :type] [R (rel T U)] [s (set T)]]
   (lambda [x T]
     (lambda [y U]
-      (and (elem T x s)
+      (and (elem x s)
            (R x y)))))
 
 (defthm restrict-dom-dom
@@ -902,25 +875,25 @@ the subset `s`."
     :script
   "Subset case"
   (assume [x T
-           Hx (elem T x (dom T U (restrict-dom T U R s)))]
+           Hx (elem x (dom T U (restrict-dom T U R s)))]
     (assume [y U
              Hy ((restrict-dom T U R s) x y)]
-      (have <a> (elem T x s) :by (p/and-elim-left% Hy))
+      (have <a> (elem x s) :by (p/and-elim-left% Hy))
       (have <b1> (R x y) :by (p/and-elim-right% Hy))
       (have <b> (exists [z U] (R x z))
             :by ((q/ex-intro U (lambda [z U] (R x z)) y)
                  <b1>))
-      (have <c> (elem T x (inter T s (dom T U R)))
+      (have <c> (elem x (inter T s (dom T U R)))
             :by (p/and-intro% <a> <b>)))
     (have <d> _ :by
           ((q/ex-elim U (lambda [z U]
                           ((restrict-dom T U R s) x z))
-                      (elem T x (inter T s (dom T U R))))
+                      (elem x (inter T s (dom T U R))))
            Hx <c>)))
   "Superset case"
   (assume [x T
-           Hx (elem T x (inter T s (dom T U R)))]
-    (have <e> (and (elem T x s)
+           Hx (elem x (inter T s (dom T U R)))]
+    (have <e> (and (elem x s)
                    (exists [y U] (R x y))) :by Hx)
     (assume [y U
              Hy (R x y)]
@@ -936,7 +909,7 @@ the subset `s`."
                                   ((restrict-dom T U R s) x y)))
                      (p/and-elim-right% <e>)
                      <f>))
-    (have <h> (elem T x (dom T U (restrict-dom T U R s)))
+    (have <h> (elem x (dom T U (restrict-dom T U R s)))
           :by <g>))
   (have <i> _ :by (p/and-intro% <d> <h>))
   (qed <i>))
@@ -946,7 +919,7 @@ the subset `s`."
   [[T :type] [U :type] [R (rel T U)] [s (set T)]]
   (lambda [x T]
     (lambda [y U]
-      (and (not (elem T x s))
+      (and (not (elem x s))
            (R x y)))))
 
 (definition restrict-ran
@@ -955,7 +928,7 @@ the subset `s`."
   [[T :type] [U :type] [R (rel T U)] [s (set U)]]
   (lambda [x T]
     (lambda [y U]
-      (and (elem U y s)
+      (and (elem y s)
            (R x y)))))
 
 (definition subtract-ran
@@ -963,7 +936,7 @@ the subset `s`."
   [[T :type] [U :type] [R (rel T U)] [s (set U)]]
   (lambda [x T]
     (lambda [y U]
-      (and (not (elem U y s))
+      (and (not (elem y s))
            (R x y)))))
 
 (definition rimage
@@ -971,7 +944,7 @@ the subset `s`."
   [[T :type] [U :type] [R (rel T U)] [s (set T)]]
   (lambda [y U]
     (exists [x T]
-      (and (elem T x s)
+      (and (elem x s)
            (R x y)))))
 
 (definition rinverse
