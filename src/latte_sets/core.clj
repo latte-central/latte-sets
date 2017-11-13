@@ -97,7 +97,7 @@ of the full set)."
   (forall [x T]
     (elem x (fullset T))))
 
-(proof 'fullset-intro :script
+(proof 'fullset-intro
   (assume [x T]
     (have <a> (elem x (fullset T)) :by p/truth-is-true))
   (qed <a>))
@@ -113,7 +113,7 @@ of the full set)."
   (forall [x T]
     (not (elem x (emptyset T)))))
 
-(proof 'emptyset-prop :script
+(proof 'emptyset-prop
   (assume [x T
            H (elem x (emptyset T))]
     (have <a> p/absurd :by H))
@@ -140,7 +140,7 @@ The expression `(subset T s1 s2)` means that
   [[T :type] [s (set T)]]
   (subset s s))
 
-(proof 'subset-refl-thm :script
+(proof 'subset-refl-thm
   (assume [x T
            H (elem x s)]
     (have <a> (elem x s) :by H))
@@ -159,7 +159,7 @@ The expression `(subset T s1 s2)` means that
        (subset s2 s3)
        (subset s1 s3)))
 
-(proof 'subset-trans-thm :script
+(proof 'subset-trans-thm
   (assume [H1 (subset s1 s2)
            H2 (subset s2 s3)]
     (assume [x T]
@@ -189,7 +189,6 @@ The expression `(subset T s1 s2)` means that
               (P x)))))
 
 (proof 'subset-prop
-    :script
   (assume [H1 (forall [x T]
                       (==> (elem x s2)
                            (P x)))
@@ -206,7 +205,6 @@ The expression `(subset T s1 s2)` means that
   (subset (emptyset T) s))
 
 (proof 'subset-emptyset-lower-bound
-    :script
   (assume [x T
            Hx (elem x (emptyset T))]
     (have <a> p/absurd :by Hx)
@@ -219,7 +217,6 @@ The expression `(subset T s1 s2)` means that
   (subset s (fullset T)))
 
 (proof 'subset-fullset-upper-bound
-    :script
   (assume [x T
            Hx (elem x s)]
     (have <a> (elem x (fullset T))
@@ -245,7 +242,7 @@ This is a natural equality on sets based on the subset relation."
   [[T :type] [s (set T)]]
   (seteq s s))
 
-(proof 'seteq-refl-thm :script
+(proof 'seteq-refl-thm
   (have <a> (subset s s) :by (subset-refl s))
   (have <b> (and (subset s s)
                  (subset s s))
@@ -264,7 +261,7 @@ This is a natural equality on sets based on the subset relation."
   (==> (seteq s1 s2)
        (seteq s2 s1)))
 
-(proof 'seteq-sym-thm :script
+(proof 'seteq-sym-thm
   (assume [H (seteq s1 s2)]
     (have <a> (subset s1 s2) :by (p/and-elim-left H))
     (have <b> (subset s2 s1) :by (p/and-elim-right H))
@@ -284,7 +281,7 @@ This is a natural equality on sets based on the subset relation."
        (seteq s2 s3)
        (seteq s1 s3)))
 
-(proof 'seteq-trans-thm :script
+(proof 'seteq-trans-thm
   (assume [H1 (seteq s1 s2)
            H2 (seteq s2 s3)]
     (have <a1> (subset s1 s2) :by (p/and-elim-left H1))
@@ -328,7 +325,6 @@ Note that the identification with [[seteq]] is non-trivial,
        (P s2)))
 
 (proof 'set-equal-prop
-    :script
   (assume [Heq (set-equal s1 s2)
            Hs1 (P s1)]
     (have <a> (<=> (P s1) (P s2))
@@ -343,7 +339,7 @@ Note that the identification with [[seteq]] is non-trivial,
   [[T :type] [s (set T)]]
   (set-equal s s))
 
-(proof 'set-equal-refl-thm :script
+(proof 'set-equal-refl-thm
   (assume [P (==> (set T) :type)]
     (have a (<=> (P s) (P s))
           :by (p/iff-refl (P s))))
@@ -361,7 +357,7 @@ Note that the identification with [[seteq]] is non-trivial,
   (==> (set-equal s1 s2)
        (set-equal s2 s1)))
 
-(proof 'set-equal-sym-thm :script
+(proof 'set-equal-sym-thm
   (assume [H (set-equal s1 s2)
            Q (==> (set T) :type)]
     (have <a> (<=> (Q s1) (Q s2)) :by (H Q))
@@ -381,7 +377,7 @@ Note that the identification with [[seteq]] is non-trivial,
        (set-equal s2 s3)
        (set-equal s1 s3)))
 
-(proof 'set-equal-trans-thm :script
+(proof 'set-equal-trans-thm
   (assume [H1 (set-equal s1 s2)
            H2 (set-equal s2 s3)
            Q (==> (set T) :type)]
@@ -403,7 +399,7 @@ Note that the identification with [[seteq]] is non-trivial,
   (==> (set-equal s1 s2)
        (subset s1 s2)))
 
-(proof 'set-equal-implies-subset :script
+(proof 'set-equal-implies-subset
   (assume [H (set-equal s1 s2)
            x T]
     (pose Qx := (lambda [s (set T)]
@@ -420,7 +416,7 @@ Note that the identification with [[seteq]] is non-trivial,
   (==> (set-equal s1 s2)
        (seteq s1 s2)))
 
-(proof 'set-equal-implies-seteq :script
+(proof 'set-equal-implies-seteq
   (assume [H (set-equal s1 s2)]
     ;; "First we get s1⊆s2."
     (have <a> (subset s1 s2) :by ((set-equal-implies-subset T s1 s2) H))
@@ -445,7 +441,7 @@ requires this axiom. This is because we cannot lift membership
   (<=> (seteq s1 s2)
        (set-equal s1 s2)))
 
-(proof 'set-equal-seteq :script
+(proof 'set-equal-seteq
   (have <a> (==> (seteq s1 s2)
                  (set-equal s1 s2)) :by (seteq-implies-set-equal-ax T s1 s2))
   (have <b> (==> (set-equal s1 s2)
@@ -473,7 +469,6 @@ sets are distinct, i.e. `s1`⊂`s2` (or more explicitely `s1`⊊`s2`)."
   (not (psubset s s)))
 
 (proof 'psubset-antirefl-thm
-    :script
   (assume [H (psubset s s)]
     (have <a> (not (seteq s s))
           :by (p/and-elim-right H))
@@ -493,7 +488,6 @@ sets are distinct, i.e. `s1`⊂`s2` (or more explicitely `s1`⊊`s2`)."
             (psubset s2 s1))))
 
 (proof 'psubset-antisym-thm
-    :script
   (assume [H (and (psubset s1 s2)
                   (psubset s2 s1))]
     (have <a> (not (seteq s1 s2))
@@ -521,7 +515,7 @@ cf. [[psubset-antisym-thm]]."
        (psubset s2 s3)
        (psubset s1 s3)))
 
-(proof 'psubset-trans-thm :script
+(proof 'psubset-trans-thm
   (assume [H1 (psubset s1 s2)
            H2 (psubset s2 s3)]
     (have <a> (subset s1 s3)
@@ -555,7 +549,6 @@ The proper subset relation is transitive, cf. [[psubset-trans-thm]]."
        (not (seteq s (emptyset T)))))
 
 (proof 'psubset-emptyset
-    :script
   (assume [H (psubset (emptyset T) s)]
     (assume [H' (seteq s (emptyset T))]
       (have <a> (not (seteq (emptyset T) s))
@@ -571,7 +564,6 @@ The proper subset relation is transitive, cf. [[psubset-trans-thm]]."
        (psubset (emptyset T) s)))
 
 (proof 'psubset-emptyset-conv
-    :script
   (assume [H (not (seteq s (emptyset T)))]
     (have <a> (subset (emptyset T) s)
           :by (subset-emptyset-lower-bound T s))
@@ -589,7 +581,6 @@ The proper subset relation is transitive, cf. [[psubset-trans-thm]]."
        (not (seteq s (emptyset T)))))
 
 (proof 'psubset-emptyset-equiv
-    :script
   (qed (p/and-intro (psubset-emptyset T s)
                     (psubset-emptyset-conv T s))))
 

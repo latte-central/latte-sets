@@ -41,7 +41,6 @@
   (releq (runion R R) R))
 
 (proof 'runion-idem
-    :script
   "We first prove that `R`∪`R`⊆`R`."
   (assume [x T
            y U
@@ -66,7 +65,6 @@
   (releq (runion R (emptyrel T U)) R))
 
 (proof 'runion-empty
-    :script
   "subset case"
   (assume [x T
            y U
@@ -94,7 +92,7 @@
   (releq (runion R1 R2)
          (runion R2 R1)))
 
-(proof 'runion-commute :script
+(proof 'runion-commute
   (assume [x T
            y U
            H ((runion R1 R2) x y)]
@@ -116,7 +114,6 @@
          (runion (runion R1 R2) R3)))
 
 (proof 'runion-assoc
-    :script
   "Subset case"
   (assume [x T
            y U
@@ -206,7 +203,6 @@
          (runion R1 (runion R2 R3))))
 
 (proof 'runion-assoc-sym
-    :script
   (have <a> (releq (runion R1 (runion R2 R3))
                    (runion (runion R1 R2) R3))
         :by (runion-assoc T U R1 R2 R3))
@@ -221,7 +217,6 @@
          (alg/union (dom R1) (dom R2))))
 
 (proof 'runion-dom
-    :script
   "Subset case"
   (assume [x T
            Hx (elem x (dom (runion R1 R2)))]
@@ -302,7 +297,6 @@
          (alg/union (ran R1) (ran R2))))
 
 (proof 'runion-ran
-    :script
   "Subset case"
   (assume [y U
            Hy (elem y (ran (runion R1 R2)))]
@@ -399,7 +393,6 @@
        (R1 x y)))
 
 (proof 'rinter-elim-left
-    :script
   (assume [H ((rinter R1 R2) x y)]
     (have <a> (R1 x y) :by (p/and-elim-left H)))
   (qed <a>))
@@ -411,7 +404,6 @@
        (R2 x y)))
 
 (proof 'rinter-elim-right
-    :script
   (assume [H ((rinter R1 R2) x y)]
     (have <a> (R2 x y) :by (p/and-elim-right H)))
   (qed <a>))
@@ -422,7 +414,6 @@
   (releq (rinter R R) R))
 
 (proof 'rinter-idem
-    :script
   "Subset case"
   (assume [x T
            y U
@@ -445,7 +436,6 @@
          (emptyrel T U)))
 
 (proof 'rinter-empty
-    :script
   "Subset case."
   (assume [x T
            y U
@@ -467,7 +457,6 @@
          (rinter R2 R1)))
 
 (proof 'rinter-commute
-    :script
   (assume [x T
            y U
            Hxy ((rinter R1 R2) x y)]
@@ -486,7 +475,6 @@
          (rinter (rinter R1 R2) R3)))
 
 (proof 'rinter-assoc
-    :script
   "Subset case"
   (assume [x T
            y U
@@ -517,7 +505,6 @@
          (rinter R1 (rinter R2 R3))))
 
 (proof 'rinter-assoc-sym
-    :script
   (have <a> (releq (rinter R1 (rinter R2 R3))
                    (rinter (rinter R1 R2) R3))
         :by (rinter-assoc T U R1 R2 R3))
@@ -532,7 +519,6 @@
          (rinter (runion R1 R2) (runion R1 R3))))
 
 (proof 'dist-runion-rinter
-    :script
   "Subset case"
   (assume [x T
            y U
@@ -611,7 +597,6 @@
          (runion R1 (rinter R2 R3))))
 
 (proof 'dist-runion-rinter-sym
-    :script
   (have <a> (releq (runion R1 (rinter R2 R3))
                    (rinter (runion R1 R2) (runion R1 R3)))
         :by (dist-runion-rinter T U R1 R2 R3))
@@ -625,7 +610,6 @@
          (runion (rinter R1 R2) (rinter R1 R3))))
 
 (proof 'dist-rinter-runion
-    :script
   "Subset case"
   (assume [x T
            y U
@@ -690,7 +674,6 @@
          (rinter R1 (runion R2 R3))))
 
 (proof 'dist-rinter-runion-sym
-    :script
   (have <a> (releq(rinter R1 (runion R2 R3))
                    (runion (rinter R1 R2) (rinter R1 R3)))
         :by (dist-rinter-runion T U R1 R2 R3))
@@ -718,7 +701,6 @@
   (releq (rdiff R (emptyrel T U)) R))
 
 (proof 'rdiff-empty-right
-    :script
   "Subset case"
   (assume [x T
            y U
@@ -742,7 +724,6 @@
   (releq (rdiff (emptyrel T U) R) (emptyrel T U)))
 
 (proof 'rdiff-empty-left
-    :script
   "Subset case"
   (assume [x T
            y U
@@ -763,7 +744,6 @@
   (releq (rdiff R R) (emptyrel T U)))
 
 (proof 'rdiff-cancel
-    :script
   "Subset case"
   (assume [x T
            y U
@@ -799,7 +779,6 @@
          (emptyrel T U)))
 
 (proof 'rcomp-full-empty
-    :script
   "Subset case"
   (assume [x T
            y U
@@ -820,7 +799,6 @@
          (fullrel T U)))
 
 (proof 'rcomp-empty-full
-    :script
   "Subset case"
   (assume [x T
            y U
@@ -857,7 +835,6 @@ the subset `s`."
          (inter s (dom R))))
 
 (proof 'restrict-dom-dom
-    :script
   "Subset case"
   (assume [x T
            Hx (elem x (dom (restrict-dom R s)))]
@@ -974,7 +951,6 @@ the subset `s`."
        ((rinverse R) y x)))
 
 (proof 'rinverse-prop
-    :script
   (assume [H (R x y)]
     (have <a> ((rinverse R) y x) :by H))
   (qed <a>))

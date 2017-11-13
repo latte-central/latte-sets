@@ -35,7 +35,6 @@
   (seteq (union s s) s))
 
 (proof 'union-idem
-    :script
   "We first prove that `s`∪`s`⊆`s`."
   (assume [x T
            Hx (elem x (union s s))]
@@ -59,7 +58,6 @@
          s))
 
 (proof 'union-empty
-    :script
   "subset case"
   (assume [x T
            Hx (elem x (union s (emptyset T)))]
@@ -85,7 +83,7 @@
   (seteq (union s1 s2)
          (union s2 s1)))
 
-(proof 'union-commute :script
+(proof 'union-commute
   (assume [x T
            H (elem x (union s1 s2))]
     (have <a1> (or (elem x s1)
@@ -109,7 +107,6 @@
          (union (union s1 s2) s3)))
 
 (proof 'union-assoc
-    :script
   "Subset case"
   (assume [x T
            Hx (elem x (union s1 (union s2 s3)))]
@@ -197,7 +194,6 @@
          (union s1 (union s2 s3))))
 
 (proof 'union-assoc-sym
-    :script
   (have <a> (seteq (union s1 (union s2 s3))
                    (union (union s1 s2) s3))
         :by (union-assoc T s1 s2 s3))
@@ -228,7 +224,7 @@
   (==> (elem x (inter s1 s2))
        (elem x s1)))
 
-(proof 'inter-elim-left :script
+(proof 'inter-elim-left
   (assume [H (elem x (inter s1 s2))]
     (have <a> (elem x s1) :by (p/and-elim-left H)))
   (qed <a>))
@@ -239,7 +235,7 @@
   (==> (elem x (inter s1 s2))
        (elem x s2)))
 
-(proof 'inter-elim-right :script
+(proof 'inter-elim-right
   (assume [H (elem x (inter s1 s2))]
     (have <a> (elem x s2) :by (p/and-elim-right H)))
     (qed <a>))
@@ -249,7 +245,6 @@
   (seteq (inter s s) s))
 
 (proof 'inter-idem
-    :script
   "Subset case"
   (assume [x T
            Hx (elem x (inter s s))]
@@ -267,7 +262,6 @@
          (emptyset T)))
 
 (proof 'inter-empty
-    :script
   "Subset case."
   (assume [x T
            Hx (elem x (inter s (emptyset T)))]
@@ -286,7 +280,7 @@
   (seteq (inter s1 s2)
          (inter s2 s1)))
 
-(proof 'inter-commute :script
+(proof 'inter-commute
   (assume [x T
            H (elem x (inter s1 s2))]
     (have <a> (elem x (inter s2 s1))
@@ -306,7 +300,6 @@
          (inter (inter s1 s2) s3)))
 
 (proof 'inter-assoc
-    :script
   "Subset case"
   (assume [x T
            Hx (elem x (inter s1 (inter s2 s3)))]
@@ -335,7 +328,6 @@
          (inter s1 (inter s2 s3))))
 
 (proof 'inter-assoc-sym
-    :script
   (have <a> (seteq (inter s1 (inter s2 s3))
                    (inter (inter s1 s2) s3))
         :by (inter-assoc T s1 s2 s3))
@@ -350,7 +342,6 @@
          (inter (union s1 s2) (union s1 s3))))
 
 (proof 'dist-union-inter
-    :script
   "Subset case"
   (assume [x T
            Hx (elem x (union s1 (inter s2 s3)))]
@@ -428,7 +419,6 @@
          (union s1 (inter s2 s3))))
 
 (proof 'dist-union-inter-sym
-    :script
   (have <a> (seteq (union s1 (inter s2 s3))
                    (inter (union s1 s2) (union s1 s3)))
         :by (dist-union-inter T s1 s2 s3))
@@ -442,7 +432,6 @@
          (union (inter s1 s2) (inter s1 s3))))
 
 (proof 'dist-inter-union
-    :script
   "Subset case"
   (assume [x T
            Hx (elem x (inter s1 (union s2 s3)))]
@@ -506,7 +495,6 @@
          (inter s1 (union s2 s3))))
 
 (proof 'dist-inter-union-sym
-    :script
   (have <a> (seteq (inter s1 (union s2 s3))
                    (union (inter s1 s2) (inter s1 s3)))
         :by (dist-inter-union T s1 s2 s3))
@@ -536,7 +524,6 @@
   (seteq (diff s (emptyset T)) s))
 
 (proof 'diff-empty-right
-    :script
   "Subset case"
   (assume [x T
            Hx (elem x (diff s (emptyset T)))]
@@ -558,7 +545,6 @@
   (seteq (diff (emptyset T) s) (emptyset T)))
 
 (proof 'diff-empty-left
-    :script
   "Subset case"
   (assume [x T
            Hx (elem x (diff (emptyset T) s))]
@@ -576,7 +562,6 @@
   (seteq (diff s s) (emptyset T)))
 
 (proof 'diff-cancel
-    :script
   "Subset case"
   (assume [x T
            Hx (elem x (diff s s))]
@@ -611,7 +596,6 @@
                 (diff s2 s1))))
 
 (proof 'symdiff-alt
-    :script
   "Subset case"
   (assume [x T
            Hx (elem x (symdiff s1 s2))]
@@ -657,7 +641,6 @@ a somewhat unsatisfying notion of \"a universe of discourse\"."
          (emptyset T)))
 
 (proof 'comp-full-empty
-    :script
   "Subset case"
   (assume [x T
            Hx (elem x (complement (fullset T)))]
@@ -676,7 +659,6 @@ a somewhat unsatisfying notion of \"a universe of discourse\"."
          (fullset T)))
 
 (proof 'comp-empty-full
-    :script
   "Subset case"
   (assume [x T
            Hx (elem x (complement (emptyset T)))]

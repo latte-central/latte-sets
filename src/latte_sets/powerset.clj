@@ -72,7 +72,7 @@ adpated for sets."
          (==> (set-elem x X) A))
        A))
 
-(proof 'set-ex-elim-thm :script
+(proof 'set-ex-elim-thm
   (assume [H1 (set-ex X)
            H2 (forall [x (set T)] (==> (set-elem x X) A))]
     (have <a> (==> (forall [x (set T)]
@@ -94,7 +94,6 @@ adpated for sets."
        (set-ex X)))
 
 (proof 'set-ex-intro-thm
-    :script
   (assume [H (set-elem x X)
            A :type
            Q (forall [y (set T)] (==> (set-elem y X) A))]
@@ -162,7 +161,6 @@ cf. [[set-unique-def]]"
          (seteq y (the-set X u)))))
 
 (proof 'the-set-lemma
-    :script
   (have <a> (set-single X) :by (p/and-elim-right u))
   (have <b> (set-elem (the-set X u) X) :by (the-set-prop T X u))
   (assume [y (set T)
@@ -198,7 +196,6 @@ the subset relation."
            (subset x (unions X)))))
 
 (proof 'unions-upper-bound
-    :script
   (assume [x (set T)
            Hx (set-elem x X)]
     (assume [y T
@@ -234,7 +231,6 @@ This is the set {y:T | ∀x∈X, y∈x}."
          (subset (intersections X) x))))
 
 (proof 'intersections-lower-bound
-    :script
   (assume [x (set T)
            Hx (set-elem x X)]
     (assume [y T
@@ -255,7 +251,6 @@ This is the set {y:T | ∀x∈X, y∈x}."
                 (P z))))))
 
 (proof 'intersections-prop
-    :script
   (assume [x (set T)
            H1 (set-elem x X)
            H2 (forall [y T]
@@ -283,7 +278,6 @@ This is the set {y:T | ∀x∈X, y∈x}."
     (set-elem x (full-powerset T))))
 
 (proof 'full-powerset-prop
-    :script
   (assume [x (set T)]
     (have <a> ((full-powerset T) x) :by p/truth-is-true))
   (qed <a>))
@@ -300,7 +294,6 @@ This is the set {y:T | ∀x∈X, y∈x}."
     (not (set-elem x (empty-powerset T)))))
 
 (proof 'empty-powerset-prop
-    :script
   (assume [x (set T)
            H (set-elem x (empty-powerset T))]
     (have <a> p/absurd :by H))
@@ -318,7 +311,6 @@ This is the set {y:T | ∀x∈X, y∈x}."
        (set-elem x (powerset1 T))))
 
 (proof 'powerset1-prop
-    :script
   (assume [H (not (s/set-equal x (s/emptyset T)))]
     (have <a> (set-elem x (powerset1 T)) :by H))
   (qed <a>))
@@ -329,7 +321,6 @@ This is the set {y:T | ∀x∈X, y∈x}."
        (not (s/set-equal x (s/emptyset T)))))
 
 (proof 'powerset1-prop-conv
-    :script
   (assume [H (set-elem x (powerset1 T))]
     (assume [Heq (s/set-equal x (s/emptyset T))]
       (have <a> (not (s/set-equal x (s/emptyset T)))
@@ -343,7 +334,6 @@ This is the set {y:T | ∀x∈X, y∈x}."
        (not (s/set-equal x (s/emptyset T)))))
 
 (proof 'powerset1-prop-equiv
-    :script
   (qed (p/and-intro (powerset1-prop T x)
                     (powerset1-prop-conv T x))))
 

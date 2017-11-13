@@ -73,7 +73,6 @@ This function is used for implicits in relations."
   (reflexive (identity T)))
 
 (proof 'ident-refl
-    :script
   (assume [x T]
     (have <a> (equal x x) :by (eq/eq-refl x)))
   (qed <a>))
@@ -96,7 +95,6 @@ This function is used for implicits in relations."
   (symmetric (identity T)))
 
 (proof 'ident-sym
-    :script
   (assume [x T
            y T
            Hx ((identity T) x y)]
@@ -123,7 +121,6 @@ This function is used for implicits in relations."
   (transitive (identity T)))
 
 (proof 'ident-trans
-    :script
   (assume [x T
            y T
            z T
@@ -153,7 +150,6 @@ This function is used for implicits in relations."
   (equivalence (identity T)))
 
 (proof 'ident-equiv
-    :script
   (qed (p/and-intro (ident-refl T)
                     (p/and-intro (ident-sym T)
                                  (ident-trans T)))))
@@ -171,7 +167,6 @@ This function is used for implicits in relations."
       ((fullrel T U) x y))))
 
 (proof 'fullrel-prop
-    :script
   (assume [x T
            y U]
     (have <a> ((fullrel T U) x y) :by p/truth-is-true))
@@ -191,7 +186,6 @@ This function is used for implicits in relations."
       (not ((emptyrel T U) x y)))))
 
 (proof 'emptyrel-prop
-    :script
   (assume [x T
            y U
            H ((emptyrel T U) x y)]
@@ -217,7 +211,6 @@ This function is used for implicits in relations."
   (subrel R R))
 
 (proof 'subrel-refl-thm
-    :script
   (assume [x T
            y U
            H1 (R x y)]
@@ -238,7 +231,6 @@ Reflexivity of `subrel`, cf. [[subrel-refl-thm]]."
        (subrel R1 R3)))
 
 (proof 'subrel-trans-thm
-    :script
   (assume [H1 (subrel R1 R2)
            H2 (subrel R2 R3)]
     (assume [x T
@@ -270,7 +262,6 @@ Transitivity of `subrel`, cf. [[subrel-trans-thm]]."
                 (P x y))))))
 
 (proof 'subrel-prop
-    :script
   (assume [H1 (forall [x T]
                       (forall [y U]
                               (==> (R2 x y)
@@ -289,7 +280,6 @@ Transitivity of `subrel`, cf. [[subrel-trans-thm]]."
   (subrel (emptyrel T U) R))
 
 (proof 'subrel-emptyrel-lower-bound
-    :script
   (assume [x T
            y U
            Hxy ((emptyrel T U) x y)]
@@ -303,7 +293,6 @@ Transitivity of `subrel`, cf. [[subrel-trans-thm]]."
   (subrel R (fullrel T U)))
 
 (proof 'subrel-fullrel-upper-bound
-    :script
   (assume [x T
            y U
            Hxy (R x y)]
@@ -330,7 +319,6 @@ Transitivity of `subrel`, cf. [[subrel-trans-thm]]."
   (releq R R))
 
 (proof 'releq-refl-thm
-    :script
   (have <a> (subrel R R) :by (subrel-refl R))
   (qed (p/and-intro <a> <a>)))
 
@@ -347,7 +335,6 @@ Transitivity of `subrel`, cf. [[subrel-trans-thm]]."
        (releq R2 R1)))
 
 (proof 'releq-sym-thm
-    :script
   (assume [H (releq R1 R2)]
     (have <a> _ :by (p/and-intro (p/and-elim-right H)
                                  (p/and-elim-left H))))
@@ -367,7 +354,6 @@ Transitivity of `subrel`, cf. [[subrel-trans-thm]]."
        (releq R1 R3)))
 
 (proof 'releq-trans-thm
-    :script
   (assume [H1 (releq R1 R2)
            H2 (releq R2 R3)]
     (have <a> (subrel R1 R2) :by (p/and-elim-left H1))
@@ -412,7 +398,6 @@ in the sense of *Leibniz*, cf. [[rel-equality]]."
        (P R2)))
 
 (proof 'rel-equal-prop
-    :script
   (assume [H (rel-equal R1 R2)
            HR1 (P R1)]
     (have <a> (<=> (P R1) (P R2))
@@ -427,7 +412,6 @@ in the sense of *Leibniz*, cf. [[rel-equality]]."
   (rel-equal R R))
 
 (proof 'rel-equal-refl-thm
-    :script
   (assume [P (==> (rel T U) :type)]
     (assume [H1 (P R)]
       (have <a> (P R) :by H1))
@@ -447,7 +431,6 @@ in the sense of *Leibniz*, cf. [[rel-equality]]."
        (rel-equal R2 R1)))
 
 (proof 'rel-equal-sym-thm
-    :script
   (assume [H (rel-equal R1 R2)]
     (assume [P (==> (rel T U) :type)]
       (assume [H1 (P R2)]
@@ -475,7 +458,6 @@ in the sense of *Leibniz*, cf. [[rel-equality]]."
        (rel-equal R1 R3)))
 
 (proof 'rel-equal-trans-thm
-    :script
   (assume [H1 (rel-equal R1 R2)
            H2 (rel-equal R2 R3)]
     (assume [P (==> (rel T U) :type)]
@@ -509,7 +491,6 @@ in the sense of *Leibniz*, cf. [[rel-equality]]."
        (subrel R1 R2)))
 
 (proof 'rel-equal-implies-subrel
-    :script
   (assume [H (rel-equal R1 R2)
            x T
            y U]
@@ -527,7 +508,6 @@ in the sense of *Leibniz*, cf. [[rel-equality]]."
        (releq R1 R2)))
 
 (proof 'rel-equal-implies-releq
-    :script
   (assume [H (rel-equal R1 R2)]
     (have <a> (subrel R1 R2)
           :by ((rel-equal-implies-subrel T U R1 R2) H))
@@ -553,7 +533,6 @@ one requires an axiom."
        (releq R1 R2)))
 
 (proof 'rel-equal-releq
-    :script
   (qed (p/and-intro (rel-equal-implies-releq T U R1 R2)
                     (releq-implies-rel-equal-ax T U R1 R2))))
 
@@ -579,7 +558,6 @@ one requires an axiom."
        ((rcomp (rcomp R1 R2) R3) x z)))
 
 (proof 'rcomp-assoc-subrel-aux
-    :script
   (assume [H ((rcomp R1 (rcomp R2 R3)) x z)]
     (have <a> (exists [y U]
                 (and (R1 x y) ((rcomp R2 R3) y z))) :by H)
@@ -617,7 +595,6 @@ one requires an axiom."
           (rcomp (rcomp R1 R2) R3)))
 
 (proof 'rcomp-assoc-subrel
-    :script
   (assume [x T
            y W
            H ((rcomp R1 (rcomp R2 R3)) x y)]
@@ -634,7 +611,6 @@ one requires an axiom."
        ((rcomp R1 (rcomp R2 R3)) x z)))
 
 (proof 'rcomp-assoc-suprel-aux
-    :script
   (assume [H ((rcomp (rcomp R1 R2) R3) x z)]
     (have <a> (exists [y V]
                 (and ((rcomp R1 R2) x y)
@@ -676,7 +652,6 @@ one requires an axiom."
           (rcomp R1 (rcomp R2 R3))))
 
 (proof 'rcomp-assoc-suprel
-    :script
   (assume [x T
            z W]
     (have <a> _ :by (rcomp-assoc-suprel-aux
@@ -692,7 +667,6 @@ one requires an axiom."
          (rcomp (rcomp R1 R2) R3)))
 
 (proof 'rcomp-assoc-thm
-    :script
   (qed (p/and-intro (rcomp-assoc-subrel T U V W R1 R2 R3)
                     (rcomp-assoc-suprel T U V W R1 R2 R3))))
 
@@ -721,7 +695,6 @@ one requires an axiom."
   (not (psubrel R R)))
 
 (proof 'psubrel-antirefl-thm
-    :script
   (assume [H (psubrel R R)]
     (have <a> (not (releq R R))
           :by (p/and-elim-right H))
@@ -740,7 +713,6 @@ one requires an axiom."
             (psubrel R2 R1))))
 
 (proof 'psubrel-antisym-thm
-    :script
   (assume [H (and (psubrel R1 R2)
                   (psubrel R2 R1))]
     (have <a> (not (releq R1 R2))
@@ -765,7 +737,6 @@ cf. [[psubrem-antisym-thm]]."
        (psubrel R1 R3)))
 
 (proof 'psubrel-trans-thm
-    :script
   (assume [H1 (psubrel R1 R2)
            H2 (psubrel R2 R3)]
     (have <a> (subrel R1 R3)
@@ -797,7 +768,6 @@ cf. [[psubrem-antisym-thm]]."
        (not (releq R (emptyrel T U)))))
 
 (proof 'psubrel-emptyrel
-    :script
   (assume [H (psubrel (emptyrel T U) R)]
     (assume [H' (releq R (emptyrel T U))]
       (have <a> (not (releq (emptyrel T U) R))
@@ -814,7 +784,6 @@ cf. [[psubrem-antisym-thm]]."
        (psubrel (emptyrel T U) R)))
 
 (proof 'psubrel-emptyrel-conv
-    :script
   (assume [H (not (releq R (emptyrel T U)))]
     (have <a> (subrel (emptyrel T U) R)
           :by (subrel-emptyrel-lower-bound T U R))
@@ -832,7 +801,6 @@ cf. [[psubrem-antisym-thm]]."
        (not (releq R (emptyrel T U)))))
 
 (proof 'psubrel-emptyrel-equiv
-    :script
   (qed (p/and-intro (psubrel-emptyrel T U R)
                     (psubrel-emptyrel-conv T U R))))
 
