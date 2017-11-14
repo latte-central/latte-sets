@@ -18,7 +18,7 @@ natural translation to the typed setting.
   (:refer-clojure :exclude [and or not set])
 
   (:require [latte.core :as latte :refer [definition defthm defaxiom defnotation
-                                          defimplicit
+                                          defimplicit deflemma
                                           forall lambda
                                           assume have pose proof qed]]
             [latte.quant :as q :refer [exists]]
@@ -61,9 +61,9 @@ shortcut for `(forall [x T]
   (if (not= (count binding) 3)
     [:ko {:msg "Binding of `forall-in` should be of the form `[x T s]`."
           :binding binding}]
-    [:ok `(forall [~(first binding) ~(second binding)]
-                  (==> (elem ~(second binding) ~(first binding) ~(nth binding 2))
-                       ~body))]))
+    [:ok (list 'forall [(first binding) (second binding)]
+               (list '==> (list #'elem (first binding) (nth binding 2))
+                     body))]))
 
 (alter-meta! #'forall-in update-in [:style/indent] (fn [_] [1 :form :form]))
 
@@ -78,9 +78,9 @@ shortcut for `(exists [x T]
   (if (not= (count binding) 3)
     [:ko {:msg "Binding of `exists-in` should be of the form `[x T s]`."
           :binding binding}]
-    [:ok `(exists [~(first binding) ~(second binding)]
-                  (and (elem ~(second binding) ~(first binding) ~(nth binding 2))
-                       ~body))]))
+    [:ok (list 'exists [(first binding) (second binding)]
+               (list 'and (list #'elem (first binding) (nth binding 2))
+                     body))]))
 
 (alter-meta! #'exists-in update-in [:style/indent] (fn [_] [1 :form :form]))
 
