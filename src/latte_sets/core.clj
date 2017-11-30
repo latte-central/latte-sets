@@ -21,6 +21,7 @@ natural translation to the typed setting.
                                           defimplicit deflemma
                                           forall lambda
                                           assume have pose proof qed]]
+            [latte.utils :as u]
             [latte.quant :as q :refer [exists]]
             [latte.prop :as p :refer [<=> and or not]]
             [latte.equal :as eq :refer [equal]]))
@@ -223,6 +224,44 @@ The expression `(subset T s1 s2)` means that
           :by p/truth-is-true))
   (qed <a>))
 
+(defthm subset-intro-thm
+  "Introduction rule for subset relation."
+  [[T :type] [s1 (set T)] [s2 (set T)]]
+  (==> (forall [x T]
+               (==> (elem x s1)
+                    (elem x s2)))
+       (subset s1 s2)))
+
+(proof 'subset-intro-thm
+  (assume [H (forall [x T]
+               (==> (elem x s1)
+                    (elem x s2)))]
+    (have <a> (subset s1 s2) :by H))
+  (qed <a>))
+
+(defimplicit subset-intro
+  "Introduction rule for subset, cf. [[subset-intro-thm]]."
+  [def-env ctx [s1 s1-ty] [s2 s2-ty]]
+  (let [T (fetch-set-type def-env ctx s1-ty)]
+    (list #'subset-intro-thm T s1 s2)))
+
+(defthm subset-elim-thm
+  "Elimination rule for subset relation."
+  [[T :type] [s1 (set T)] [s2 (set T)] [x T]]
+  (==> (elem x s1)
+       (subset s1 s2)
+       (elem x s2)))
+
+(proof 'subset-elim-thm
+  (assume [H1 (elem x s1)
+           H2 (subset s1 s2)]
+    (have <a> (elem x s2) :by (H2 x H1)))
+  (qed <a>))
+
+;; now that we have intro and elim, subset can become opaque
+;; (u/set-opacity! #'subset-def true)
+;; not yet read (cf. algebra)
+
 (definition seteq-def
   "Equality on sets.
 
@@ -400,15 +439,16 @@ Note that the identification with [[seteq]] is non-trivial,
        (subset s1 s2)))
 
 (proof 'set-equal-implies-subset
-  (assume [H (set-equal s1 s2)
-           x T]
-    (pose Qx := (lambda [s (set T)]
-                        (elem x s)))
-    (have <a> (<=> (elem x s1) (elem x s2))
-          :by (H Qx))
-    (have <b> (==> (elem x s1) (elem x s2))
-          :by (p/iff-elim-if <a>)))
-  (qed <b>))
+  (assume [H (set-equal s1 s2)]
+    (assume [x T]
+      (pose Qx := (lambda [s (set T)]
+                    (elem x s)))
+      (have <a> (<=> (elem x s1) (elem x s2))
+            :by (H Qx))
+      (have <b> (==> (elem x s1) (elem x s2))
+            :by (p/iff-elim-if <a>)))
+    (have <c> (subset s1 s2) :by ((subset-intro s1 s2) <b>)))
+  (qed <c>))
 
 (defthm set-equal-implies-seteq
   "Subset-based equality implies *Leibniz*-style equality on sets."
