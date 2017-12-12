@@ -153,7 +153,7 @@ The image of an element `x` by partial function `f` is unique, cf. [[pfun-img-un
   (let [[T U f dom ran] (fetch-pfun-type def-env ctx pf-ty)]
     (list #'pfun-img-uniq-prop T U f dom ran pf x xin)))
 
-(definition pfinjective-def
+(definition pinjective-def
   "An injective partial function."
   [[T :type] [U :type] [f (rel T U)] [dom (set T)] [ran (set U)] [pf (pfun f dom ran)]]
   (forall-in [x1 T dom]
@@ -164,5 +164,37 @@ The image of an element `x` by partial function `f` is unique, cf. [[pfun-img-un
                (f x2 y2)
                (equal y1 y2)
                (equal x1 x2)))))))
+
+(defimplicit pinjective
+  "An injective partial function, cf. [[pinjective-def]]."
+  [def-env ctx [pf pf-ty]]
+  (let [[T U f dom ran] (fetch-pfun-type def-env ctx pf-ty)]
+    (list #'pinjective-def T U f dom ran pf)))
+
+(definition psurjective-def
+  "A surjective partial function."
+  [[T :type] [U :type] [f (rel T U)] [dom (set T)] [ran (set U)] [pf (pfun f dom ran)]]
+  (forall-in [y U ran]
+    (exists-in [x T dom]
+      (f x y))))
+
+(defimplicit psurjective
+  "An surjective partial function, cf. [[psurjective-def]]."
+  [def-env ctx [pf pf-ty]]
+  (let [[T U f dom ran] (fetch-pfun-type def-env ctx pf-ty)]
+    (list #'psurjective-def T U f dom ran pf)))
+
+
+(definition pbijective-def
+  "A bijective partial function."
+  [[T :type] [U :type] [f (rel T U)] [dom (set T)] [ran (set U)] [pf (pfun f dom ran)]]
+  (and (pinjective pf)
+       (psurjective pf)))
+
+(defimplicit pbijective
+  "An bijective partial function, cf. [[pbijective-def]]."
+  [def-env ctx [pf pf-ty]]
+  (let [[T U f dom ran] (fetch-pfun-type def-env ctx pf-ty)]
+    (list #'pbijective-def T U f dom ran pf)))
 
 
