@@ -626,5 +626,3 @@ The proper subset relation is transitive, cf. [[psubset-trans-thm]]."
 
 
 
-
-
