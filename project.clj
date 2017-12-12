@@ -1,4 +1,4 @@
-(defproject latte-sets "0.4.2-SNAPSHOT"
+(defproject latte-sets "0.5.0-SNAPSHOT"
   :description "A formalization of (typed) Set theory in LaTTe."
   :url "https://github.com/fredokun/latte-sets.git"
   :license {:name "MIT Licence"
@@ -11,5 +11,6 @@
                        latte-sets.algebra
                        latte-sets.powerset
                        latte-sets.rel
-                       latte-sets.ralgebra]}
+                       latte-sets.ralgebra
+                       latte-sets.pfun]}
   :plugins [[lein-codox "0.10.3"]])

@@ -1,9 +1,16 @@
 (ns latte-sets.pfun
   "Partial functions are defined in this namespace as
   a relation (in the type theoretic sense) of type
-  `(==> A B :type)` together with a domain set `sA` and a range set `sB`
-   such that for any element of the domain `sA` there is a unique
-  image in the range `sB`."
+  `(==> T U :type)` together with a domain `dom` of type `(set T)`
+  and a range `ran` of type `(set U)`
+   such that for any element of the domain there is a unique
+  image in the range.
+
+  **Remark**: in type theory, it is best to rely on total functions because
+  these are 'native' through the function type `==>`. Partial functions are encoded and thus more complex and less 'natural', use with care."
+
+  (:refer-clojure :exclude [and or not set])
+
   (:require [latte.core :as latte :refer [definition defthm defaxiom defnotation
                                           defimplicit
                                           forall lambda
