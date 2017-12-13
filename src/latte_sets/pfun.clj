@@ -23,62 +23,39 @@
             [latte-sets.rel :as rel :refer [rel]]))
 
 
-(definition pfun-ex-def
-  "A partial function `f` based on a relation together with
-a domain set `dom` and a range set `ran`. This is the existential condition."
-  [[T :type] [U :type] [f (rel T U)] [dom (set T)] [ran (set U)]]
-  (forall-in [x T dom]
-    (exists-in [y U ran]
-      (f x y))))
-
-(definition pfun-single-def
-  "The singleness condition for partial functions."
-  [[T :type] [U :type] [f (rel T U)] [dom (set T)] [ran (set U)]]
-  (forall-in [x T dom]
-    (forall [y1 y2 U]
-      (==> (elem y1 ran)
-           (elem y2 ran)
-           (f x y1)
-           (f x y2)
-           (equal y1 y2)))))
-
 (definition pfun-def
   "A partial function `f` based on a relation together with
-a domain set `dom` and a range set `ran`."
-  [[T :type] [U :type] [f (rel T U)] [dom (set T)] [ran (set U)]]
-  (and (pfun-ex-def T U f dom ran)
-       (pfun-single-def T U f dom ran)))
+a domain set `from` and a range set `to`."
+  [[T :type] [U :type] [f (rel T U)] [from (set T)] [to (set U)]]
+  (forall-in [x T from]
+    (forall-in [y1 U to]
+      (forall-in [y2 U to]
+        (==> (f x y1)
+             (f x y2)
+             (equal y1 y2))))))
 
 (defimplicit pfun
   "A partial function `f` based on a relation together with
-a domain set `dom` and a range set `ran`, cf. [[pfun-def]]."
-  [def-env ctx [f f-ty] [dom dom-ty] [ran ran-ty]]
+a domain set `from` and a range set `to`, cf. [[pfun-def]]."
+  [def-env ctx [f f-ty] [from from-ty] [to to-ty]]
   (let [[T U] (rel/fetch-rel-type def-env ctx f-ty)]
-    (list #'pfun-def T U f dom ran)))
+    (list #'pfun-def T U f from to)))
 
-(defthm pfun-ex-prop
-  "The existential property of partial functions, cf [[pfun-ex-def]]."
-  [[T :type] [U :type] [f (rel T U)] [dom (set T)] [ran (set U)] [pf (pfun f dom ran)]]
-  (forall-in [x T dom]
-    (exists-in [y U ran]
-      (f x y))))
+;; before making the definition opaque, we need the
+;; following to fetch the defining property
 
-(proof 'pfun-ex-prop
-  (qed (p/and-elim-left pf)))
+(defthm pfun-prop-thm
+  "The defining property of partial functions."
+  [[T :type] [U :type] [f (rel T U)] [from (set T)] [to (set U)] [pf (pfun f from to)]]
+  (forall-in [x T from]
+    (forall-in [y1 U to]
+      (forall-in [y2 U to]
+        (==> (f x y1)
+             (f x y2)
+             (equal y1 y2))))))
 
-(defthm pfun-single-prop
-  "The singleness property of partial functions, cf [[pfun-single-def]]."
-  [[T :type] [U :type] [f (rel T U)] [dom (set T)] [ran (set U)] [pf (pfun f dom ran)]]
-  (forall-in [x T dom]
-    (forall [y1 y2 U]
-      (==> (elem y1 ran)
-           (elem y2 ran)
-           (f x y1)
-           (f x y2)
-           (equal y1 y2)))))
-
-(proof 'pfun-single-prop
-  (qed (p/and-elim-right pf)))
+(proof 'pfun-prop-thm
+  (qed pf))
 
 ;; the definition of a partial function should in most
 ;; cases treated as opaque
@@ -94,79 +71,19 @@ a domain set `dom` and a range set `ran`, cf. [[pfun-def]]."
        (throw (ex-info "Not a partial function type." {:type t}))))
    def-env ctx t))
 
-(defimplicit pfun-ex
-  "The existential property of partial functions, cf. [[pfun-ex-prop]]."
+(defimplicit pfun-prop
+  "The definition property of partial functions, cf. [[pfun-prop-thm]]."
   [def-env ctx [pf pf-ty]]
-  (let [[T U f dom ran] (fetch-pfun-type def-env ctx pf-ty)]
-    (list #'pfun-ex-prop T U f dom ran pf)))
-
-(defimplicit pfun-single
-  "The singleness property of partial functions, cf. [[pfun-single-prop]]."
-  [def-env ctx [pf pf-ty]]
-  (let [[T U f dom ran] (fetch-pfun-type def-env ctx pf-ty)]
-    (list #'pfun-single-prop T U f dom ran pf)))
-
-(defaxiom pfun-img-ax
-  [[T :type] [U :type] [f (rel T U)] [dom (set T)] [ran (set U)]
-   [pf (pfun f dom ran)] [x T] [xin (elem x dom)]]
-  U)
-
-(defimplicit pfun-img
-  "The image of `x` in domain of partial function `f`."
-  [def-env ctx [pf pf-ty] [x x-ty] [xin xin-ty]]
-  (let [[T U f dom ran] (fetch-pfun-type def-env ctx pf-ty)]
-    (list #'pfun-img-ax T U f dom ran pf x xin)))
-
-(defaxiom pfun-img-prop-ax
-  "The unique image of an element `x` in the domain of partial function `f`."
-  [[T :type] [U :type] [f (rel T U)] [dom (set T)] [ran (set U)]
-   [pf (pfun f dom ran)] [x T] [xin (elem x dom)]]
-  (and (elem (pfun-img pf x xin) ran)
-       (f x (pfun-img pf x xin))))
-
-(defimplicit pfun-img-prop
-  "The unique image of an element `x` in the domain of partial function `f`."
-  [def-env ctx [pf pf-ty] [x x-ty] [xin xin-ty]]
-  (let [[T U f dom ran] (fetch-pfun-type def-env ctx pf-ty)]
-    (list #'pfun-img-prop-ax T U f dom ran pf x xin)))
-
-(defthm pfun-img-uniq-prop
-  "The image of an element `x` by partial function `f` is unique."
-  [[T :type] [U :type] [f (rel T U)] [dom (set T)] [ran (set U)]
-   [pf (pfun f dom ran)] [x T] [xin (elem x dom)]]
-  (forall-in [y U ran]
-    (==> (f x y)
-         (equal y (pfun-img pf x xin)))))
-
-(proof 'pfun-img-uniq-prop
-  (pose img := (pfun-img pf x xin))
-  (assume [y U
-           Hy1 (elem y ran)
-           Hy2 (f x y)]
-    (have <a> (equal y img)
-          :by ((pfun-single pf)
-               x xin y img               
-               Hy1
-               (p/and-elim-left (pfun-img-prop pf x xin))
-               Hy2
-               (p/and-elim-right (pfun-img-prop pf x xin)))))
-  (qed <a>))
-
-(defimplicit pfun-img-uniq
-  "`(pfun-img-uniq [f (rel T U)] [dom (set T)] [ran (set U)] [pf (pfun f dom ran)] [x T] [xin (set T)])`
-
-The image of an element `x` by partial function `f` is unique, cf. [[pfun-img-unique-prop]]."
-  [def-env ctx [f f-ty] [dom dom-ty] [ran ran-ty] [pf pf-ty] [x x-ty] [xin xin-ty]]
-  (let [[T U f dom ran] (fetch-pfun-type def-env ctx pf-ty)]
-    (list #'pfun-img-uniq-prop T U f dom ran pf x xin)))
+  (let [[T U f from to] (fetch-pfun-type def-env ctx pf-ty)]
+    (list #'pfun-prop-thm T U f from to pf)))
 
 (definition pinjective-def
   "An injective partial function."
-  [[T :type] [U :type] [f (rel T U)] [dom (set T)] [ran (set U)] [pf (pfun f dom ran)]]
-  (forall-in [x1 T dom]
-    (forall-in [x2 T dom]
-      (forall-in [y1 U ran]
-        (forall-in [y2 U ran]
+  [[T :type] [U :type] [f (rel T U)] [from (set T)] [to (set U)] [pf (pfun f from to)]]
+  (forall-in [x1 T from]
+    (forall-in [x2 T from]
+      (forall-in [y1 U to]
+        (forall-in [y2 U to]
           (==> (f x1 y1)
                (f x2 y2)
                (equal y1 y2)
@@ -175,33 +92,32 @@ The image of an element `x` by partial function `f` is unique, cf. [[pfun-img-un
 (defimplicit pinjective
   "An injective partial function, cf. [[pinjective-def]]."
   [def-env ctx [pf pf-ty]]
-  (let [[T U f dom ran] (fetch-pfun-type def-env ctx pf-ty)]
-    (list #'pinjective-def T U f dom ran pf)))
+  (let [[T U f from to] (fetch-pfun-type def-env ctx pf-ty)]
+    (list #'pinjective-def T U f from to pf)))
 
 (definition psurjective-def
   "A surjective partial function."
-  [[T :type] [U :type] [f (rel T U)] [dom (set T)] [ran (set U)] [pf (pfun f dom ran)]]
-  (forall-in [y U ran]
-    (exists-in [x T dom]
+  [[T :type] [U :type] [f (rel T U)] [from (set T)] [to (set U)] [pf (pfun f from to)]]
+  (forall-in [y U to]
+    (exists-in [x T from]
       (f x y))))
 
 (defimplicit psurjective
   "An surjective partial function, cf. [[psurjective-def]]."
   [def-env ctx [pf pf-ty]]
-  (let [[T U f dom ran] (fetch-pfun-type def-env ctx pf-ty)]
-    (list #'psurjective-def T U f dom ran pf)))
-
+  (let [[T U f from to] (fetch-pfun-type def-env ctx pf-ty)]
+    (list #'psurjective-def T U f from to pf)))
 
 (definition pbijective-def
   "A bijective partial function."
-  [[T :type] [U :type] [f (rel T U)] [dom (set T)] [ran (set U)] [pf (pfun f dom ran)]]
+  [[T :type] [U :type] [f (rel T U)] [from (set T)] [to (set U)] [pf (pfun f from to)]]
   (and (pinjective pf)
        (psurjective pf)))
 
 (defimplicit pbijective
   "An bijective partial function, cf. [[pbijective-def]]."
   [def-env ctx [pf pf-ty]]
-  (let [[T U f dom ran] (fetch-pfun-type def-env ctx pf-ty)]
-    (list #'pbijective-def T U f dom ran pf)))
+  (let [[T U f from to] (fetch-pfun-type def-env ctx pf-ty)]
+    (list #'pbijective-def T U f from to pf)))
 
 
