@@ -41,26 +41,6 @@ a domain set `from` and a range set `to`, cf. [[pfun-def]]."
   (let [[T U] (rel/fetch-rel-type def-env ctx f-ty)]
     (list #'pfun-def T U f from to)))
 
-;; before making the definition opaque, we need the
-;; following to fetch the defining property
-
-(defthm pfun-prop-thm
-  "The defining property of partial functions."
-  [[T :type] [U :type] [f (rel T U)] [from (set T)] [to (set U)] [pf (pfun f from to)]]
-  (forall-in [x T from]
-    (forall-in [y1 U to]
-      (forall-in [y2 U to]
-        (==> (f x y1)
-             (f x y2)
-             (equal y1 y2))))))
-
-(proof 'pfun-prop-thm
-  (qed pf))
-
-;; the definition of a partial function should in most
-;; cases treated as opaque
-(latte.utils/set-opacity! #'pfun-def true)
-
 (defn fetch-pfun-type [def-env ctx t]
   (latte.utils/decomposer
    (fn [t]
@@ -71,15 +51,9 @@ a domain set `from` and a range set `to`, cf. [[pfun-def]]."
        (throw (ex-info "Not a partial function type." {:type t}))))
    def-env ctx t))
 
-(defimplicit pfun-prop
-  "The definition property of partial functions, cf. [[pfun-prop-thm]]."
-  [def-env ctx [pf pf-ty]]
-  (let [[T U f from to] (fetch-pfun-type def-env ctx pf-ty)]
-    (list #'pfun-prop-thm T U f from to pf)))
-
 (definition pinjective-def
   "An injective partial function."
-  [[T :type] [U :type] [f (rel T U)] [from (set T)] [to (set U)] [pf (pfun f from to)]]
+  [[T :type] [U :type] [f (rel T U)] [from (set T)] [to (set U)]]
   (forall-in [x1 T from]
     (forall-in [x2 T from]
       (forall-in [y1 U to]
@@ -91,33 +65,33 @@ a domain set `from` and a range set `to`, cf. [[pfun-def]]."
 
 (defimplicit pinjective
   "An injective partial function, cf. [[pinjective-def]]."
-  [def-env ctx [pf pf-ty]]
-  (let [[T U f from to] (fetch-pfun-type def-env ctx pf-ty)]
-    (list #'pinjective-def T U f from to pf)))
+  [def-env ctx [f f-ty] [from from-ty] [to to-ty]]
+  (let [[T U] (rel/fetch-rel-type def-env ctx f-ty)]
+    (list #'pinjective-def T U f from to)))
 
 (definition psurjective-def
   "A surjective partial function."
-  [[T :type] [U :type] [f (rel T U)] [from (set T)] [to (set U)] [pf (pfun f from to)]]
+  [[T :type] [U :type] [f (rel T U)] [from (set T)] [to (set U)]]
   (forall-in [y U to]
     (exists-in [x T from]
       (f x y))))
 
 (defimplicit psurjective
   "An surjective partial function, cf. [[psurjective-def]]."
-  [def-env ctx [pf pf-ty]]
-  (let [[T U f from to] (fetch-pfun-type def-env ctx pf-ty)]
-    (list #'psurjective-def T U f from to pf)))
+  [def-env ctx [f f-ty] [from from-ty] [to to-ty]]
+  (let [[T U] (rel/fetch-rel-type def-env ctx f-ty)]
+    (list #'psurjective-def T U f from to)))
 
 (definition pbijective-def
   "A bijective partial function."
-  [[T :type] [U :type] [f (rel T U)] [from (set T)] [to (set U)] [pf (pfun f from to)]]
-  (and (pinjective pf)
-       (psurjective pf)))
+  [[T :type] [U :type] [f (rel T U)] [from (set T)] [to (set U)]]
+  (and (pinjective f from to)
+       (psurjective f from to)))
 
 (defimplicit pbijective
   "An bijective partial function, cf. [[pbijective-def]]."
-  [def-env ctx [pf pf-ty]]
-  (let [[T U f from to] (fetch-pfun-type def-env ctx pf-ty)]
-    (list #'pbijective-def T U f from to pf)))
+  [def-env ctx [f f-ty] [from from-ty] [to to-ty]]
+  (let [[T U] (rel/fetch-rel-type def-env ctx f-ty)]
+    (list #'pbijective-def T U f from to)))
 
 
