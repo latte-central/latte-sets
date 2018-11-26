@@ -15,9 +15,9 @@ to deal with powersets."
                                             defimplicit
                                             forall lambda
                                             assume have pose proof qed lambda]]
-              [latte.quant :as q :refer [exists]]
-              [latte.prop :as p :refer [<=> and or not]]
-              [latte.equal :as eq :refer [equal]]
+              [latte-prelude.quant :as q :refer [exists]]
+              [latte-prelude.prop :as p :refer [<=> and or not]]
+              [latte-prelude.equal :as eq :refer [equal]]
 
               [latte-sets.core :as s :refer [set elem seteq subset]]))
 
@@ -108,7 +108,7 @@ adpated for sets."
     (list #'set-ex-intro-thm T X x)))
 
 (definition set-single-def
-  "The powerset version of [[latte.quant/single]].
+  "The powerset version of [[latte-prelude.quant/single]].
 There exists at most one set ..."
   [[T :type] [X (powerset T)]]
   (forall [x y (set T)]
@@ -124,7 +124,7 @@ cf. [[set-single-def]]"
     (list #'set-single-def T X)))
 
 (definition set-unique-def
-  "The powerset version of [[latte.quant/unique]].
+  "The powerset version of [[latte-prelude.quant/unique]].
 There exists a unique set ..."
   [[T :type] [X (powerset T)]]
   (and (set-ex X)
@@ -138,7 +138,7 @@ cf. [[set-unique-def]]"
     (list #'set-unique-def T X)))
 
 (defaxiom the-set-ax
-  "The powerset version of [[latte.quant/the]]."
+  "The powerset version of [[latte-prelude.quant/the]]."
   [[T :type] [X (powerset T)] [u (set-unique X)]]
   (set T))
 

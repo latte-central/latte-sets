@@ -15,9 +15,9 @@
                                           defimplicit
                                           forall lambda
                                           assume have pose proof qed lambda]]
-            [latte.quant :as q :refer [exists]]
-            [latte.prop :as p :refer [<=> and or not]]
-            [latte.equal :as eq :refer [equal]]
+            [latte-prelude.quant :as q :refer [exists]]
+            [latte-prelude.prop :as p :refer [<=> and or not]]
+            [latte-prelude.equal :as eq :refer [equal]]
 
             [latte-sets.core :as s :refer [set elem seteq subset forall-in exists-in]]
             [latte-sets.rel :as rel :refer [rel]]))

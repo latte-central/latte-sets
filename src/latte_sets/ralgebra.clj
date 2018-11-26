@@ -8,9 +8,9 @@
                      forall lambda defimplicit
                      assume have pose qed proof lambda forall]]
  
-            [latte.quant :as q :refer [exists]]
-            [latte.prop :as p :refer [<=> and or not]]
-            [latte.equal :as eq :refer [equal]]
+            [latte-prelude.quant :as q :refer [exists]]
+            [latte-prelude.prop :as p :refer [<=> and or not]]
+            [latte-prelude.equal :as eq :refer [equal]]
 
             [latte-sets.core :as sets
              :refer [set elem subset seteq set-equal emptyset fullset]]

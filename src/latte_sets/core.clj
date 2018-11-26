@@ -22,9 +22,9 @@ natural translation to the typed setting.
                                           forall lambda
                                           assume have pose proof qed]]
             [latte.utils :as u]
-            [latte.quant :as q :refer [exists]]
-            [latte.prop :as p :refer [<=> and or not]]
-            [latte.equal :as eq :refer [equal]]))
+            [latte-prelude.quant :as q :refer [exists]]
+            [latte-prelude.prop :as p :refer [<=> and or not]]
+            [latte-prelude.equal :as eq :refer [equal]]))
 
 (definition set
   "The type of sets whose elements are of type `T`."

@@ -10,9 +10,9 @@ a given type `T` to elements of `U` is formalized with type `(==> T U :type)`.
   (:require [latte.core :as latte :refer [definition defaxiom defthm defimplicit
                                           deflemma forall lambda
                                           proof assume have pose qed]]
-            [latte.prop :as p :refer [and or not <=>]]
-            [latte.equal :as eq :refer [equal]]
-            [latte.quant :as q :refer [exists]]
+            [latte-prelude.prop :as p :refer [and or not <=>]]
+            [latte-prelude.equal :as eq :refer [equal]]
+            [latte-prelude.quant :as q :refer [exists]]
             [latte-sets.core :as sets :refer [set elem]]))
 
 (definition rel
