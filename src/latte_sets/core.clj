@@ -37,6 +37,19 @@ This function is used for implicit in sets."
   (let [[T _] (p/decompose-impl-type def-env ctx s-type)]
     T))
 
+(defnotation set-of
+  "Definition of a set by comprehension.
+
+  `(set-of [x T] (P x))` is the set of all `x`'s of type `T` such
+ that `(P x)`. This is similar to the notation `{x : T | P(x) }` in classical mathematics.
+
+Note that it is exactly the same as `(lambda [x T] (P x))`"
+  [binding body]
+  (if (not= (count binding) 2)
+    [:ko {:msg "Binding of `set-of` should be of the form `[x T]`."
+          :binding binding}]
+    [:ok (list 'lambda [(first binding) (second binding)] body)]))
+
 (definition elem-def
   "Set membership. 
 
@@ -90,7 +103,7 @@ shortcut for `(exists [x T]
 (all the inhabitants of the type are element
 of the full set)."
   [[T :type]]
-  (lambda [x T] p/truth))
+  (set-of [x T] p/truth))
 
 (defthm fullset-intro
   "Introduction rule for the full set."
@@ -106,7 +119,7 @@ of the full set)."
 (definition emptyset
   "The empty set of a type."
   [[T :type]]
-  (lambda [x T] p/absurd))
+  (set-of [x T] p/absurd))
 
 (defthm emptyset-prop
   "The main property of the empty set."
