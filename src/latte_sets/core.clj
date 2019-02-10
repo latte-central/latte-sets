@@ -135,8 +135,7 @@ of the full set)."
 
 (definition subset-def
   "The subset relation for type `T`.
-
-The expression `(subset T s1 s2)` means that
+The expression `(subset-def T s1 s2)` means that
  the set `s1` is a subset of `s2`, i.e. `s1`⊆`s2`."
   [[T :type] [s1 (set T)] [s2 (set T)]]
   (forall [x T]
@@ -276,9 +275,9 @@ The expression `(subset T s1 s2)` means that
 ;; not yet read (cf. algebra)
 
 (definition seteq-def
-  "Equality on sets.
-
-This is a natural equality on sets based on the subset relation."
+  "Set equivalence.
+This is a natural notion of \"equal sets\"
+ based on the subset relation."
   [[T :type] [s1 (set T)] [s2 (set T)]]
   (and (subset s1 s2)
        (subset s2 s1)))
