@@ -16,5 +16,5 @@
                        latte-sets.rel
                        latte-sets.ralgebra
                        latte-sets.pfun]}
-  :plugins [[lein-codox "0.10.5"]])
+  :plugins [[lein-codox "0.10.6"]])
 

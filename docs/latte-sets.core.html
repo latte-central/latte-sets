@@ -79,8 +79,7 @@
 (seteq s1 s2)</code></p>
 <p>Set <code>s1</code> is equal to <code>s2</code>, cf. <a href="latte-sets.core.html#var-seteq-def">seteq-def</a>.</p></div></div></div><div class="public anchor" id="var-seteq-def"><h3>seteq-def</h3><div class="usage"><code>(seteq-def [T :type] [s1 (set T)] [s2 (set T)])</code></div><div class="doc"><div class="markdown"><pre><code>(and (subset s1 s2) (subset s2 s1))
 </code></pre>
-<p><strong>Definition</strong>: Equality on sets.</p>
-<p>This is a natural equality on sets based on the subset relation.</p></div></div></div><div class="public anchor" id="var-seteq-implies-set-equal-ax"><h3>seteq-implies-set-equal-ax</h3><div class="usage"><code>(seteq-implies-set-equal-ax [T :type] [s1 (set T)] [s2 (set T)])</code></div><div class="doc"><div class="markdown"><pre><code>(==&gt; (seteq s1 s2) (set-equal s1 s2))
+<p><strong>Definition</strong>: Set equivalence. This is a natural notion of “equal sets”  based on the subset relation.</p></div></div></div><div class="public anchor" id="var-seteq-implies-set-equal-ax"><h3>seteq-implies-set-equal-ax</h3><div class="usage"><code>(seteq-implies-set-equal-ax [T :type] [s1 (set T)] [s2 (set T)])</code></div><div class="doc"><div class="markdown"><pre><code>(==&gt; (seteq s1 s2) (set-equal s1 s2))
 </code></pre>
 <p><strong>Axiom</strong>: Going from subset-based equality to <em>Leibniz</em>-style equality requires this axiom. This is because we cannot lift membership  to an arbitrary predicate.</p></div></div></div><div class="public anchor" id="var-seteq-refl"><h3>seteq-refl</h3><div class="usage"></div><div class="doc"><div class="markdown"><p><code>
 (seteq-refl s)</code></p>
@@ -98,8 +97,7 @@
 (subset s1 s2)</code></p>
 <p><code>(subset s1 s2)</code> mens set <code>s1</code> is a subset of <code>s2</code> i.e. <code>s1</code>⊆<code>s2</code>, cf. <a href="latte-sets.core.html#var-subset-def">subset-def</a>.</p></div></div></div><div class="public anchor" id="var-subset-def"><h3>subset-def</h3><div class="usage"><code>(subset-def [T :type] [s1 (set T)] [s2 (set T)])</code></div><div class="doc"><div class="markdown"><pre><code>(forall [x T] (==&gt; (elem x s1) (elem x s2)))
 </code></pre>
-<p><strong>Definition</strong>: The subset relation for type <code>T</code>.</p>
-<p>The expression <code>(subset T s1 s2)</code> means that  the set <code>s1</code> is a subset of <code>s2</code>, i.e. <code>s1</code>⊆<code>s2</code>.</p></div></div></div><div class="public anchor" id="var-subset-elim-thm"><h3>subset-elim-thm</h3><div class="usage"><code>(subset-elim-thm [T :type] [s1 (set T)] [s2 (set T)] [x T])</code></div><div class="doc"><div class="markdown"><pre><code>(==&gt; (elem x s1) (subset s1 s2) (elem x s2))
+<p><strong>Definition</strong>: The subset relation for type <code>T</code>. The expression <code>(subset-def T s1 s2)</code> means that  the set <code>s1</code> is a subset of <code>s2</code>, i.e. <code>s1</code>⊆<code>s2</code>.</p></div></div></div><div class="public anchor" id="var-subset-elim-thm"><h3>subset-elim-thm</h3><div class="usage"><code>(subset-elim-thm [T :type] [s1 (set T)] [s2 (set T)] [x T])</code></div><div class="doc"><div class="markdown"><pre><code>(==&gt; (elem x s1) (subset s1 s2) (elem x s2))
 </code></pre>
 <p><strong>Theorem</strong>: Elimination rule for subset relation.</p></div></div></div><div class="public anchor" id="var-subset-emptyset-lower-bound"><h3>subset-emptyset-lower-bound</h3><div class="usage"><code>(subset-emptyset-lower-bound [T :type] [s (set T)])</code></div><div class="doc"><div class="markdown"><pre><code>(subset (emptyset T) s)
 </code></pre>
