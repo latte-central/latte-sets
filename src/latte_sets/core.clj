@@ -64,39 +64,80 @@ Given a type `T`, a value `x` of type `T` and
   [def-env ctx [x x-ty] [s s-ty]]
   (list #'elem-def x-ty x s))
 
+(defimplicit element-type-of
+  "Replaces `sterm` by its element type (if it is a set type)."
+  [def-env ctx [sterm stype]]
+  (fetch-set-type def-env ctx stype))
+
 (defnotation forall-in
   "Universal quantification over sets.
 
-  `(forall-in [x T s] (P x))` is a 
-shortcut for `(forall [x T]
-                 (==> (elem T x s)
+  `(forall-in [x s] (P x))` is a 
+shortcut for `(forall [x (element-type-of s)]
+                 (==> (elem x s)
                       (P x)))`."
   [binding body]
-  (if (not= (count binding) 3)
-    [:ko {:msg "Binding of `forall-in` should be of the form `[x T s]`."
+  (if (not= (count binding) 2)
+    [:ko {:msg "Binding of `forall-in` should be of the form `[x s]` with `s` a set."
           :binding binding}]
-    [:ok (list 'forall [(first binding) (second binding)]
-               (list '==> (list #'elem (first binding) (nth binding 2))
+    [:ok (list 'forall [(first binding) (list #'element-type-of (second binding))]
+               (list '==> (list #'elem (first binding) (second binding))
                      body))]))
 
-(alter-meta! #'forall-in update-in [:style/indent] (fn [_] [1 :form :form]))
+(alter-meta! #'forall-in update-in [:style/indent] (fn [_] [1 :form]))
+
+
+;; Example without the notation
+;; (latte/try-example [[A :type] [As (set A)]]
+;;     (forall [x A]
+;;       (==> (elem x As)
+;;            (elem x As)))
+;;   (assume [x A
+;;            Hx (elem x As)]
+;;     (have <a> (elem x As) :by Hx))
+;;   (qed <a>))
+
+;; Example with the notation
+;; (latte/try-example [[A :type] [As (set A)]]
+;;     (forall-in [x As]
+;;       (elem x As))
+;;   (assume [x A
+;;            Hx (elem x As)]
+;;     (have <a> (elem x As) :by Hx))
+;;   (qed <a>))
+
 
 (defnotation exists-in
   "Existential quantification over sets.
 
   `(exists-in [x T s] (P x))` is a 
 shortcut for `(exists [x T]
-                 (and (elem T x s)
+                 (and (elem x s)
                       (P x)))`."
   [binding body]
-  (if (not= (count binding) 3)
-    [:ko {:msg "Binding of `exists-in` should be of the form `[x T s]`."
+  (if (not= (count binding) 2)
+    [:ko {:msg "Binding of `exists-in` should be of the form `[x s]`."
           :binding binding}]
-    [:ok (list 'exists [(first binding) (second binding)]
-               (list 'and (list #'elem (first binding) (nth binding 2))
+    [:ok (list 'exists [(first binding) (list #'element-type-of (second binding))]
+               (list 'and (list #'elem (first binding) (second binding))
                      body))]))
 
-(alter-meta! #'exists-in update-in [:style/indent] (fn [_] [1 :form :form]))
+(alter-meta! #'exists-in update-in [:style/indent] (fn [_] [1 :form]))
+
+;; Example with the notation
+;; (latte/try-example [[A :type] [As (set A)] [z A] [Pz (elem z As)]]
+;;     (exists [x A]
+;;       (and (elem x As)
+;;            (elem x As)))
+;;   (have <a> (and (elem z As) (elem z As)) :by (p/and-intro Pz Pz))
+;;   (qed ((q/ex-intro (lambda [x A] (and (elem x As) (elem x As))) z) <a>)))
+
+;; Example without
+;; (latte/try-example [[A :type] [As (set A)] [z A] [Pz (elem z As)]]
+;;     (exists-in [x As]
+;;       (elem x As))
+;;   (have <a> (and (elem z As) (elem z As)) :by (p/and-intro Pz Pz))
+;;   (qed ((q/ex-intro (lambda [x A] (and (elem x As) (elem x As))) z) <a>)))
 
 (definition fullset
   "The full set of a type

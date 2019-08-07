@@ -27,9 +27,9 @@
   "A partial function `f` based on a relation together with
 a domain set `from` and a range set `to`."
   [[T :type] [U :type] [f (rel T U)] [from (set T)] [to (set U)]]
-  (forall-in [x T from]
-    (forall-in [y1 U to]
-      (forall-in [y2 U to]
+  (forall-in [x from]
+    (forall-in [y1 to]
+      (forall-in [y2 to]
         (==> (f x y1)
              (f x y2)
              (equal y1 y2))))))
@@ -54,10 +54,10 @@ a domain set `from` and a range set `to`, cf. [[pfun-def]]."
 (definition pinjective-def
   "An injective partial function."
   [[T :type] [U :type] [f (rel T U)] [from (set T)] [to (set U)]]
-  (forall-in [x1 T from]
-    (forall-in [x2 T from]
-      (forall-in [y1 U to]
-        (forall-in [y2 U to]
+  (forall-in [x1 from]
+    (forall-in [x2 from]
+      (forall-in [y1 to]
+        (forall-in [y2 to]
           (==> (f x1 y1)
                (f x2 y2)
                (equal y1 y2)
@@ -72,8 +72,8 @@ a domain set `from` and a range set `to`, cf. [[pfun-def]]."
 (definition psurjective-def
   "A surjective partial function."
   [[T :type] [U :type] [f (rel T U)] [from (set T)] [to (set U)]]
-  (forall-in [y U to]
-    (exists-in [x T from]
+  (forall-in [y to]
+    (exists-in [x from]
       (f x y))))
 
 (defimplicit psurjective
