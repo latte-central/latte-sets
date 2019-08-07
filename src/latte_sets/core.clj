@@ -110,8 +110,8 @@ shortcut for `(forall [x (element-type-of s)]
 (defnotation exists-in
   "Existential quantification over sets.
 
-  `(exists-in [x T s] (P x))` is a 
-shortcut for `(exists [x T]
+  `(exists-in [x s] (P x))` is a 
+shortcut for `(exists [x (element-type-of s)]
                  (and (elem x s)
                       (P x)))`."
   [binding body]
