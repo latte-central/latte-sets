@@ -25,13 +25,14 @@
 
 (definition pfun-def
   "A partial function `f` based on a relation together with
-a domain set `from` and a range set `to`."
+a domain set `from` and a range set `to`. Note that the relation `f` on
+outside `from` could not be a function."
   [[T :type] [U :type] [f (rel T U)] [from (set T)] [to (set U)]]
   (forall-in [x from]
     (forall-in [y1 to]
-      (forall-in [y2 to]
+      (forall [y2 U]  ;; remark: we allow to go "outside" the specified to-set
         (==> (f x y1)
-             (f x y2)
+             (f x y2) ;; for y2 what is important is that it is associated to x
              (equal y1 y2))))))
 
 (defimplicit pfun
@@ -50,6 +51,57 @@ a domain set `from` and a range set `to`, cf. [[pfun-def]]."
        (into [] (rest t))
        (throw (ex-info "Not a partial function type." {:type t}))))
    def-env ctx t))
+
+(definition ptotal-def
+  "The partial function `f` is total wrt. the provided `from`/`to` sets."
+  [[T :type] [U :type] [f (rel T U)] [from (set T)] [to (set U)]]
+  (forall-in [x from]
+    (exists-in [y to]
+      (f x y))))
+
+(defimplicit ptotal
+  "The term `(ptotal f from to)` means the partial function `f` is
+total wrt. the provided `from`/`to` sets, cf. [[ptotal-def]]."
+  [def-env ctx [f f-ty] [from from-ty] [to to-ty]]
+  (let [[T U] (rel/fetch-rel-type def-env ctx f-ty)]
+    (list #'ptotal-def T U f from to)))
+
+(defthm ptotal-not-in-range
+  [[T :type] [U :type] [f (rel T U)] [from (set T)] [to (set U)]]
+  (==> (pfun f from to)
+       (ptotal f from to)
+       (forall [y U]
+         (==> (not (elem y to))
+              (forall-in [x from]
+                (not (f x y)))))))
+
+(proof 'ptotal-not-in-range
+  (assume [Hfun _ Htot _
+           y U
+           Hy (not (elem y to))
+           x T
+           Hx1 (elem x from)
+           Hx2 (f x y)]
+    (have <a> (exists-in [z to] (f x z))
+          :by (Htot x Hx1))
+    (assume [z U
+             Hz (and (elem z to) (f x z))]
+      (have <b> (equal z y)
+            :by (Hfun 
+                 x Hx1 
+                 z (p/and-elim-left Hz) 
+                 y
+                 (p/and-elim-right Hz)
+                 Hx2))
+      (have <c> (elem y to) :by (eq/eq-subst (lambda [k U]
+                                               (elem k to))
+                                             <b> (p/and-elim-left Hz))))
+    (have <d> (elem y to) :by ((q/ex-elim (lambda [z U]
+                                           (and (elem z to) (f x z))) 
+                                         (elem y to))
+                                         <a> <c>))
+    (have <e> p/absurd :by (Hy <d>)))
+  (qed <e>))
 
 (definition pinjective-def
   "An injective partial function."
