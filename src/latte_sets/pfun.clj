@@ -153,4 +153,30 @@ total wrt. the provided `from`/`to` sets, cf. [[ptotal-def]]."
   (let [[T U] (rel/fetch-rel-type def-env ctx f-ty)]
     (list #'pbijective-def T U f from to)))
 
+(defthm pinjective-single
+  [[T :type] [U :type] [f (rel T U)] [from (set T)] [to (set U)]]
+  (==> (pfun f from to)
+       (pinjective f from to)
+       (forall-in [z to]
+         (q/single (lambda [x T] (and (elem x from) 
+                                      (forall [w U] 
+                                        (==> (f x w)
+                                             (equal w z)))))))))
 
+(proof 'pinjective-single
+  (assume [Hfun _
+           Hinj _
+           z U
+           Hz (elem z to)]
+    (pose P := (lambda [x T] (and (elem x from)
+                                  (forall [w U]
+                                    (==> (f x w)
+                                         (equal w z))))))
+    (assume [x T y T
+             Hx (P x)
+             Hy (P y)]
+      "We have to show that x equals y"
+      (have <a1> (elem x from) :by (p/and-elim-left Hx))
+      (have <a2> (elem y from) :by (p/and-elim-left Hy))
+      
+      
