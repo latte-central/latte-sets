@@ -20,7 +20,7 @@
             [latte-prelude.equal :as eq :refer [equal]]
 
             [latte-sets.core :as s :refer [set elem seteq subset forall-in exists-in]]
-            [latte-sets.rel :as rel :refer [rel]]))
+            [latte-sets.rel :as rel :refer [rel dom ran]]))
 
 
 (definition pfun-def
@@ -85,23 +85,30 @@ total wrt. the provided `from`/`to` sets, cf. [[ptotal-def]]."
     (have <a> (exists-in [z to] (f x z))
           :by (Htot x Hx1))
     (assume [z U
-             Hz (and (elem z to) (f x z))]
+             Hz1 (elem z to)
+             Hz2 (f x z)]
       (have <b> (equal z y)
             :by (Hfun 
                  x Hx1 
-                 z (p/and-elim-left Hz) 
+                 z Hz1
                  y
-                 (p/and-elim-right Hz)
+                 Hz2
                  Hx2))
       (have <c> (elem y to) :by (eq/eq-subst (lambda [k U]
                                                (elem k to))
-                                             <b> (p/and-elim-left Hz))))
-    (have <d> (elem y to) :by ((q/ex-elim (lambda [z U]
-                                           (and (elem z to) (f x z))) 
-                                         (elem y to))
-                                         <a> <c>))
+                                             <b> Hz1)))
+    (have <d> (elem y to) :by ((s/ex-in-elim to (lambda [z U]
+                                                 (f x z))
+                                             (elem y to))
+                               <a> <c>))
     (have <e> p/absurd :by (Hy <d>)))
   (qed <e>))
+
+(definition application
+  "An application is a total function on its whole domain/range."
+  [[T :type] [U :type] [f (rel T U)]]
+  (and (pfun f (dom f) (ran f))
+       (ptotal f (dom f) (ran f))))
 
 (definition pinjective-def
   "An injective partial function."
