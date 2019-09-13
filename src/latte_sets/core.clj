@@ -134,6 +134,33 @@ shortcut for `(exists [x (element-type-of s)]
 ;;   (have <a> (and (elem z As) (elem z As)) :by (p/and-intro Pz Pz))
 ;;   (qed ((q/ex-intro (lambda [x A] (and (elem x As) (elem x As))) z) <a>)))
 
+(defthm ex-in-elim-thm
+  "Elimination rule for `exists-in` existentials, a simple variant of [[latte-prelude.quant/ex-elim-thm]]."
+  [[T :type] [s (set T)] [P (==> T :type)] [A :type]]
+  (==> (exists-in [x s] (P x))
+       (forall-in [y s]
+         (==> (P y)
+              A))
+       A))
+
+(proof 'ex-in-elim-thm
+  (assume [Hex _
+           HA _]
+    (pose Q := (lambda [x T] (and (elem x s) (P x))))
+    (assume [z T
+             Hz (Q z)]
+      (have <a> A :by (HA z (p/and-elim-left Hz) (p/and-elim-right Hz))))
+    (have <b> A :by ((q/ex-elim Q A) Hex <a>)))
+  (qed <b>))
+
+(defimplicit ex-in-elim
+  "The elimination rule for the `exists-in` existential quantifier over a set `s` (of elements of type `T`).
+A typical proof instance is of the form `((ex-elim s P A) ex-proof A-proof)`
+with `ex-term` a proof of `(exists-in [x s] (P x))` and `A-proof` a proof of  `(==> (forall-in [x s] (==> (P x) A)))`. See [[ex-in-elem-thm]]."
+  [def-env ctx [s s-ty] [P P-ty] [A A-ty]]
+  (let [T (fetch-set-type def-env ctx s-ty)]
+    (list #'ex-in-elim-thm T s P A)))
+
 (definition fullset
   "The full set of a type
 (all the inhabitants of the type are element

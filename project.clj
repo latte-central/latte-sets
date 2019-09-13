@@ -11,6 +11,7 @@
   :codox {:output-path "docs"
           :metadata {:doc/format :markdown}
           :namespaces [latte-sets.core
+                       latte-sets.quant
                        latte-sets.algebra
                        latte-sets.powerset
                        latte-sets.rel

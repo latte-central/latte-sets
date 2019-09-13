@@ -20,12 +20,13 @@
             [latte-prelude.equal :as eq :refer [equal]]
 
             [latte-sets.core :as s :refer [set elem seteq subset forall-in exists-in]]
-            [latte-sets.rel :as rel :refer [rel]]))
+            [latte-sets.rel :as rel :refer [rel dom ran]]))
 
 
 (definition pfun-def
   "A partial function `f` based on a relation together with
-a domain set `from` and a range set `to`."
+a domain set `from` and a range set `to`. Note that the relation `f` on
+outside `from` or `to` need not be a function."
   [[T :type] [U :type] [f (rel T U)] [from (set T)] [to (set U)]]
   (forall-in [x from]
     (forall-in [y1 to]
@@ -35,8 +36,8 @@ a domain set `from` and a range set `to`."
              (equal y1 y2))))))
 
 (defimplicit pfun
-  "A partial function `f` based on a relation together with
-a domain set `from` and a range set `to`, cf. [[pfun-def]]."
+  "The term `(pfun f from to)` means the relation `f` is a partial function over the
+domain set `from` and range set `to`, cf. [[pfun-def]]."
   [def-env ctx [f f-ty] [from from-ty] [to to-ty]]
   (let [[T U] (rel/fetch-rel-type def-env ctx f-ty)]
     (list #'pfun-def T U f from to)))
@@ -50,6 +51,27 @@ a domain set `from` and a range set `to`, cf. [[pfun-def]]."
        (into [] (rest t))
        (throw (ex-info "Not a partial function type." {:type t}))))
    def-env ctx t))
+
+(definition ptotal-def
+  "The partial function `f` is total wrt. the provided `from`/`to` sets."
+  [[T :type] [U :type] [f (rel T U)] [from (set T)] [to (set U)]]
+  (forall-in [x from]
+    (exists-in [y to]
+      (f x y))))
+
+(defimplicit ptotal
+  "The term `(ptotal f from to)` means the partial function `f` is
+total wrt. the provided `from`/`to` sets, cf. [[ptotal-def]]."
+  [def-env ctx [f f-ty] [from from-ty] [to to-ty]]
+  (let [[T U] (rel/fetch-rel-type def-env ctx f-ty)]
+    (list #'ptotal-def T U f from to)))
+
+
+(definition application
+  "An application is a total function on its whole domain/range."
+  [[T :type] [U :type] [f (rel T U)]]
+  (and (pfun f (dom f) (ran f))
+       (ptotal f (dom f) (ran f))))
 
 (definition pinjective-def
   "An injective partial function."
@@ -94,4 +116,34 @@ a domain set `from` and a range set `to`, cf. [[pfun-def]]."
   (let [[T U] (rel/fetch-rel-type def-env ctx f-ty)]
     (list #'pbijective-def T U f from to)))
 
+(comment
+  (defthm pinjective-single
+    [[T :type] [U :type] [f (rel T U)] [from (set T)] [to (set U)]]
+    (==> (pfun f from to)
+         (pinjective f from to)
+         (forall-in [z to]
+                    (q/single (lambda [x T] (and (elem x from) 
+                                                 (forall [w U] 
+                                                         (==> (f x w)
+                                                              (equal w z)))))))))
 
+(proof 'pinjective-single
+  (assume [Hfun _
+           Hinj _
+           z U
+           Hz (elem z to)]
+    (pose P := (lambda [x T] (and (elem x from)
+                                  (forall [w U]
+                                    (==> (f x w)
+                                         (equal w z))))))
+    (assume [x T y T
+             Hx (P x)
+             Hy (P y)]
+      "We have to show that x equals y"
+      (have <a1> (elem x from) :by (p/and-elim-left Hx))
+      (have <a2> (elem y from) :by (p/and-elim-left Hy))
+      )))
+
+
+)
+      
