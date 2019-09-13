@@ -10,10 +10,11 @@ a given type `T` to elements of `U` is formalized with type `(==> T U :type)`.
   (:require [latte.core :as latte :refer [definition defaxiom defthm defimplicit
                                           deflemma forall lambda
                                           proof assume have pose qed]]
-            [latte-prelude.prop :as p :refer [and or not <=>]]
+            [latte.utils :as u]
+            [latte-prelude.prop :as p :refer [and and* or not <=>]]
             [latte-prelude.equal :as eq :refer [equal]]
             [latte-prelude.quant :as q :refer [exists]]
-            [latte-sets.core :as sets :refer [set elem]]))
+            [latte-sets.core :as sets :refer [set set-of elem]]))
 
 (definition rel
   "The type of relations."
@@ -27,29 +28,19 @@ This function is used for implicits in relations."
     (let [[U _] (p/decompose-impl-type def-env ctx cod-type)]
       [T U])))
 
-(definition dom-def
+(u/register-implicit-type-parameters-handler! 'rel fetch-rel-type 2)
+
+(definition dom
   "The domain of relation `R`."
-  [[T :type] [U :type] [R (rel T U)]]
-  (lambda [x T]
+  [[R (rel ?T ?U)]]
+  (set-of [x T]
           (exists [y U] (R x y))))
 
-(defimplicit dom
-  "`(dom R)` is the domain of relation `R`, cf. [[dom-def]]."
-  [def-env ctx [R R-ty]]
-  (let [[T U] (fetch-rel-type def-env ctx R-ty)]
-    (list #'dom-def T U R)))
-
-(definition ran-def
+(definition ran
   "The range of relation `R`."
-  [[T :type] [U :type] [R (rel T U)]]
-  (lambda [y U]
+  [[R (rel ?T ?U)]]
+  (set-of [y U]
           (exists [x T] (R x y))))
-
-(defimplicit ran
-  "`(ran R)` is the range (or codomain) of relation `R`, cf. [[ran-def]]."
-  [def-env ctx [R R-ty]]
-  (let [[T U] (fetch-rel-type def-env ctx R-ty)]
-    (list #'ran-def T U R)))
 
 (definition identity
   "The indentity relation on `T`."
@@ -57,16 +48,10 @@ This function is used for implicits in relations."
   (lambda [x y T]
     (equal x y)))
 
-(definition reflexive-def
+(definition reflexive
   "A reflexive relation."
-  [[T :type] [R (rel T T)]]
+  [[R (rel ?T ?T)]]
   (forall [x T] (R x x)))
-
-(defimplicit reflexive
-  "`(reflexive R)` holds if `R` is reflexive, cf. [[reflexive-def]]."
-  [def-env ctx [R R-ty]]
-  (let [[T _] (fetch-rel-type def-env ctx R-ty)]
-    (list #'reflexive-def T R)))
 
 (defthm ident-refl
   [[T :type]]
@@ -77,18 +62,12 @@ This function is used for implicits in relations."
     (have <a> (equal x x) :by (eq/eq-refl x)))
   (qed <a>))
 
-(definition symmetric-def
+(definition symmetric
   "A symmetric relation."
-  [[T :type] [R (rel T T)]]
+  [[R (rel ?T ?T)]]
   (forall [x y T]
     (==> (R x y)
          (R y x))))
-
-(defimplicit symmetric
-  "`(symmetric R)` holds if `R` is symmetric, cf. [[reflexive-def]]."
-  [def-env ctx [R R-ty]]
-  (let [[T _] (fetch-rel-type def-env ctx R-ty)]
-    (list #'symmetric-def T R)))
 
 (defthm ident-sym
   [[T :type]]
@@ -102,19 +81,13 @@ This function is used for implicits in relations."
     (have <b> (equal y x) :by (eq/eq-sym <a>)))
   (qed <b>))
 
-(definition transitive-def
+(definition transitive
   "A transitive relation."
-  [[T :type] [R (rel T T)]]
+  [[R (rel ?T ?T)]]
   (forall [x y z T]
     (==> (R x y)
          (R y z)
          (R x z))))
-
-(defimplicit transitive
-  "`(transitive R)` holds if `R` is transitive, cf. [[transitive-def]]."
-  [def-env ctx [R R-ty]]
-  (let [[T _] (fetch-rel-type def-env ctx R-ty)]
-    (list #'transitive-def T R)))
 
 (defthm ident-trans
   [[T :type]]
@@ -131,18 +104,12 @@ This function is used for implicits in relations."
     (have <c> (equal x z) :by (eq/eq-trans <a> <b>)))
   (qed <c>))
 
-(definition equivalence-def
+(definition equivalence
   "An equivalence relation."
-  [[T :type] [R (rel T T)]]
-  (and (reflexive R)
-       (and (symmetric R)
-            (transitive R))))
-
-(defimplicit equivalence
-  "`(equivalence R)` holds if `R` is an equivalence relation, cf. [[equivalence-def]]."
-  [def-env ctx [R R-ty]]
-  (let [[T _] (fetch-rel-type def-env ctx R-ty)]
-    (list #'equivalence-def T R)))
+  [[R (rel ?T ?T)]]
+  (and* (reflexive R)
+        (symmetric R)
+        (transitive R)))
 
 (defthm ident-equiv
   "The indentity on `T` is an equivalence relation."
@@ -150,9 +117,9 @@ This function is used for implicits in relations."
   (equivalence (identity T)))
 
 (proof 'ident-equiv
-  (qed (p/and-intro (ident-refl T)
-                    (p/and-intro (ident-sym T)
-                                 (ident-trans T)))))
+  (qed (p/and-intro* (ident-refl T)
+                     (ident-sym T)
+                     (ident-trans T))))
 
 (definition fullrel
   "The full (total) relation between `T` and `U`."
@@ -192,22 +159,16 @@ This function is used for implicits in relations."
     (have <a> p/absurd :by H))
   (qed <a>))
 
-(definition subrel-def
-  "The subset ordering for relations."
-  [[T :type] [U :type] [R1 (rel T U)] [R2 (rel T U)]]
+(definition subrel
+  "The subset ordering for relations, i.e. `R1`⊆`R2`"
+  [[R1 (rel ?T ?U)] [R2 (rel ?T ?U)]]
   (forall [x T]
     (forall [y U]
       (==> (R1 x y)
            (R2 x y)))))
 
-(defimplicit subrel
-  "The subset ordering for relations, `(subrel R1 R2)` is `R1`⊆`R2`, cf. [[subrel-def]]."
-  [def-env ctx [R1 R1-ty] [R2 R2-ty]]
-  (let [[T U] (fetch-rel-type def-env ctx R1-ty)]
-    (list #'subrel-def T U R1 R2)))
-
-(defthm subrel-refl-thm
-  [[T :type] [U :type] [R (rel T U)]]
+(defthm subrel-refl
+  [[R (rel ?T ?U)]]
   (subrel R R))
 
 (proof 'subrel-refl-thm
@@ -217,15 +178,8 @@ This function is used for implicits in relations."
     (have <a> (R x y) :by H1))
   (qed <a>))
 
-(defimplicit subrel-refl
-  "`(subrel-refl R)`
-Reflexivity of `subrel`, cf. [[subrel-refl-thm]]."
-  [def-env ctx [R R-ty]]
-  (let [[T U] (fetch-rel-type def-env ctx R-ty)]
-    (list #'subrel-refl-thm T U R)))
-
-(defthm subrel-trans-thm
-  [[T :type] [U :type] [R1 (rel T U)] [R2 (rel T U)] [R3 (rel T U)]]
+(defthm subrel-trans
+  [[R1 (rel ?T ?U)] [R2 (rel ?T ?U)] [R3 (rel ?T ?U)]]
   (==> (subrel R1 R2)
        (subrel R2 R3)
        (subrel R1 R3)))
@@ -241,16 +195,9 @@ Reflexivity of `subrel`, cf. [[subrel-refl-thm]]."
             :by (p/impl-trans <a> <b>))))
   (qed <c>))
 
-(defimplicit subrel-trans
-  "`(subrel-trans R1 R2 R3)`
-Transitivity of `subrel`, cf. [[subrel-trans-thm]]."
-  [def-env ctx [R1 R1-ty] [R2 R2-ty] [R3 R3-ty]]
-  (let [[T U] (fetch-rel-type def-env ctx R1-ty)]
-    (list #'subrel-trans-thm T U R1 R2 R3)))
-
 (defthm subrel-prop
   "Preservation of properties on relational subsets."
-  [[T :type] [U :type] [P (==> T U :type)] [R1 (rel T U)] [R2 (rel T U)]]
+  [[P (==> ?T ?U :type)] [R1 (rel ?T ?U)] [R2 (rel ?T ?U)]]
   (==> (forall [x T]
          (forall [y U]
            (==> (R2 x y)
@@ -261,7 +208,7 @@ Transitivity of `subrel`, cf. [[subrel-trans-thm]]."
            (==> (R1 x y)
                 (P x y))))))
 
-(proof 'subrel-prop
+(proof 'subrel-prop-thm
   (assume [H1 (forall [x T]
                       (forall [y U]
                               (==> (R2 x y)
@@ -276,10 +223,10 @@ Transitivity of `subrel`, cf. [[subrel-trans-thm]]."
 
 (defthm subrel-emptyrel-lower-bound
   "The empty relation is a subset of every other relations."
-  [[T :type] [U :type] [R (rel T U)]]
+  [[R (rel ?T ?U)]]
   (subrel (emptyrel T U) R))
 
-(proof 'subrel-emptyrel-lower-bound
+(proof 'subrel-emptyrel-lower-bound-thm
   (assume [x T
            y U
            Hxy ((emptyrel T U) x y)]
@@ -289,10 +236,10 @@ Transitivity of `subrel`, cf. [[subrel-trans-thm]]."
 
 (defthm subrel-fullrel-upper-bound
   "The full relation is a superset of every other relations."
-  [[T :type] [U :type] [R (rel T U)]]
+  [[R (rel ?T ?U)]]
   (subrel R (fullrel T U)))
 
-(proof 'subrel-fullrel-upper-bound
+(proof 'subrel-fullrel-upper-bound-thm
   (assume [x T
            y U
            Hxy (R x y)]
@@ -301,36 +248,22 @@ Transitivity of `subrel`, cf. [[subrel-trans-thm]]."
   (qed <a>))
 
 
-(definition releq-def
+(definition releq
   "Subset-based equality on relations."
-  [[T :type] [U :type] [R1 (rel T U)] [R2 (rel T U)]]
+  [[R1 (rel ?T ?U)] [R2 (rel ?T ?U)]]
   (and (subrel R1 R2)
        (subrel R2 R1)))
 
-(defimplicit releq
-  "`(releq R1 R2)` means relations `R1` and `R2` are equal wrt. the [[subrel]] ordering,
- cf. [[releq-def]]."
-  [def-env ctx [R1 R1-ty] [R2 R2-ty]]
-  (let [[T U] (fetch-rel-type def-env ctx R1-ty)]
-    (list #'releq-def T U R1 R2)))
-
-(defthm releq-refl-thm
-  [[T :type] [U :type] [R (rel T U)]]
+(defthm releq-refl
+  [[R (rel ?T ?U)]]
   (releq R R))
 
 (proof 'releq-refl-thm
   (have <a> (subrel R R) :by (subrel-refl R))
   (qed (p/and-intro <a> <a>)))
 
-(defimplicit releq-refl
-  "`(releq-refl R)`
-`releq` is reflexive, cf. [[releq-refl-thm]]."
-  [def-env ctx [R R-ty]]
-  (let [[T U] (fetch-rel-type def-env ctx R-ty)]
-    (list #'releq-refl-thm T U R)))
-
-(defthm releq-sym-thm
-  [[T :type] [U :type] [R1 (rel T U)] [R2 (rel T U)]]
+(defthm releq-sym
+  [[R1 (rel ?T ?U)] [R2 (rel ?T ?U)]]
   (==> (releq R1 R2)
        (releq R2 R1)))
 
@@ -340,15 +273,8 @@ Transitivity of `subrel`, cf. [[subrel-trans-thm]]."
                                  (p/and-elim-left H))))
   (qed <a>))
 
-(defimplicit releq-sym
-  "`(releq-sym R1 R2)`
-`releq` is symmetric, cf. [[releq-sym-thm]]."
-  [def-env ctx [R1 R1-ty] [R2 R2-ty]]
-  (let [[T U] (fetch-rel-type def-env ctx R1-ty)]
-    (list #'releq-sym-thm T U R1 R2)))
-
-(defthm releq-trans-thm
-  [[T :type] [U :type] [R1 (rel T U)] [R2 (rel T U)] [R3 (rel T U)]]
+(defthm releq-trans
+  [[R1 (rel ?T ?U)] [R2 (rel ?T ?U)] [R3 (rel ?T ?U)]]
   (==> (releq R1 R2)
        (releq R2 R3)
        (releq R1 R3)))
@@ -365,14 +291,7 @@ Transitivity of `subrel`, cf. [[subrel-trans-thm]]."
     (have <g> _ :by (p/and-intro <c> <f>)))
   (qed <g>))
 
-(defimplicit releq-trans
-  "`(releq-trans R1 R2 R3)`
-`releq` is transitive, cf. [[releq-trans-thm]]."
-  [def-env ctx [R1 R1-ty] [R2 R2-ty] [R3 R3-ty]]
-  (let [[T U] (fetch-rel-type def-env ctx R1-ty)]
-    (list #'releq-trans-thm T U R1 R2 R3)))
-
-(definition rel-equality
+(definition rel-equal
   "A *Leibniz*-stype equality for relations.
 
 It says that two relations `R1` and `R2` are equal iff for 
@@ -380,24 +299,17 @@ any predicate `P` then `(P R1)` if and only if `(P R2)`.
 
 Note that the identification with [[seteq]] is non-trivial,
  and requires an axiom."
-  [[T :type] [U :type] [R1 (rel T U)] [R2 (rel T U)]]
+  [[R1 (rel ?T ?U)] [R2 (rel ?T ?U)]]
   (forall [P (==> (rel T U) :type)]
           (<=> (P R1) (P R2))))
 
-(defimplicit rel-equal
-  "`(rel-equal R1 R2) means `R1` and `R2` are equal
-in the sense of *Leibniz*, cf. [[rel-equality]]."
-  [def-env ctx [R1 R1-ty] [R2 R2-ty]]
-  (let [[T U] (fetch-rel-type def-env ctx R1-ty)]
-    (list #'rel-equality T U R1 R2)))
-
 (defthm rel-equal-prop
-  [[T :type] [U :type] [R1 (rel T U)] [R2 (rel T U)] [P (==> (rel T U) :type)]]
+  [[R1 (rel ?T ?U)] [R2 (rel ?T ?U)] [P (==> (rel ?T ?U) :type)]]
   (==> (rel-equal R1 R2)
        (P R1)
        (P R2)))
 
-(proof 'rel-equal-prop
+(proof 'rel-equal-prop-thm
   (assume [H (rel-equal R1 R2)
            HR1 (P R1)]
     (have <a> (<=> (P R1) (P R2))
@@ -407,8 +319,8 @@ in the sense of *Leibniz*, cf. [[rel-equality]]."
     (have <c> (P R2) :by (<b> HR1)))
   (qed <c>))
 
-(defthm rel-equal-refl-thm
-  [[T :type] [U :type] [R (rel T U)]]
+(defthm rel-equal-refl
+  [[R (rel ?T ?U)]]
   (rel-equal R R))
 
 (proof 'rel-equal-refl-thm
@@ -418,15 +330,8 @@ in the sense of *Leibniz*, cf. [[rel-equality]]."
     (have <b> _ :by (p/and-intro <a> <a>)))
   (qed <b>))
 
-(defimplicit rel-equal-refl
-  "`(rel-equal-refl R)`
-`rel-equal` is reflexive, cf. [[rel-equal-refl-thm]]."
-  [def-env ctx [R R-ty]]
-  (let [[T U] (fetch-rel-type def-env ctx R-ty)]
-    (list #'rel-equal-refl-thm T U R)))
-
-(defthm rel-equal-sym-thm
-  [[T :type] [U :type] [R1 (rel T U)] [R2 (rel T U)]]
+(defthm rel-equal-sym
+  [[R1 (rel ?T ?U)] [R2 (rel ?T ?U)]]
   (==> (rel-equal R1 R2)
        (rel-equal R2 R1)))
 
@@ -444,15 +349,8 @@ in the sense of *Leibniz*, cf. [[rel-equality]]."
       (have <e> _ :by (p/and-intro <b> <d>))))
   (qed <e>))
 
-(defimplicit rel-equal-sym
-  "`(rel-equal-sym R1 R2)`
-`rel-equal` is symmetric, cf. [[rel-equal-sym-thm]]."
-  [def-env ctx [R1 R1-ty] [R2 R2-ty]]
-  (let [[T U] (fetch-rel-type def-env ctx R1-ty)]
-    (list #'rel-equal-sym-thm T U R1 R2)))
-
-(defthm rel-equal-trans-thm
-  [[T :type] [U :type] [R1 (rel T U)] [R2 (rel T U)] [R3 (rel T U)]]
+(defthm rel-equal-trans
+  [[R1 (rel ?T ?U)] [R2 (rel ?T ?U)] [R3 (rel ?T ?U)]]
   (==> (rel-equal R1 R2)
        (rel-equal R2 R3)
        (rel-equal R1 R3)))
@@ -478,19 +376,12 @@ in the sense of *Leibniz*, cf. [[rel-equality]]."
       (have <i> _ :by (p/and-intro <d> <h>))))
   (qed <i>))
 
-(defimplicit rel-equal-trans
-  "`(rel-equal-trans R1 R2 R3)`
-`rel-equal` is transitive, cf. [[rel-equal-trans-thm]]."
-  [def-env ctx [R1 R1-ty] [R2 R2-ty] [R3 R3-ty]]
-  (let [[T U] (fetch-rel-type def-env ctx R1-ty)]
-    (list #'rel-equal-trans-thm T U R1 R2 R3)))
-
 (defthm rel-equal-implies-subrel
-  [[T :type] [U :type] [R1 (rel T U)] [R2 (rel T U)]]
+  [[R1 (rel ?T ?U)] [R2 (rel ?T ?U)]]
   (==> (rel-equal R1 R2)
        (subrel R1 R2)))
 
-(proof 'rel-equal-implies-subrel
+(proof 'rel-equal-implies-subrel-thm
   (assume [H (rel-equal R1 R2)
            x T
            y U]
@@ -503,53 +394,46 @@ in the sense of *Leibniz*, cf. [[rel-equality]]."
   (qed <b>))
 
 (defthm rel-equal-implies-releq
-  [[T :type] [U :type] [R1 (rel T U)] [R2 (rel T U)]]
+  [[R1 (rel ?T ?U)] [R2 (rel ?T ?U)]]
   (==> (rel-equal R1 R2)
        (releq R1 R2)))
 
-(proof 'rel-equal-implies-releq
+(proof 'rel-equal-implies-releq-thm
   (assume [H (rel-equal R1 R2)]
     (have <a> (subrel R1 R2)
-          :by ((rel-equal-implies-subrel T U R1 R2) H))
+          :by ((rel-equal-implies-subrel R1 R2) H))
     (have <b> (rel-equal R2 R1)
           :by ((rel-equal-sym R1 R2) H))
     (have <c> (subrel R2 R1)
-          :by ((rel-equal-implies-subrel T U R2 R1) <b>))
+          :by ((rel-equal-implies-subrel R2 R1) <b>))
     (have <d> _ :by (p/and-intro <a> <c>)))
   (qed <d>))
 
-(defaxiom releq-implies-rel-equal-ax
-  "As for the set case (cf. [[sets/seteq-implies-set-equal-ax]]),
+(defaxiom releq-implies-rel-equal
+  "As for the set case (cf. [[sets/seteq-implies-set-equal]]),
 going from the subset-based equality to the (thus more general) *leibniz*-style
 one requires an axiom."
-  [[T :type] [U :type] [R1 (rel T U)] [R2 (rel T U)]]
+  [[R1 (rel ?T ?U)] [R2 (rel ?T ?U)]]
   (==> (releq R1 R2)
        (rel-equal R1 R2)))
 
 (defthm rel-equal-releq
   "Coincidence of *Leibniz*-style and subset-based equality for relations."
-  [[T :type] [U :type] [R1 (rel T U)] [R2 (rel T U)]]
+  [[R1 (rel ?T ?U)] [R2 (rel ?T ?U)]]
   (<=> (rel-equal R1 R2)
        (releq R1 R2)))
 
-(proof 'rel-equal-releq
-  (qed (p/and-intro (rel-equal-implies-releq T U R1 R2)
-                    (releq-implies-rel-equal-ax T U R1 R2))))
+(proof 'rel-equal-releq-thm
+  (qed (p/and-intro (rel-equal-implies-releq R1 R2)
+                    (releq-implies-rel-equal R1 R2))))
 
-(definition rcomp-def
+(definition rcomp
   "Sequential relational composition."
-  [[T :type] [U :type] [V :type] [R1 (rel T U)] [R2 (rel U V)]]
+  [[R1 (rel ?T ?U)] [R2 (rel ?U ?V)]]
   (lambda [x T]
     (lambda [z V]
       (exists [y U]
         (and (R1 x y) (R2 y z))))))
-
-(defimplicit rcomp
-  "`(rcomp R1 R2)` is the relational composition of `R1` and `R2`, cf. [[rcomp-def]]."
-  [def-env ctx [R1 R1-ty] [R2 R2-ty]]
-  (let [[T U] (fetch-rel-type def-env ctx R1-ty)
-        [_ V] (fetch-rel-type def-env ctx R2-ty)]
-    (list #'rcomp-def T U V R1 R2)))
 
 (deflemma rcomp-assoc-subrel-aux
   [[T :type] [U :type] [V :type] [W :type]
@@ -589,12 +473,11 @@ one requires an axiom."
   (qed <i>))
 
 (defthm rcomp-assoc-subrel
-  [[T :type] [U :type] [V :type] [W :type]
-   [R1 (rel T U)] [R2 (rel U V)] [R3 (rel V W)]]
+  [[R1 (rel ?T ?U)] [R2 (rel ?U ?V)] [R3 (rel ?V ?W)]]
   (subrel (rcomp R1 (rcomp R2 R3))
           (rcomp (rcomp R1 R2) R3)))
 
-(proof 'rcomp-assoc-subrel
+(proof 'rcomp-assoc-subrel-thm
   (assume [x T
            y W
            H ((rcomp R1 (rcomp R2 R3)) x y)]
@@ -646,12 +529,11 @@ one requires an axiom."
   (qed <e>))
 
 (defthm rcomp-assoc-suprel
-  [[T :type] [U :type] [V :type] [W :type]
-   [R1 (rel T U)] [R2 (rel U V)] [R3 (rel V W)]]
+  [[R1 (rel ?T ?U)] [R2 (rel ?U ?V)] [R3 (rel ?V ?W)]]
   (subrel (rcomp (rcomp R1 R2) R3)
           (rcomp R1 (rcomp R2 R3))))
 
-(proof 'rcomp-assoc-suprel
+(proof 'rcomp-assoc-suprel-thm
   (assume [x T
            z W]
     (have <a> _ :by (rcomp-assoc-suprel-aux
@@ -659,39 +541,24 @@ one requires an axiom."
                      R1 R2 R3 x z)))
   (qed <a>))
 
-(defthm rcomp-assoc-thm
+(defthm rcomp-assoc
   "Relational composition is associative."
-  [[T :type] [U :type] [V :type] [W :type]
-   [R1 (rel T U)] [R2 (rel U V)] [R3 (rel V W)]]
+  [[R1 (rel ?T ?U)] [R2 (rel ?U ?V)] [R3 (rel ?V ?W)]]
   (releq (rcomp R1 (rcomp R2 R3))
          (rcomp (rcomp R1 R2) R3)))
 
 (proof 'rcomp-assoc-thm
-  (qed (p/and-intro (rcomp-assoc-subrel T U V W R1 R2 R3)
-                    (rcomp-assoc-suprel T U V W R1 R2 R3))))
+  (qed (p/and-intro (rcomp-assoc-subrel R1 R2 R3)
+                    (rcomp-assoc-suprel R1 R2 R3))))
 
-(defimplicit rcomp-assoc
-  "`(rcomp-assoc R1 R2 R3)`. Relational composition is associative, cf. [[recomp-assoc-thm]]."
-  [def-env ctx [R1 R1-ty] [R2 R2-ty] [R3 R3-ty]]
-  (let [[T U] (fetch-rel-type def-env ctx R1-ty)
-        [_ V] (fetch-rel-type def-env ctx R2-ty)
-        [_ W] (fetch-rel-type def-env ctx R3-ty)]
-    (list #'rcomp-assoc-thm T U V W R1 R2 R3)))
-
-(definition psubrel-def
+(definition psubrel
   "The anti-reflexive variant of [[subrel]]."
-  [[T :type] [U :type] [R1 (rel T U)] [R2 (rel T U)]]
+  [[R1 (rel ?T ?U)] [R2 (rel ?T ?U)]]
   (and (subrel R1 R2)
        (not (releq R1 R2))))
 
-(defimplicit psubrel
-  "`(psubrel R1 R2)` means `R1` si a sub-relation of `R2`, cf. [[psubrel-def]]."
-  [def-env ctx [R1 R1-ty] [R2 R2-ty]]
-  (let [[T U] (fetch-rel-type def-env ctx R1-ty)]
-    (list #'psubrel-def T U R1 R2)))
-
-(defthm psubrel-antirefl-thm
-  [[T :type] [U :type] [R (rel T U)]]
+(defthm psubrel-antirefl
+  [[R (rel ?T ?U)]]
   (not (psubrel R R)))
 
 (proof 'psubrel-antirefl-thm
@@ -701,14 +568,8 @@ one requires an axiom."
     (have <b> p/absurd :by (<a> (releq-refl R))))
   (qed <b>))
 
-(defimplicit psubrel-antirefl
-  "`(psubrel-antirefl R)` means proper sub-relation is antireflexive, cf. [[psubrel-antirefl-thm]]."
-  [def-env ctx [R R-ty]]
-  (let [[T U] (fetch-rel-type def-env ctx R-ty)]
-    (list #'psubrel-antirefl-thm T U R)))
-
-(defthm psubrel-antisym-thm
-  [[T :type] [U :type] [R1 (rel T U)] [R2 (rel T U)]]
+(defthm psubrel-antisym
+  [[R1 (rel ?T ?U)] [R2 (rel ?T ?U)]]
   (not (and (psubrel R1 R2)
             (psubrel R2 R1))))
 
@@ -723,15 +584,8 @@ one requires an axiom."
     (have <c> p/absurd :by (<a> <b>)))
   (qed <c>))
 
-(defimplicit psubrel-antisym
-  "`(psubrel-antisym R1 R2)` means proper sub-relation is antisymmetric, 
-cf. [[psubrem-antisym-thm]]."
-  [def-env ctx [R1 R1-ty] [R2 R2-ty]]
-  (let [[T U] (fetch-rel-type def-env ctx R1-ty)]
-    (list #'psubrel-antisym-thm T U R1 R2)))
-
-(defthm psubrel-trans-thm
-  [[T :type] [U :type] [R1 (rel T U)] [R2 (rel T U)] [R3 (rel T U)]]
+(defthm psubrel-trans
+  [[R1 (rel ?T ?U)] [R2 (rel ?T ?U)] [R3 (rel ?T ?U)]]
   (==> (psubrel R1 R2)
        (psubrel R2 R3)
        (psubrel R1 R3)))
@@ -745,29 +599,23 @@ cf. [[psubrem-antisym-thm]]."
                (p/and-elim-left H2)))
     (assume [H3 (releq R1 R3)]
       (have <b> (rel-equal R1 R3)
-            :by ((releq-implies-rel-equal-ax T U R1 R3)
+            :by ((releq-implies-rel-equal R1 R3)
                  H3))
       (have <c> (psubrel R3 R2)
-            :by ((rel-equal-prop T U R1 R3 (lambda [R (rel T U)]
-                                                   (psubrel R R2)))
+            :by ((rel-equal-prop R1 R3 (lambda [R (rel T U)]
+                                         (psubrel R R2)))
                  <b> H1))
       (have <d> p/absurd :by ((psubrel-antisym R2 R3)
                               (p/and-intro H2 <c>))))
     (have <e> _ :by (p/and-intro <a> <d>)))
   (qed <e>))
 
-(defimplicit psubrel-trans
-  "`(psubrel-trans R1 R2 R3)` means proper sub-relation is transitive, cf. [[psubrel-trans-thm]]."
-  [def-env ctx [R1 R1-ty] [R2 R2-ty] [R3 R3-ty]]
-  (let [[T U] (fetch-rel-type def-env ctx R1-ty)]
-    (list #'psubrel-trans-thm T U R1 R2 R3)))
-
 (defthm psubrel-emptyrel
-  [[T :type] [U :type] [R (rel T U)]]
+  [[R (rel ?T ?U)]]
   (==> (psubrel (emptyrel T U) R)
        (not (releq R (emptyrel T U)))))
 
-(proof 'psubrel-emptyrel
+(proof 'psubrel-emptyrel-thm
   (assume [H (psubrel (emptyrel T U) R)]
     (assume [H' (releq R (emptyrel T U))]
       (have <a> (not (releq (emptyrel T U) R))
@@ -777,16 +625,15 @@ cf. [[psubrem-antisym-thm]]."
       (have <c> p/absurd :by (<a> <b>))))
   (qed <c>))
 
-
 (defthm psubrel-emptyrel-conv
-  [[T :type] [U :type] [R (rel T U)]]
+  [[R (rel ?T ?U)]]
   (==> (not (releq R (emptyrel T U)))
        (psubrel (emptyrel T U) R)))
 
-(proof 'psubrel-emptyrel-conv
+(proof 'psubrel-emptyrel-conv-thm
   (assume [H (not (releq R (emptyrel T U)))]
     (have <a> (subrel (emptyrel T U) R)
-          :by (subrel-emptyrel-lower-bound T U R))
+          :by (subrel-emptyrel-lower-bound R))
     (assume [H' (releq (emptyrel T U) R)]
       (have <b> (releq R (emptyrel T U))
             :by ((releq-sym (emptyrel T U) R) H'))
@@ -796,29 +643,21 @@ cf. [[psubrem-antisym-thm]]."
   (qed <d>))
 
 (defthm psubrel-emptyrel-equiv
-  [[T :type] [U :type] [R (rel T U)]]
+  [[R (rel ?T ?U)]]
   (<=> (psubrel (emptyrel T U) R)
        (not (releq R (emptyrel T U)))))
 
-(proof 'psubrel-emptyrel-equiv
-  (qed (p/and-intro (psubrel-emptyrel T U R)
-                    (psubrel-emptyrel-conv T U R))))
+(proof 'psubrel-emptyrel-equiv-thm
+  (qed (p/and-intro (psubrel-emptyrel R)
+                    (psubrel-emptyrel-conv R))))
 
-(definition prod-def
+(definition prod
   "The cartersian product of sets `s1` and `s2`, i.e. `s1`⨯`s2`."
-  [[T :type] [U :type] [s1 (set T)] [s2 (set U)]]
+  [[s1 (set ?T)] [s2 (set ?U)]]
   (lambda [x T]
     (lambda [y U]
       (and (elem x s1)
            (elem y s2)))))
-
-(defimplicit prod
-  "`(prod s1 s2)` is the cartersian product of `s1` and `s2` i.e. `s1`⨯`s2`,
-cf. [[prod-def]]."
-  [def-env ctx [s1 s1-ty] [s2 s2-ty]]
-  (let [T (sets/fetch-set-type def-env ctx s1-ty)
-        U (sets/fetch-set-type def-env ctx s2-ty)]
-    (list #'prod-def T U s1 s2)))
 
 
 
