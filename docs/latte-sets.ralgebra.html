@@ -74,7 +74,7 @@
 </code></pre>
 <p><strong>Theorem</strong>: </p></div></div></div><div class="public anchor" id="var-runion"><h3>runion</h3><div class="usage"></div><div class="doc"><div class="markdown"><p><code>
 (runion R1 R2)</code></p>
-<p><code>(runion R1 R2)</code> is the relational union of <code>R1</code> and <code>R2</code>, cf. <a href="latte-sets.algebra.html#var-union-def">union-def</a>.</p></div></div></div><div class="public anchor" id="var-runion-assoc"><h3>runion-assoc</h3><div class="usage"><code>(runion-assoc [T :type] [U :type] [R1 (rel T U)] [R2 (rel T U)] [R3 (rel T U)])</code></div><div class="doc"><div class="markdown"><pre><code>(releq (runion R1 (runion R2 R3)) (runion (runion R1 R2) R3))
+<p><code>(runion R1 R2)</code> is the relational union of <code>R1</code> and <code>R2</code>, cf. <a href="null">union-def</a>.</p></div></div></div><div class="public anchor" id="var-runion-assoc"><h3>runion-assoc</h3><div class="usage"><code>(runion-assoc [T :type] [U :type] [R1 (rel T U)] [R2 (rel T U)] [R3 (rel T U)])</code></div><div class="doc"><div class="markdown"><pre><code>(releq (runion R1 (runion R2 R3)) (runion (runion R1 R2) R3))
 </code></pre>
 <p><strong>Theorem</strong>: </p></div></div></div><div class="public anchor" id="var-runion-assoc-sym"><h3>runion-assoc-sym</h3><div class="usage"><code>(runion-assoc-sym [T :type] [U :type] [R1 (rel T U)] [R2 (rel T U)] [R3 (rel T U)])</code></div><div class="doc"><div class="markdown"><pre><code>(releq (runion (runion R1 R2) R3) (runion R1 (runion R2 R3)))
 </code></pre>
