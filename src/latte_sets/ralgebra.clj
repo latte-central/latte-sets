@@ -12,35 +12,29 @@
             [latte-prelude.prop :as p :refer [<=> and or not]]
             [latte-prelude.equal :as eq :refer [equal]]
 
-            [latte-sets.core :as sets
+            [latte-sets.core :as s
              :refer [set elem subset seteq set-equal emptyset fullset]]
 
-            [latte-sets.algebra :as alg
+            [latte-sets.algebra :as set
              :refer [union inter diff]]
 
             [latte-sets.rel :as rel
              :refer [rel dom ran subrel releq rel-equal emptyrel fullrel
                      fetch-rel-type]]))
 
-(definition runion-def
+(definition runion
   "Relational union."
-  [[T :type] [U :type] [R1 (rel T U)] [R2 (rel T U)]]
+  [[R1 (rel ?T ?U)] [R2 (rel ?T ?U)]]
   (lambda [x T]
     (lambda [y U]
       (or (R1 x y)
           (R2 x y)))))
 
-(defimplicit runion
-  "`(runion R1 R2)` is the relational union of `R1` and `R2`, cf. [[union-def]]."
-  [def-env ctx [R1 R1-ty] [R2 R2-ty]]
-  (let [[T U] (fetch-rel-type def-env ctx R1-ty)]
-    (list #'runion-def T U R1 R2)))
-
 (defthm runion-idem
-  [[T :type] [U :type] [R (rel T U)]]
+  [[R (rel ?T ?U)]]
   (releq (runion R R) R))
 
-(proof 'runion-idem
+(proof 'runion-idem-thm
   "We first prove that `R`∪`R`⊆`R`."
   (assume [x T
            y U
@@ -61,10 +55,10 @@
   (qed (p/and-intro <c> <d>)))
 
 (defthm runion-empty
-  [[T :type] [U :type] [R (rel T U)]]
+  [[R (rel ?T ?U)]]
   (releq (runion R (emptyrel T U)) R))
 
-(proof 'runion-empty
+(proof 'runion-empty-thm
   "subset case"
   (assume [x T
            y U
@@ -88,11 +82,11 @@
 
 (defthm runion-commute
   "Relational union commutes."
-  [[T :type] [U :type] [R1 (rel T U)] [R2 (rel T U)]]
+  [[R1 (rel ?T ?U)] [R2 (rel ?T ?U)]]
   (releq (runion R1 R2)
          (runion R2 R1)))
 
-(proof 'runion-commute
+(proof 'runion-commute-thm
   (assume [x T
            y U
            H ((runion R1 R2) x y)]
@@ -109,11 +103,11 @@
   (qed (p/and-intro <a> <b>)))
 
 (defthm runion-assoc
-  [[T :type] [U :type] [R1 (rel T U)] [R2 (rel T U)] [R3 (rel T U)]]
+  [[R1 (rel ?T ?U)] [R2 (rel ?T ?U)] [R3 (rel ?T ?U)]]
   (releq (runion R1 (runion R2 R3))
          (runion (runion R1 R2) R3)))
 
-(proof 'runion-assoc
+(proof 'runion-assoc-thm
   "Subset case"
   (assume [x T
            y U
@@ -198,25 +192,25 @@
   (qed (p/and-intro <f> <l>)))
 
 (defthm runion-assoc-sym
-  [[T :type] [U :type] [R1 (rel T U)] [R2 (rel T U)] [R3 (rel T U)]]
+  [[R1 (rel ?T ?U)] [R2 (rel ?T ?U)] [R3 (rel ?T ?U)]]
   (releq (runion (runion R1 R2) R3)
          (runion R1 (runion R2 R3))))
 
-(proof 'runion-assoc-sym
+(proof 'runion-assoc-sym-thm
   (have <a> (releq (runion R1 (runion R2 R3))
                    (runion (runion R1 R2) R3))
-        :by (runion-assoc T U R1 R2 R3))
+        :by (runion-assoc R1 R2 R3))
   (have <b> _ :by ((rel/releq-sym (runion R1 (runion R2 R3))
                                   (runion (runion R1 R2) R3))
                    <a>))
   (qed <b>))
 
 (defthm runion-dom
-  [[T :type] [U :type] [R1 (rel T U)] [R2 (rel T U)]]
+  [[R1 (rel ?T ?U)] [R2 (rel ?T ?U)]]
   (seteq (dom (runion R1 R2))
-         (alg/union (dom R1) (dom R2))))
+         (set/union (dom R1) (dom R2))))
 
-(proof 'runion-dom
+(proof 'runion-dom-thm
   "Subset case"
   (assume [x T
            Hx (elem x (dom (runion R1 R2)))]
@@ -234,7 +228,7 @@
         (have <c3> (or (elem x (dom R1))
                        (elem x (dom R2)))
               :by (p/or-intro-left <c2> (elem x (dom R2))))
-        (have <c> (elem x (alg/union (dom R1) (dom R2))) :by <c3>))
+        (have <c> (elem x (set/union (dom R1) (dom R2))) :by <c3>))
       (assume [HR2 (R2 x y)]
         (have <d1> (exists [y U] (R2 x y))
               :by ((q/ex-intro (lambda [k U] (R2 x k)) y)
@@ -243,17 +237,17 @@
         (have <d3> (or (elem x (dom R1))
                        (elem x (dom R2)))
               :by (p/or-intro-right (elem x (dom R1)) <d2>))
-        (have <d> (elem x (alg/union (dom R1) (dom R2))) :by <d3>))
+        (have <d> (elem x (set/union (dom R1) (dom R2))) :by <d3>))
       (have <e> _ :by (p/or-elim <b1> 
-                                 (elem x (alg/union (dom R1) (dom R2)))
+                                 (elem x (set/union (dom R1) (dom R2)))
                                  <c> <d>)))
     (have <f> _ :by ((q/ex-elim (lambda [k U]
                                         ((runion R1 R2) x k))
-                                (elem x (alg/union (dom R1) (dom R2))))
+                                (elem x (set/union (dom R1) (dom R2))))
                      <a> <e>)))
   "Supset case"
   (assume [x T
-           Hx (elem x (alg/union (dom R1) (dom R2)))]
+           Hx (elem x (set/union (dom R1) (dom R2)))]
     (have <g> (or (elem x (dom R1))
                   (elem x (dom R2))) :by Hx)
     (assume [HR1 (elem x (dom R1))]
@@ -290,13 +284,12 @@
                                <j> <m>)))
   (qed (p/and-intro <f> <n>)))
 
-
 (defthm runion-ran
-  [[T :type] [U :type] [R1 (rel T U)] [R2 (rel T U)]]
+  [[R1 (rel ?T ?U)] [R2 (rel ?T ?U)]]
   (seteq (ran (runion R1 R2))
-         (alg/union (ran R1) (ran R2))))
+         (set/union (ran R1) (ran R2))))
 
-(proof 'runion-ran
+(proof 'runion-ran-thm
   "Subset case"
   (assume [y U
            Hy (elem y (ran (runion R1 R2)))]
@@ -314,7 +307,7 @@
         (have <c3> (or (elem y (ran R1))
                        (elem y (ran R2)))
               :by (p/or-intro-left <c2> (elem y (ran R2))))
-        (have <c> (elem y (alg/union (ran R1) (ran R2))) :by <c3>))
+        (have <c> (elem y (set/union (ran R1) (ran R2))) :by <c3>))
       (assume [HR2 (R2 x y)]
         (have <d1> (exists [x T] (R2 x y))
               :by ((q/ex-intro (lambda [k T] (R2 k y)) x)
@@ -323,18 +316,18 @@
         (have <d3> (or (elem y (ran R1))
                        (elem y (ran R2)))
               :by (p/or-intro-right (elem y (ran R1)) <d2>))
-        (have <d> (elem y (alg/union (ran R1) (ran R2))) :by <d3>))
+        (have <d> (elem y (set/union (ran R1) (ran R2))) :by <d3>))
       (have <e> _ :by (p/or-elim <b1> 
-                                 (elem y (alg/union (ran R1) (ran R2)))
+                                 (elem y (set/union (ran R1) (ran R2)))
                                   <c> <d>)))
     (have <f> _ :by ((q/ex-elim (lambda [k T]
                                         ((runion R1 R2) k y))
-                                (elem y (alg/union (ran R1) (ran R2))))
+                                (elem y (set/union (ran R1) (ran R2))))
                      <a> <e>)))
 
   "Supset case"
    (assume [y U
-            Hy (elem y (alg/union (ran R1) (ran R2)))]
+            Hy (elem y (set/union (ran R1) (ran R2)))]
      (have <g> (or (elem y (ran R1))
                    (elem y (ran R2))) :by Hy)
      (assume [HR1 (elem y (ran R1))]
@@ -371,49 +364,42 @@
                                 <j> <m>)))
    (qed (p/and-intro <f> <n>)))
 
-
-(definition rinter-def
+(definition rinter
   "Relational intersection."
-  [[T :type] [U :type] [R1 (rel T U)] [R2 (rel T U)]]
+  [[R1 (rel ?T ?U)] [R2 (rel ?T ?U)]]
   (lambda [x T]
     (lambda [y U]
       (and (R1 x y)
            (R2 x y)))))
 
-(defimplicit rinter
-  "`(rinter R1 R2)` is the relational intersection of `R1` and `R2`, cf. [[rinter-def]]."
-  [def-env ctx [R1 R1-ty] [R2 R2-ty]]
-  (let [[T U] (fetch-rel-type def-env ctx R1-ty)]
-    (list #'rinter-def T U R1 R2)))
 
 (defthm rinter-elim-left
   "Elimination rule for intersection (left operand)."
-  [[T :type] [U :type] [R1 (rel T U)] [R2 (rel T U)] [x T] [y U]]
+  [[R1 (rel ?T ?U)] [R2 (rel ?T ?U)] [x ?T] [y ?U]]
   (==> ((rinter R1 R2) x y)
        (R1 x y)))
 
-(proof 'rinter-elim-left
+(proof 'rinter-elim-left-thm
   (assume [H ((rinter R1 R2) x y)]
     (have <a> (R1 x y) :by (p/and-elim-left H)))
   (qed <a>))
 
 (defthm rinter-elim-right
   "Elimination rule for intersection (right operand)."
-  [[T :type] [U :type] [R1 (rel T U)] [R2 (rel T U)] [x T] [y U]]
+  [[R1 (rel ?T ?U)] [R2 (rel ?T ?U)] [x ?T] [y ?U]]
   (==> ((rinter R1 R2) x y)
        (R2 x y)))
 
-(proof 'rinter-elim-right
+(proof 'rinter-elim-right-thm
   (assume [H ((rinter R1 R2) x y)]
     (have <a> (R2 x y) :by (p/and-elim-right H)))
   (qed <a>))
 
-
 (defthm rinter-idem
-  [[T :type] [U :type] [R (rel T U)]]
+  [[R (rel ?T ?U)]]
   (releq (rinter R R) R))
 
-(proof 'rinter-idem
+(proof 'rinter-idem-thm
   "Subset case"
   (assume [x T
            y U
@@ -431,11 +417,11 @@
   (qed (p/and-intro <b> <c>)))
 
 (defthm rinter-empty
-  [[T :type] [U :type] [R (rel T U)]]
+  [[R (rel ?T ?U)]]
   (releq (rinter R (emptyrel T U))
          (emptyrel T U)))
 
-(proof 'rinter-empty
+(proof 'rinter-empty-thm
   "Subset case."
   (assume [x T
            y U
@@ -452,11 +438,11 @@
 
 (defthm rinter-commute
   "Relation intersection commutes."
-  [[T :type] [U :type] [R1 (rel T U)] [R2 (rel T U)]]
+  [[R1 (rel ?T ?U)] [R2 (rel ?T ?U)]]
   (releq (rinter R1 R2)
          (rinter R2 R1)))
 
-(proof 'rinter-commute
+(proof 'rinter-commute-thm
   (assume [x T
            y U
            Hxy ((rinter R1 R2) x y)]
@@ -470,11 +456,11 @@
   (qed (p/and-intro <a> <b>)))
 
 (defthm rinter-assoc
-  [[T :type] [U :type] [R1 (rel T U)] [R2 (rel T U)] [R3 (rel T U)]]
+  [[R1 (rel ?T ?U)] [R2 (rel ?T ?U)] [R3 (rel ?T ?U)]]
   (releq (rinter R1 (rinter R2 R3))
          (rinter (rinter R1 R2) R3)))
 
-(proof 'rinter-assoc
+(proof 'rinter-assoc-thm
   "Subset case"
   (assume [x T
            y U
@@ -500,25 +486,25 @@
   (qed (p/and-intro <a> <b>)))
 
 (defthm rinter-assoc-sym
-  [[T :type] [U :type] [R1 (rel T U)] [R2 (rel T U)] [R3 (rel T U)]]
+  [[R1 (rel ?T ?U)] [R2 (rel ?T ?U)] [R3 (rel ?T ?U)]]
   (releq (rinter (rinter R1 R2) R3)
          (rinter R1 (rinter R2 R3))))
 
-(proof 'rinter-assoc-sym
+(proof 'rinter-assoc-sym-thm
   (have <a> (releq (rinter R1 (rinter R2 R3))
                    (rinter (rinter R1 R2) R3))
-        :by (rinter-assoc T U R1 R2 R3))
+        :by (rinter-assoc R1 R2 R3))
   (qed ((rel/releq-sym (rinter R1 (rinter R2 R3))
                        (rinter (rinter R1 R2) R3))
         <a>)))
 
 (defthm dist-runion-rinter
   "Distributivity of union over intersection."
-  [[T :type] [U :type] [R1 (rel T U)] [R2 (rel T U)] [R3 (rel T U)]]
+  [[R1 (rel ?T ?U)] [R2 (rel ?T ?U)] [R3 (rel ?T ?U)]]
   (releq (runion R1 (rinter R2 R3))
          (rinter (runion R1 R2) (runion R1 R3))))
 
-(proof 'dist-runion-rinter
+(proof 'dist-runion-rinter-thm
   "Subset case"
   (assume [x T
            y U
@@ -592,24 +578,24 @@
 
 (defthm dist-runion-rinter-sym
   "Symmetric case of [[dist-runion-rinter]]."
-  [[T :type] [U :type] [R1 (rel T U)] [R2 (rel T U)] [R3 (rel T U)]]
+  [[R1 (rel ?T ?U)] [R2 (rel ?T ?U)] [R3 (rel ?T ?U)]]
   (releq (rinter (runion R1 R2) (runion R1 R3))
          (runion R1 (rinter R2 R3))))
 
-(proof 'dist-runion-rinter-sym
+(proof 'dist-runion-rinter-sym-thm
   (have <a> (releq (runion R1 (rinter R2 R3))
                    (rinter (runion R1 R2) (runion R1 R3)))
-        :by (dist-runion-rinter T U R1 R2 R3))
+        :by (dist-runion-rinter R1 R2 R3))
   (qed ((rel/releq-sym (runion R1 (rinter R2 R3))
                        (rinter (runion R1 R2) (runion R1 R3))) <a>)))
 
 (defthm dist-rinter-runion
   "Distributivity of intersection over union."
-  [[T :type] [U :type] [R1 (rel T U)] [R2 (rel T U)] [R3 (rel T U)]]
+  [[R1 (rel ?T ?U)] [R2 (rel ?T ?U)] [R3 (rel ?T ?U)]]
   (releq (rinter R1 (runion R2 R3))
          (runion (rinter R1 R2) (rinter R1 R3))))
 
-(proof 'dist-rinter-runion
+(proof 'dist-rinter-runion-thm
   "Subset case"
   (assume [x T
            y U
@@ -669,38 +655,31 @@
 
 (defthm dist-rinter-runion-sym
   "Symmetric case of [[dist-rinter-runion]]."
-  [[T :type] [U :type] [R1 (rel T U)] [R2 (rel T U)] [R3 (rel T U)]]
+  [[R1 (rel ?T ?U)] [R2 (rel ?T ?U)] [R3 (rel ?T ?U)]]
   (releq (runion (rinter R1 R2) (rinter R1 R3))
          (rinter R1 (runion R2 R3))))
 
-(proof 'dist-rinter-runion-sym
+(proof 'dist-rinter-runion-sym-thm
   (have <a> (releq(rinter R1 (runion R2 R3))
                    (runion (rinter R1 R2) (rinter R1 R3)))
-        :by (dist-rinter-runion T U R1 R2 R3))
+        :by (dist-rinter-runion R1 R2 R3))
   (qed ((rel/releq-sym
          (rinter R1 (runion R2 R3))
          (runion (rinter R1 R2) (rinter R1 R3))) <a>)))
 
-
-(definition rdiff-def
+(definition rdiff
   "Relational difference."
-  [[T :type] [U :type] [R1 (rel T U)] [R2 (rel T U)]]
+  [[R1 (rel ?T ?U)] [R2 (rel ?T ?U)]]
   (lambda [x T]
     (lambda [y U]
       (and (R1 x y)
            (not (R2 x y))))))
 
-(defimplicit rdiff
-  "`(rdiff s1 s2)` is the relational difference of `s1` and `s2`, cf. [[rdiff-def]]."
-  [def-env ctx [R1 R1-ty] [R2 R2-ty]]
-  (let [[T U] (fetch-rel-type def-env ctx R1-ty)]
-    (list #'rdiff-def T U R1 R2)))
-
 (defthm rdiff-empty-right
-  [[T :type] [U :type] [R (rel T U)]]
+  [[R (rel ?T ?U)]]
   (releq (rdiff R (emptyrel T U)) R))
 
-(proof 'rdiff-empty-right
+(proof 'rdiff-empty-right-thm
   "Subset case"
   (assume [x T
            y U
@@ -720,10 +699,10 @@
   (qed (p/and-intro <b> <d>)))
 
 (defthm rdiff-empty-left
-  [[T :type] [U :type] [R (rel T U)]]
+  [[R (rel ?T ?U)]]
   (releq (rdiff (emptyrel T U) R) (emptyrel T U)))
 
-(proof 'rdiff-empty-left
+(proof 'rdiff-empty-left-thm
   "Subset case"
   (assume [x T
            y U
@@ -738,12 +717,11 @@
     (have <c> _ :by (<b> ((rdiff (emptyrel T U) R) x y))))
   (qed (p/and-intro <a> <c>)))
 
-
 (defthm rdiff-cancel
-  [[T :type] [U :type] [R (rel T U)]]
+  [[R (rel ?T ?U)]]
   (releq (rdiff R R) (emptyrel T U)))
 
-(proof 'rdiff-cancel
+(proof 'rdiff-cancel-thm
   "Subset case"
   (assume [x T
            y U
@@ -760,18 +738,12 @@
   (qed (p/and-intro <b> <d>)))
 
 
-(definition rcomplement-def
+(definition rcomplement
   "The complement of relation `R`."
-  [[T :type] [U :type] [R (rel T U)]]
+  [[R (rel ?T ?U)]]
   (lambda [x T]
     (lambda [y U]
             (not (R x y)))))
-
-(defimplicit rcomplement
-  "`(rcomplement R)` is the relational complement of `R`, cf. [[rcomplement-def]]."
-  [def-env ctx [R R-ty]]
-  (let [[T U] (fetch-rel-type def-env ctx R-ty)]
-    (list #'rcomplement-def T U R)))
 
 (defthm rcomp-full-empty
   [[T :type] [U :type]]
@@ -814,27 +786,21 @@
   (qed (p/and-intro <a> <b>)))
 
 
-(definition restrict-dom-def
+(definition restrict-dom
   "Restriction of domain of relation `R` to
 the subset `s`."
-  [[T :type] [U :type] [R (rel T U)] [s (set T)]]
+  [[R (rel ?T ?U)] [s (set ?T)]]
   (lambda [x T]
     (lambda [y U]
       (and (elem x s)
            (R x y)))))
 
-(defimplicit restrict-dom
-  "`(restrict-dom R s)` is the restriction of relation `R` to domain `s`, cf. [[restrict-dom-def]]."
-  [def-env ctx [R R-ty] [s s-ty]]
-  (let [[T U] (fetch-rel-type def-env ctx R-ty)]
-    (list #'restrict-dom-def T U R s)))
-
 (defthm restrict-dom-dom
-  [[T :type] [U :type] [R (rel T U)] [s (set T)]]
+  [[R (rel ?T ?U)] [s (set ?T)]]
   (seteq (dom (restrict-dom R s))
          (inter s (dom R))))
 
-(proof 'restrict-dom-dom
+(proof 'restrict-dom-dom-thm
   "Subset case"
   (assume [x T
            Hx (elem x (dom (restrict-dom R s)))]
@@ -875,85 +841,57 @@ the subset `s`."
           :by <g>))
   (qed (p/and-intro <d> <h>)))
 
-(definition subtract-dom-def
+(definition subtract-dom
   "Subtraction (or anti-restriction) of set `s` from the domain of relation `R`"
-  [[T :type] [U :type] [R (rel T U)] [s (set T)]]
+  [[R (rel ?T ?U)] [s (set ?T)]]
   (lambda [x T]
     (lambda [y U]
       (and (not (elem x s))
            (R x y)))))
 
-(defimplicit subtract-dom
-  "`(subtract-dom R s)` is the anti-restriction of relation `R` wrt. domain `s`, cf. [[subtract-dom-def]]."
-  [def-env ctx [R R-ty] [s s-ty]]
-  (let [[T U] (fetch-rel-type def-env ctx R-ty)]
-    (list #'subtract-dom-def T U R s)))
-
-(definition restrict-ran-def
+(definition restrict-ran
   "Restriction of range of relation `R` to
 the subset `s`."
-  [[T :type] [U :type] [R (rel T U)] [s (set U)]]
+  [[R (rel ?T ?U)] [s (set ?U)]]
   (lambda [x T]
     (lambda [y U]
       (and (elem y s)
            (R x y)))))
 
-(defimplicit restrict-ran
-  "`(restrict-ran R s)` is the restriction of relation `R` to range (or codomain) `s`, cf. [[restrict-ran-def]]."
-  [def-env ctx [R R-ty] [s s-ty]]
-  (let [[T U] (fetch-rel-type def-env ctx R-ty)]
-    (list #'restrict-ran-def T U R s)))
-
-(definition subtract-ran-def
+(definition subtract-ran
   "Subtraction of set `s` from the range of relation `R`"
-  [[T :type] [U :type] [R (rel T U)] [s (set U)]]
+  [[R (rel ?T ?U)] [s (set ?U)]]
   (lambda [x T]
     (lambda [y U]
       (and (not (elem y s))
            (R x y)))))
 
-(defimplicit subtract-ran
-  "`(subtract-ran R s)` is the anti-restriction of relation `R` wrt. codomain `s`, cf. [[subtract-ran-def]]."
-  [def-env ctx [R R-ty] [s s-ty]]
-  (let [[T U] (fetch-rel-type def-env ctx R-ty)]
-    (list #'subtract-ran-def T U R s)))
-
-(definition rimage-def
+(definition rimage
   "Relational image of set `s` for relation `R`."
-  [[T :type] [U :type] [R (rel T U)] [s (set T)]]
+  [[R (rel ?T ?U)] [s (set ?T)]]
   (lambda [y U]
     (exists [x T]
       (and (elem x s)
            (R x y)))))
 
-(defimplicit rimage
-  "`(rimage R s)` is the image of set `s` through relation `R`, cf. [[rimage-def]]."
-  [def-env ctx [R R-ty] [s s-ty]]
-  (let [[T U] (fetch-rel-type def-env ctx R-ty)]
-    (list #'rimage-def T U R s)))
-
-(definition rinverse-def
+(definition rinverse
   "The relational inverse of `R`."
-  [[T :type] [U :type] [R (rel T U)]]
+  [[R (rel ?T ?U)]]
   (lambda [y U]
     (lambda [x T]
             (R x y))))
 
-(defimplicit rinverse
-  "`(rinverse R)` is the inverse of relation `R`, cf. [[rinverse-def]]."
-  [def-env ctx [R R-ty]]
-  (let [[T U] (fetch-rel-type def-env ctx R-ty)]
-    (list #'rinverse-def T U R)))
-
 (defthm rinverse-prop
-  [[T :type] [U :type] [R (rel T U)] [x T] [y U]]
+  [[R (rel ?T ?U)] [x ?T] [y ?U]]
   (==> (R x y)
        ((rinverse R) y x)))
 
-(proof 'rinverse-prop
+(proof 'rinverse-prop-thm
   (assume [H (R x y)]
     (have <a> ((rinverse R) y x) :by H))
   (qed <a>))
+
+
 
 
 
