@@ -13,28 +13,21 @@
             [latte-prelude.equal :as eq :refer [equal]]
 
             [latte-sets.core :as sets
-             :refer [set elem subset seteq set-equal emptyset fullset
+             :refer [set set-of elem subset seteq set-equal emptyset fullset
                      fetch-set-type]]))
 
-(definition union-def
-  "Set union.
-`(union-def T s1 s2)` is the set `s1`∪`s2`."
-  [[T :type] [s1 (set T)] [s2 (set T)]]
+(definition union
+  "Set union, `(union s1 s2)` is the set `s1`∪`s2`."
+  [[s1 (set ?T)] [s2 (set ?T)]]
   (lambda [x T]
     (or (elem x s1)
         (elem x s2))))
 
-(defimplicit union
-  "Set union, `(union s1 s2)` is the set `s1`∪`s2`, cf. [[union-def]]."
-  [def-env ctx [s1 s1-ty] [s2 s2-ty]]
-  (let [T (fetch-set-type def-env ctx s1-ty)]
-    (list #'union-def T s1 s2)))
-
 (defthm union-idem
-  [[T :type] [s (set T)]]
+  [[s (set ?T)]]
   (seteq (union s s) s))
 
-(proof 'union-idem
+(proof 'union-idem-thm
   "We first prove that `s`∪`s`⊆`s`."
   (assume [x T
            Hx (elem x (union s s))]
@@ -53,11 +46,11 @@
   (qed (p/and-intro <c> <d>)))
 
 (defthm union-empty
-  [[T :type] [s (set T)]]
+  [[s (set ?T)]]
   (seteq (union s (emptyset T))
          s))
 
-(proof 'union-empty
+(proof 'union-empty-thm
   "subset case"
   (assume [x T
            Hx (elem x (union s (emptyset T)))]
@@ -79,11 +72,11 @@
 
 (defthm union-commute
   "Set union commutes."
-  [[T :type] [s1 (set T)] [s2 (set T)]]
+  [[s1 (set ?T)] [s2 (set ?T)]]
   (seteq (union s1 s2)
          (union s2 s1)))
 
-(proof 'union-commute
+(proof 'union-commute-thm
   (assume [x T
            H (elem x (union s1 s2))]
     (have <a1> (or (elem x s1)
@@ -102,11 +95,11 @@
   (qed <c>))
 
 (defthm union-assoc
-  [[T :type] [s1 (set T)] [s2 (set T)] [s3 (set T)]]
+  [[s1 (set ?T)] [s2 (set ?T)] [s3 (set ?T)]]
   (seteq (union s1 (union s2 s3))
          (union (union s1 s2) s3)))
 
-(proof 'union-assoc
+(proof 'union-assoc-thm
   "Subset case"
   (assume [x T
            Hx (elem x (union s1 (union s2 s3)))]
@@ -189,62 +182,52 @@
   (qed (p/and-intro <f> <l>)))
 
 (defthm union-assoc-sym
-  [[T :type] [s1 (set T)] [s2 (set T)] [s3 (set T)]]
+  [[s1 (set ?T)] [s2 (set ?T)] [s3 (set ?T)]]
   (seteq (union (union s1 s2) s3)
          (union s1 (union s2 s3))))
 
-(proof 'union-assoc-sym
+(proof 'union-assoc-sym-thm
   (have <a> (seteq (union s1 (union s2 s3))
                    (union (union s1 s2) s3))
-        :by (union-assoc T s1 s2 s3))
+        :by (union-assoc s1 s2 s3))
   (qed ((sets/seteq-sym (union s1 (union s2 s3))
                         (union (union s1 s2) s3))
         <a>)))
 
-(definition inter-def
-  "Set intersection.
-
-`(inter s1 s2)` is the set `s1`∩`s2`."
-
-  [[T :type] [s1 (set T)] [s2 (set T)]]
+(definition inter
+  "Set intersection, i.e. the set `s1`∩`s2`."
+  [[s1 (set ?T)] [s2 (set ?T)]]
   (lambda [x T]
     (and (elem x s1)
          (elem x s2))))
 
-(defimplicit inter
-  "Set intersection, `(inter s1 s2)` is the set `s1`∩`s2`, cf. [[inter-def]]."
-  [def-env ctx [s1 s1-ty] [s2 s2-ty]]
-  (let [T (fetch-set-type def-env ctx s1-ty)]
-    (list #'inter-def T s1 s2)))
-
-
 (defthm inter-elim-left
   "Elimination rule for intersection (left operand)."
-  [[T :type] [s1 (set T)] [s2 (set T)] [x T]]
+  [[s1 (set ?T)] [s2 (set ?T)] [x ?T]]
   (==> (elem x (inter s1 s2))
        (elem x s1)))
 
-(proof 'inter-elim-left
+(proof 'inter-elim-left-thm
   (assume [H (elem x (inter s1 s2))]
     (have <a> (elem x s1) :by (p/and-elim-left H)))
   (qed <a>))
 
 (defthm inter-elim-right
   "Elimination rule for intersection (right operand)."
-  [[T :type] [s1 (set T)] [s2 (set T)] [x T]]
+  [[s1 (set ?T)] [s2 (set ?T)] [x ?T]]
   (==> (elem x (inter s1 s2))
        (elem x s2)))
 
-(proof 'inter-elim-right
+(proof 'inter-elim-right-thm
   (assume [H (elem x (inter s1 s2))]
     (have <a> (elem x s2) :by (p/and-elim-right H)))
     (qed <a>))
 
 (defthm inter-idem
-  [[T :type] [s (set T)]]
+  [[s (set ?T)]]
   (seteq (inter s s) s))
 
-(proof 'inter-idem
+(proof 'inter-idem-thm
   "Subset case"
   (assume [x T
            Hx (elem x (inter s s))]
@@ -257,11 +240,11 @@
   (qed (p/and-intro <a> <b>)))
 
 (defthm inter-empty
-  [[T :type] [s (set T)]]
+  [[s (set ?T)]]
   (seteq (inter s (emptyset T))
          (emptyset T)))
 
-(proof 'inter-empty
+(proof 'inter-empty-thm
   "Subset case."
   (assume [x T
            Hx (elem x (inter s (emptyset T)))]
@@ -276,11 +259,11 @@
 
 (defthm inter-commute
   "Set intersection commutes."
-  [[T :type] [s1 (set T)] [s2 (set T)]]
+  [[s1 (set ?T)] [s2 (set ?T)]]
   (seteq (inter s1 s2)
          (inter s2 s1)))
 
-(proof 'inter-commute
+(proof 'inter-commute-thm
   (assume [x T
            H (elem x (inter s1 s2))]
     (have <a> (elem x (inter s2 s1))
@@ -295,11 +278,11 @@
   (qed <c>))
 
 (defthm inter-assoc
-  [[T :type] [s1 (set T)] [s2 (set T)] [s3 (set T)]]
+  [[s1 (set ?T)] [s2 (set ?T)] [s3 (set ?T)]]
   (seteq (inter s1 (inter s2 s3))
          (inter (inter s1 s2) s3)))
 
-(proof 'inter-assoc
+(proof 'inter-assoc-thm
   "Subset case"
   (assume [x T
            Hx (elem x (inter s1 (inter s2 s3)))]
@@ -323,25 +306,25 @@
   (qed (p/and-intro <a> <b>)))
 
 (defthm inter-assoc-sym
-  [[T :type] [s1 (set T)] [s2 (set T)] [s3 (set T)]]
+  [[s1 (set ?T)] [s2 (set ?T)] [s3 (set ?T)]]
   (seteq (inter (inter s1 s2) s3)
          (inter s1 (inter s2 s3))))
 
-(proof 'inter-assoc-sym
+(proof 'inter-assoc-sym-thm
   (have <a> (seteq (inter s1 (inter s2 s3))
                    (inter (inter s1 s2) s3))
-        :by (inter-assoc T s1 s2 s3))
+        :by (inter-assoc s1 s2 s3))
   (qed ((sets/seteq-sym (inter s1 (inter s2 s3))
                         (inter (inter s1 s2) s3))
         <a>)))
 
 (defthm dist-union-inter
   "Distributivity of union over intersection."
-  [[T :type] [s1 (set T)] [s2 (set T)] [s3 (set T)]]
+  [[s1 (set ?T)] [s2 (set ?T)] [s3 (set ?T)]]
   (seteq (union s1 (inter s2 s3))
          (inter (union s1 s2) (union s1 s3))))
 
-(proof 'dist-union-inter
+(proof 'dist-union-inter-thm
   "Subset case"
   (assume [x T
            Hx (elem x (union s1 (inter s2 s3)))]
@@ -411,27 +394,26 @@
                           <g> <j>)))
   (qed (p/and-intro <d> <k>)))
 
-
 (defthm dist-union-inter-sym
   "Symmetric case of [[dist-union-inter]]."
-  [[T :type] [s1 (set T)] [s2 (set T)] [s3 (set T)]]
+  [[s1 (set ?T)] [s2 (set ?T)] [s3 (set ?T)]]
   (seteq (inter (union s1 s2) (union s1 s3))
          (union s1 (inter s2 s3))))
 
-(proof 'dist-union-inter-sym
+(proof 'dist-union-inter-sym-thm
   (have <a> (seteq (union s1 (inter s2 s3))
                    (inter (union s1 s2) (union s1 s3)))
-        :by (dist-union-inter T s1 s2 s3))
+        :by (dist-union-inter s1 s2 s3))
   (qed ((sets/seteq-sym (union s1 (inter s2 s3))
                         (inter (union s1 s2) (union s1 s3))) <a>)))
 
 (defthm dist-inter-union
   "Distributivity of intersection over union."
-  [[T :type] [s1 (set T)] [s2 (set T)] [s3 (set T)]]
+  [[s1 (set ?T)] [s2 (set ?T)] [s3 (set ?T)]]
   (seteq (inter s1 (union s2 s3))
          (union (inter s1 s2) (inter s1 s3))))
 
-(proof 'dist-inter-union
+(proof 'dist-inter-union-thm
   "Subset case"
   (assume [x T
            Hx (elem x (inter s1 (union s2 s3)))]
@@ -489,41 +471,33 @@
 
 (defthm dist-inter-union-sym
   "Symmetric case of [[dist-inter-union]]."
-  [[T :type] [s1 (set T)] [s2 (set T)] [s3 (set T)]]
+  [[s1 (set ?T)] [s2 (set ?T)] [s3 (set ?T)]]
   (seteq
          (union (inter s1 s2) (inter s1 s3))
          (inter s1 (union s2 s3))))
 
-(proof 'dist-inter-union-sym
+(proof 'dist-inter-union-sym-thm
   (have <a> (seteq (inter s1 (union s2 s3))
                    (union (inter s1 s2) (inter s1 s3)))
-        :by (dist-inter-union T s1 s2 s3))
+        :by (dist-inter-union s1 s2 s3))
   (qed ((sets/seteq-sym
          (inter s1 (union s2 s3))
          (union (inter s1 s2) (inter s1 s3))) <a>)))
 
-
-(definition diff-def
+(definition diff
   "Set difference
 
 `(difference T s1 s2)` is the set `s1`∖`s2`."
-  [[T :type] [s1 (set T)] [s2 (set T)]]
+  [[s1 (set ?T)] [s2 (set ?T)]]
   (lambda [x T]
     (and (elem x s1)
          (not (elem x s2)))))
 
-(defimplicit diff
-  "Set difference, `(diff s1 s2)` is the set `s1`∖`s2`, cf. [[diff-def]]."
-  [def-env ctx [s1 s1-ty] [s2 s2-ty]]
-  (let [T (fetch-set-type def-env ctx s1-ty)]
-    (list #'diff-def T s1 s2)))
-
-
 (defthm diff-empty-right
-  [[T :type] [s (set T)]]
+  [[s (set ?T)]]
   (seteq (diff s (emptyset T)) s))
 
-(proof 'diff-empty-right
+(proof 'diff-empty-right-thm
   "Subset case"
   (assume [x T
            Hx (elem x (diff s (emptyset T)))]
@@ -541,10 +515,10 @@
   (qed (p/and-intro <b> <d>)))
 
 (defthm diff-empty-left
-  [[T :type] [s (set T)]]
+  [[s (set ?T)]]
   (seteq (diff (emptyset T) s) (emptyset T)))
 
-(proof 'diff-empty-left
+(proof 'diff-empty-left-thm
   "Subset case"
   (assume [x T
            Hx (elem x (diff (emptyset T) s))]
@@ -558,10 +532,10 @@
   (qed (p/and-intro <a> <c>)))
 
 (defthm diff-cancel
-  [[T :type] [s (set T)]]
+  [[s (set ?T)]]
   (seteq (diff s s) (emptyset T)))
 
-(proof 'diff-cancel
+(proof 'diff-cancel-thm
   "Subset case"
   (assume [x T
            Hx (elem x (diff s s))]
@@ -575,27 +549,21 @@
     (have <d> _ :by (<c> (elem x (diff s s)))))
   (qed (p/and-intro <b> <d>)))
 
-(definition symdiff-def
+(definition symdiff
   "Symmetric difference, often denoted by `s1`∆`s2`."
-  [[T :type] [s1 (set T)] [s2 (set T)]]
+  [[s1 (set ?T)] [s2 (set ?T)]]
   (lambda [x T]
     (or (and (elem x s1) (not (elem x s2)))
         (and (elem x s2) (not (elem x s1))))))
 
-(defimplicit symdiff
-  "Symmetric difference, `(symdiff s1 s2)` is the set `s1`∆`s2`, cf. [[symdiff-def]]."
-  [def-env ctx [s1 s1-ty] [s2 s2-ty]]
-  (let [T (fetch-set-type def-env ctx s1-ty)]
-    (list #'symdiff-def T s1 s2)))
-
 (defthm symdiff-alt
   "An alternative caracterisation of the symmetric difference."
-  [[T :type] [s1 (set T)] [s2 (set T)]]
+  [[s1 (set ?T)] [s2 (set ?T)]]
   (seteq (symdiff s1 s2)
          (union (diff s1 s2)
                 (diff s2 s1))))
 
-(proof 'symdiff-alt
+(proof 'symdiff-alt-thm
   "Subset case"
   (assume [x T
            Hx (elem x (symdiff s1 s2))]
@@ -615,8 +583,7 @@
     (have <d> (elem x (symdiff s1 s2)) :by <c>))
   (qed (p/and-intro <b> <d>)))
 
-
-(definition complement-def
+(definition complement
   "The complement of set `s`.
 
 Note that the definition is more self-contained
@@ -624,16 +591,9 @@ in type theory than with classical sets. The complement
 is here wrt. a type `T` which is well defined,
  wherease in classical set theory one has to introduce
 a somewhat unsatisfying notion of \"a universe of discourse\"."
-  [[T :type] [s (set T)]]
-  (lambda [x T]
+  [[s (set ?T)]]
+  (set-of [x T]
           (not (elem x s))))
-
-(defimplicit complement
-  "Set complement. Given a set `s` of type `(set T)`, then `(complement s)` 
- with all the inhabitants of `T` that are not member of set `s`, cf. [[complement-def]]."
-  [def-env ctx [s s-ty]]
-  (let [T (fetch-set-type def-env ctx s-ty)]
-    (list #'complement-def T s)))
 
 (defthm comp-full-empty
   [[T :type]]
@@ -670,6 +630,8 @@ a somewhat unsatisfying notion of \"a universe of discourse\"."
     (have <b> (not (elem x (emptyset T)))
           :by ((sets/emptyset-prop T) x)))
   (qed (p/and-intro <a> <b>)))
+
+
 
 
 
