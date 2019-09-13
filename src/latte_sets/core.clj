@@ -37,6 +37,9 @@ This function is used for implicit in sets."
   (let [[T _] (p/decompose-impl-type def-env ctx s-type)]
     T))
 
+;; Implicit type parameter: to infer `T` from `(set ?T)`
+(u/register-implicit-type-parameters-handler! 'set fetch-set-type 1)
+
 (defnotation set-of
   "Definition of a set by comprehension.
 
@@ -50,19 +53,13 @@ Note that it is exactly the same as `(lambda [x T] (P x))`"
           :binding binding}]
     [:ok (list 'lambda [(first binding) (second binding)] body)]))
 
-(definition elem-def
+(definition elem
   "Set membership. 
 
-Given a type `T`, a value `x` of type `T` and
- a set `s`, then `(elem T x s)` means that `x` is an element of set `s`.
- The standard mathematical notation is: `x`∊`s` (leaving the type `T` implicit)."
-  [[T :type] [x T] [s (set T)]]
+ `(elem x s)` means that `x` (of implicit type `T`) is an element of set `s`.
+ The standard mathematical notation is: `x`∊`s`."
+  [[x ?T] [s (set ?T)]]
   (s x))
-
-(defimplicit elem
-  "Object `x` is member of set `s`, cf. [[elem-def]]."
-  [def-env ctx [x x-ty] [s s-ty]]
-  (list #'elem-def x-ty x s))
 
 (defimplicit element-type-of
   "Replaces `sterm` by its element type (if it is a set type)."
@@ -86,7 +83,6 @@ shortcut for `(forall [x (element-type-of s)]
 
 (alter-meta! #'forall-in update-in [:style/indent] (fn [_] [1 :form]))
 
-
 ;; Example without the notation
 ;; (latte/try-example [[A :type] [As (set A)]]
 ;;     (forall [x A]
@@ -105,7 +101,6 @@ shortcut for `(forall [x (element-type-of s)]
 ;;            Hx (elem x As)]
 ;;     (have <a> (elem x As) :by Hx))
 ;;   (qed <a>))
-
 
 (defnotation exists-in
   "Existential quantification over sets.
@@ -174,24 +169,18 @@ of the full set)."
     (have <a> p/absurd :by H))
   (qed <a>))
 
-(definition subset-def
+(definition subset
   "The subset relation for type `T`.
 The expression `(subset-def T s1 s2)` means that
  the set `s1` is a subset of `s2`, i.e. `s1`⊆`s2`."
-  [[T :type] [s1 (set T)] [s2 (set T)]]
+  [[s1 (set ?T)] [s2 (set ?T)]]
   (forall [x T]
     (==> (elem x s1)
          (elem x s2))))
 
-(defimplicit subset
-  "`(subset s1 s2)` mens set `s1` is a subset of `s2` i.e. `s1`⊆`s2`, cf. [[subset-def]]."
-  [def-env ctx [s1 s1-ty] [s2 s2-ty]]
-  (let [T (fetch-set-type def-env ctx s1-ty)]
-    (list #'subset-def T s1 s2)))
-
-(defthm subset-refl-thm
+(defthm subset-refl
   "The subset relation is reflexive."
-  [[T :type] [s (set T)]]
+  [[s (set ?T)]]
   (subset s s))
 
 (proof 'subset-refl-thm
@@ -200,15 +189,9 @@ The expression `(subset-def T s1 s2)` means that
     (have <a> (elem x s) :by H))
   (qed <a>))
 
-(defimplicit subset-refl
-  "The subset relation is reflexive, cf. [[subset-refl-thm]]."
-  [def-env ctx [s s-ty]]
-  (let [T (fetch-set-type def-env ctx s-ty)]
-    (list #'subset-refl-thm T s)))
-
-(defthm subset-trans-thm
+(defthm subset-trans
   "The subset relation is transitive."
-  [[T :type] [s1 (set T)] [s2 (set T)] [s3 (set T)]]
+  [[s1 (set ?T)] [s2 (set ?T)] [s3 (set ?T)]]
   (==> (subset s1 s2)
        (subset s2 s3)
        (subset s1 s3)))
@@ -225,15 +208,9 @@ The expression `(subset-def T s1 s2)` means that
                      (elem x s3)) :by (p/impl-trans <a> <b>))))
   (qed <c>))
 
-(defimplicit subset-trans
-  "The subset relation is transitive, cf. [[subset-trans-thm]]."
-  [def-env ctx [s1 s1-ty] [s2 s2-ty] [s3 s3-ty]]
-  (let [T (fetch-set-type def-env ctx s1-ty)]
-    (list #'subset-trans-thm T s1 s2 s3)))
-
 (defthm subset-prop
   "Preservation of properties on subsets."
-  [[T :type] [P (==> T :type)][s1 (set T)] [s2 (set T)]]
+  [[P (==> ?T :type)][s1 (set ?T)] [s2 (set ?T)]]
   (==> (forall [x T]
          (==> (elem x s2)
               (P x)))
@@ -242,7 +219,7 @@ The expression `(subset-def T s1 s2)` means that
          (==> (elem x s1)
               (P x)))))
 
-(proof 'subset-prop
+(proof 'subset-prop-thm
   (assume [H1 (forall [x T]
                       (==> (elem x s2)
                            (P x)))
@@ -255,10 +232,10 @@ The expression `(subset-def T s1 s2)` means that
 
 (defthm subset-emptyset-lower-bound
   "The emptyset is a subset of every other sets."
-  [[T :type] [s (set T)]]
+  [[s (set ?T)]]
   (subset (emptyset T) s))
 
-(proof 'subset-emptyset-lower-bound
+(proof 'subset-emptyset-lower-bound-thm
   (assume [x T
            Hx (elem x (emptyset T))]
     (have <a> p/absurd :by Hx)
@@ -267,19 +244,19 @@ The expression `(subset-def T s1 s2)` means that
 
 (defthm subset-fullset-upper-bound
   "The fullset is a superset of every other sets."
-  [[T :type] [s (set T)]]
+  [[s (set ?T)]]
   (subset s (fullset T)))
 
-(proof 'subset-fullset-upper-bound
+(proof 'subset-fullset-upper-bound-thm
   (assume [x T
            Hx (elem x s)]
     (have <a> (elem x (fullset T))
           :by p/truth-is-true))
   (qed <a>))
 
-(defthm subset-intro-thm
+(defthm subset-intro
   "Introduction rule for subset relation."
-  [[T :type] [s1 (set T)] [s2 (set T)]]
+  [[s1 (set ?T)] [s2 (set ?T)]]
   (==> (forall [x T]
                (==> (elem x s1)
                     (elem x s2)))
@@ -292,15 +269,9 @@ The expression `(subset-def T s1 s2)` means that
     (have <a> (subset s1 s2) :by H))
   (qed <a>))
 
-(defimplicit subset-intro
-  "Introduction rule for subset, cf. [[subset-intro-thm]]."
-  [def-env ctx [s1 s1-ty] [s2 s2-ty]]
-  (let [T (fetch-set-type def-env ctx s1-ty)]
-    (list #'subset-intro-thm T s1 s2)))
-
-(defthm subset-elim-thm
+(defthm subset-elim
   "Elimination rule for subset relation."
-  [[T :type] [s1 (set T)] [s2 (set T)] [x T]]
+  [[s1 (set ?T)] [s2 (set ?T)] [x ?T]]
   (==> (elem x s1)
        (subset s1 s2)
        (elem x s2)))
@@ -315,23 +286,17 @@ The expression `(subset-def T s1 s2)` means that
 ;; (u/set-opacity! #'subset-def true)
 ;; not yet read (cf. algebra)
 
-(definition seteq-def
-  "Set equivalence.
+(definition seteq
+  "Set equivalence. Set `s1` is equal to `s2`
 This is a natural notion of \"equal sets\"
  based on the subset relation."
-  [[T :type] [s1 (set T)] [s2 (set T)]]
+  [[s1 (set ?T)] [s2 (set ?T)]]
   (and (subset s1 s2)
        (subset s2 s1)))
 
-(defimplicit seteq
-  "Set `s1` is equal to `s2`, cf. [[seteq-def]]."
-  [def-env ctx [s1 s1-ty] [s2 s2-ty]]
-  (let [T (fetch-set-type def-env ctx s1-ty)]
-    (list #'seteq-def T s1 s2)))
-
-(defthm seteq-refl-thm
+(defthm seteq-refl
   "Set equality is reflexive."
-  [[T :type] [s (set T)]]
+  [[s (set ?T)]]
   (seteq s s))
 
 (proof 'seteq-refl-thm
@@ -341,15 +306,9 @@ This is a natural notion of \"equal sets\"
         :by (p/and-intro <a> <a>))
   (qed <b>))
 
-(defimplicit seteq-refl
-  "Set `s` is equal to itself, cf. [[seteq-refl-thm]]."
-  [def-env ctx [s s-ty]]
-  (let [T (fetch-set-type def-env ctx s-ty)]
-    (list #'seteq-refl-thm T s)))
-
-(defthm seteq-sym-thm
+(defthm seteq-sym
   "Set equality is symmetric."
-  [[T :type] [s1 (set T)] [s2 (set T)]]
+  [[s1 (set ?T)] [s2 (set ?T)]]
   (==> (seteq s1 s2)
        (seteq s2 s1)))
 
@@ -360,15 +319,9 @@ This is a natural notion of \"equal sets\"
     (have <c> (seteq s2 s1) :by (p/and-intro <b> <a>)))
   (qed <c>))
 
-(defimplicit seteq-sym
-  "Set equality is symmetric, cf. [[seteq-sym-thm]]."
-  [def-env ctx [s1 s1-ty] [s2 s2-ty]]
-  (let [T (fetch-set-type def-env ctx s1-ty)]
-    (list #'seteq-sym-thm T s1 s2)))
-
-(defthm seteq-trans-thm
+(defthm seteq-trans
   "Set equality is transitive."
-  [[T :type] [s1 (set T)] [s2 (set T)] [s3 (set T)]]
+  [[s1 (set ?T)] [s2 (set ?T)] [s3 (set ?T)]]
   (==> (seteq s1 s2)
        (seteq s2 s3)
        (seteq s1 s3)))
@@ -385,14 +338,7 @@ This is a natural notion of \"equal sets\"
     (have <d> (seteq s1 s3) :by (p/and-intro <c1> <c2>)))
   (qed <d>))
 
-(defimplicit seteq-trans
-  "`(seteq-trans s1 s2 s3)`.
-Set equality is transitive, cf. [[seteq-trans-thm]]."
-  [def-env ctx [s1 s1-ty] [s2 s2-ty] [s3 s3-ty]]
-  (let [T (fetch-set-type def-env ctx s1-ty)]
-    (list #'seteq-trans-thm T s1 s2 s3)))
-
-(definition set-equality
+(definition set-equal
   "A *Leibniz*-style equality for sets.
 
 It says that two sets `s1` and `s2` are equal iff for 
@@ -400,23 +346,17 @@ any predicate `P` then `(P s1)` if and only if `(P s2)`.
 
 Note that the identification with [[seteq]] is non-trivial,
  and requires an axiom."
-  [[T :type] [s1 (set T)] [s2 (set T)]]
+  [[s1 (set ?T)] [s2 (set ?T)]]
   (forall [P (==> (set T) :type)]
           (<=> (P s1) (P s2))))
 
-(defimplicit set-equal
-  "The *Leibniz*-style equality for sets, cf. [[set-equality]]."
-  [def-env ctx [s1 s1-ty] [s2 s2-ty]]
-  (let [T (fetch-set-type def-env ctx s1-ty)]
-    (list #'set-equality T s1 s2)))
-
 (defthm set-equal-prop
-  [[T :type] [s1 (set T)] [s2 (set T)] [P (==> (set T) :type)]]
+  [[s1 (set ?T)] [s2 (set ?T)] [P (==> (set ?T) :type)]]
   (==> (set-equal s1 s2)
        (P s1)
        (P s2)))
 
-(proof 'set-equal-prop
+(proof 'set-equal-prop-thm
   (assume [Heq (set-equal s1 s2)
            Hs1 (P s1)]
     (have <a> (<=> (P s1) (P s2))
@@ -426,9 +366,9 @@ Note that the identification with [[seteq]] is non-trivial,
     (have <c> (P s2) :by (<b> Hs1)))
   (qed <c>))
 
-(defthm set-equal-refl-thm
+(defthm set-equal-refl
   "Reflexivity of set equality."
-  [[T :type] [s (set T)]]
+  [[s (set ?T)]]
   (set-equal s s))
 
 (proof 'set-equal-refl-thm
@@ -437,15 +377,9 @@ Note that the identification with [[seteq]] is non-trivial,
           :by (p/iff-refl (P s))))
   (qed a))
 
-(defimplicit set-equal-refl
-  "Reflexivity of set equality, cf. [[set-equal-refl-thm]]."
-  [def-env ctx [s s-ty]]
-  (let [T (fetch-set-type def-env ctx s-ty)]
-    (list #'set-equal-refl-thm T s)))
-
-(defthm set-equal-sym-thm
+(defthm set-equal-sym
   "Symmetry of set equality."
-  [[T :type] [s1 (set T)] [s2 (set T)]]
+  [[s1 (set ?T)] [s2 (set ?T)]]
   (==> (set-equal s1 s2)
        (set-equal s2 s1)))
 
@@ -456,15 +390,9 @@ Note that the identification with [[seteq]] is non-trivial,
     (have <b> (<=> (Q s2) (Q s1)) :by (p/iff-sym <a>)))
   (qed <b>))
 
-(defimplicit set-equal-sym
-  "Symmetry of set equality, cf. [[set-equal-sym-thm]]."
-  [def-env ctx [s1 s1-ty] [s2 s2-ty]]
-  (let [T (fetch-set-type def-env ctx s1-ty)]
-    (list #'set-equal-sym-thm T s1 s2)))
-
-(defthm set-equal-trans-thm
+(defthm set-equal-trans
   "Transitivity of set equality."
-  [[T :type] [s1 (set T)] [s2 (set T)] [s3 (set T)]]
+  [[s1 (set ?T)] [s2 (set ?T)] [s3 (set ?T)]]
   (==> (set-equal s1 s2)
        (set-equal s2 s3)
        (set-equal s1 s3)))
@@ -479,19 +407,13 @@ Note that the identification with [[seteq]] is non-trivial,
           :by (p/iff-trans <a> <b>)))
   (qed <c>))
 
-(defimplicit set-equal-trans
-  "Transitivity of set equality, cf. [[set-equal-trans-thm]]."
-  [def-env ctx [s1 s1-ty] [s2 s2-ty] [s3 s3-ty]]
-  (let [T (fetch-set-type def-env ctx s1-ty)]
-    (list #'set-equal-trans-thm T s1 s2 s3)))
-
 (defthm set-equal-implies-subset
   "Going from *Leibniz* equality on sets to the subset relation is easy."
-  [[T :type] [s1 (set T)] [s2 (set T)]]
+  [[s1 (set ?T)] [s2 (set ?T)]]
   (==> (set-equal s1 s2)
        (subset s1 s2)))
 
-(proof 'set-equal-implies-subset
+(proof 'set-equal-implies-subset-thm
   (assume [H (set-equal s1 s2)]
     (assume [x T]
       (pose Qx := (lambda [s (set T)]
@@ -505,60 +427,54 @@ Note that the identification with [[seteq]] is non-trivial,
 
 (defthm set-equal-implies-seteq
   "Subset-based equality implies *Leibniz*-style equality on sets."
-  [[T :type] [s1 (set T)] [s2 (set T)]]
+  [[s1 (set ?T)] [s2 (set ?T)]]
   (==> (set-equal s1 s2)
        (seteq s1 s2)))
 
-(proof 'set-equal-implies-seteq
+(proof 'set-equal-implies-seteq-thm
   (assume [H (set-equal s1 s2)]
     ;; "First we get s1⊆s2."
-    (have <a> (subset s1 s2) :by ((set-equal-implies-subset T s1 s2) H))
+    (have <a> (subset s1 s2) :by ((set-equal-implies-subset s1 s2) H))
     ;; "Then we get s2⊆s1."
     (have <b1> (set-equal s2 s1) :by ((set-equal-sym s1 s2) H))
-    (have <b> (subset s2 s1) :by ((set-equal-implies-subset T s2 s1) <b1>))
+    (have <b> (subset s2 s1) :by ((set-equal-implies-subset s2 s1) <b1>))
     ;; "... and we can now conclude"
     (have <c> (seteq s1 s2) :by (p/and-intro <a> <b>)))
   (qed <c>))
 
-(defaxiom seteq-implies-set-equal-ax
+(defaxiom seteq-implies-set-equal
   "Going from subset-based equality to *Leibniz*-style equality
 requires this axiom. This is because we cannot lift membership
  to an arbitrary predicate."
-  [[T :type] [s1 (set T)] [s2 (set T)]]
+  [[s1 (set ?T)] [s2 (set ?T)]]
   (==> (seteq s1 s2)
        (set-equal s1 s2)))
 
 (defthm set-equal-seteq
   "Set equality and subset-based equality (should) coincide (axiomatically)."
-  [[T :type] [s1 (set T)] [s2 (set T)]]
+  [[s1 (set ?T)] [s2 (set ?T)]]
   (<=> (seteq s1 s2)
        (set-equal s1 s2)))
 
-(proof 'set-equal-seteq
+(proof 'set-equal-seteq-thm
   (have <a> (==> (seteq s1 s2)
-                 (set-equal s1 s2)) :by (seteq-implies-set-equal-ax T s1 s2))
+                 (set-equal s1 s2)) :by (seteq-implies-set-equal s1 s2))
   (have <b> (==> (set-equal s1 s2)
-                 (seteq s1 s2)) :by (set-equal-implies-seteq T s1 s2))
+                 (seteq s1 s2)) :by (set-equal-implies-seteq s1 s2))
   (qed (p/iff-intro <a> <b>)))
 
-(definition psubset-def
+(definition psubset
   "The anti-reflexive variant of the subset relation.
 
 The expression `(psubset T s1 s2)` means that
  the set `s1` is a subset of `s2`, but that the two
 sets are distinct, i.e. `s1`⊂`s2` (or more explicitely `s1`⊊`s2`)."
-  [[T :type] [s1 (set T)] [s2 (set T)]]
+  [[s1 (set ?T)] [s2 (set ?T)]]
   (and (subset s1 s2)
        (not (seteq s1 s2))))
 
-(defimplicit psubset
-  "`s1` is a propre subset of `s2`, cf. [[psubset-def]]."
-  [def-env ctx [s1 s1-ty] [s2 s2-ty]]
-  (let [T (fetch-set-type def-env ctx s1-ty)]
-    (list #'psubset-def T s1 s2)))
-
-(defthm psubset-antirefl-thm
-  [[T :type] [s (set T)]]
+(defthm psubset-antirefl
+  [[s (set ?T)]]
   (not (psubset s s)))
 
 (proof 'psubset-antirefl-thm
@@ -569,14 +485,8 @@ sets are distinct, i.e. `s1`⊂`s2` (or more explicitely `s1`⊊`s2`)."
     (have <c> p/absurd :by (<a> <b>)))
   (qed <c>))
 
-(defimplicit psubset-antirefl
-  "`(psubset-antirefl s)` means proper subset relation is antireflexive, cf. [[psubset-antirefl-thm]]."
-  [def-env ctx [s s-ty]]
-  (let [T (fetch-set-type def-env ctx s-ty)]
-    (list #'psubset-antirefl-thm T s)))
-
-(defthm psubset-antisym-thm
-  [[T :type] [s1 (set T)] [s2 (set T)]]
+(defthm psubset-antisym
+  [[s1 (set ?T)] [s2 (set ?T)]]
   (not (and (psubset s1 s2)
             (psubset s2 s1))))
 
@@ -594,16 +504,9 @@ sets are distinct, i.e. `s1`⊂`s2` (or more explicitely `s1`⊊`s2`)."
     (have <e> p/absurd :by (<a> <d>)))
   (qed <e>))
 
-(defimplicit psubset-antisym
-  "`(psubset-antisym s1 s2)` means proper subset relation is antisymmetric, 
-cf. [[psubset-antisym-thm]]."
-  [def-env ctx [s1 s1-ty] [s2 s2-ty]]
-  (let [T (fetch-set-type def-env ctx s1-ty)]
-    (list #'psubset-antisym-thm T s1 s2)))
-
-(defthm psubset-trans-thm
+(defthm psubset-trans
   "The proper subset relation is transitive."
-  [[T :type] [s1 (set T)] [s2 (set T)] [s3 (set T)]]
+  [[s1 (set ?T)] [s2 (set ?T)] [s3 (set ?T)]]
   (==> (psubset s1 s2)
        (psubset s2 s3)
        (psubset s1 s3)))
@@ -617,11 +520,11 @@ cf. [[psubset-antisym-thm]]."
                (p/and-elim-left H2)))
     (assume [H (seteq s1 s3)]
       (have <b> (set-equal s1 s3)
-            :by ((seteq-implies-set-equal-ax T s1 s3)
+            :by ((seteq-implies-set-equal s1 s3)
                  H))
       (have <c> (psubset s3 s2)
-            :by ((set-equal-prop T s1 s3 (lambda [x (set T)]
-                                           (psubset x s2)))
+            :by ((set-equal-prop s1 s3 (lambda [x (set T)]
+                                         (psubset x s2)))
                  <b> H1))
       (have <d> p/absurd
             :by ((psubset-antisym s2 s3)
@@ -629,19 +532,12 @@ cf. [[psubset-antisym-thm]]."
     (have <e> _ :by (p/and-intro <a> <d>)))
   (qed <e>))
 
-(defimplicit psubset-trans
-  "`(psubset-trans s1 s2 s3)`.
-The proper subset relation is transitive, cf. [[psubset-trans-thm]]."
-  [def-env ctx [s1 s1-ty] [s2 s2-ty] [s3 s3-ty]]
-  (let [T (fetch-set-type def-env ctx s1-ty)]
-    (list #'psubset-trans-thm T s1 s2 s3)))
-
 (defthm psubset-emptyset
-  [[T :type] [s (set T)]]
+  [[s (set ?T)]]
   (==> (psubset (emptyset T) s)
        (not (seteq s (emptyset T)))))
 
-(proof 'psubset-emptyset
+(proof 'psubset-emptyset-thm
   (assume [H (psubset (emptyset T) s)]
     (assume [H' (seteq s (emptyset T))]
       (have <a> (not (seteq (emptyset T) s))
@@ -652,14 +548,14 @@ The proper subset relation is transitive, cf. [[psubset-trans-thm]]."
   (qed <c>))
 
 (defthm psubset-emptyset-conv
-  [[T :type] [s (set T)]]
+  [[s (set ?T)]]
   (==> (not (seteq s (emptyset T)))
        (psubset (emptyset T) s)))
 
-(proof 'psubset-emptyset-conv
+(proof 'psubset-emptyset-conv-thm
   (assume [H (not (seteq s (emptyset T)))]
     (have <a> (subset (emptyset T) s)
-          :by (subset-emptyset-lower-bound T s))
+          :by (subset-emptyset-lower-bound s))
     (assume [H' (seteq (emptyset T) s)]
       (have <b> (seteq s (emptyset T))
             :by ((seteq-sym (emptyset T) s) H'))
@@ -669,13 +565,15 @@ The proper subset relation is transitive, cf. [[psubset-trans-thm]]."
   (qed <d>))
 
 (defthm psubset-emptyset-equiv
-  [[T :type] [s (set T)]]
+  [[s (set ?T)]]
   (<=> (psubset (emptyset T) s)
        (not (seteq s (emptyset T)))))
 
-(proof 'psubset-emptyset-equiv
-  (qed (p/and-intro (psubset-emptyset T s)
-                    (psubset-emptyset-conv T s))))
+(proof 'psubset-emptyset-equiv-thm
+  (qed (p/and-intro (psubset-emptyset s)
+                    (psubset-emptyset-conv s))))
+
+
 
 
 
