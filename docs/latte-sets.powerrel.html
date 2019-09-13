@@ -23,7 +23,7 @@ of sets whose elements are relations of type</code>(rel T U)`.</p></div></div></
 </code></pre>
 <p><strong>Theorem</strong>: Introduction rule for <a href="latte-sets.powerrel.html#var-rel-ex">rel-ex</a>.</p></div></div></div><div class="public anchor" id="var-rel-single"><h3>rel-single</h3><div class="usage"></div><div class="doc"><div class="markdown"><p><code>
 (rel-single X)</code></p>
-<p>There is a single set element in <code>X</code> such that… cf. <a href="latte-sets.powerset.html#var-set-single-def">set-single-def</a></p></div></div></div><div class="public anchor" id="var-rel-single-def"><h3>rel-single-def</h3><div class="usage"><code>(rel-single-def [T :type] [U :type] [X (powerrel T U)])</code></div><div class="doc"><div class="markdown"><pre><code>(forall [R S (rel T U)] (==&gt; (rel-elem R X) (rel-elem S X) (releq R S)))
+<p>There is a single set element in <code>X</code> such that… cf. <a href="null">set-single-def</a></p></div></div></div><div class="public anchor" id="var-rel-single-def"><h3>rel-single-def</h3><div class="usage"><code>(rel-single-def [T :type] [U :type] [X (powerrel T U)])</code></div><div class="doc"><div class="markdown"><pre><code>(forall [R S (rel T U)] (==&gt; (rel-elem R X) (rel-elem S X) (releq R S)))
 </code></pre>
 <p><strong>Definition</strong>: The relational powerset version of <a href="null">latte-prelude.quant/single</a>. There exists at most one set …</p></div></div></div><div class="public anchor" id="var-rel-unique"><h3>rel-unique</h3><div class="usage"></div><div class="doc"><div class="markdown"><p><code>
 (rel-unique X)</code></p>

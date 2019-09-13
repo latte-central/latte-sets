@@ -15,6 +15,7 @@ to deal with powersets."
                                             defimplicit
                                             forall lambda
                                             assume have pose proof qed lambda]]
+              [latte.utils :as u]
               [latte-prelude.quant :as q :refer [exists]]
               [latte-prelude.prop :as p :refer [<=> and or not]]
               [latte-prelude.equal :as eq :refer [equal]]
@@ -29,10 +30,10 @@ of sets whose elements are sets of type `T`."
   [[T :type]]
   (==> (set T) :type))
 
-(definition set-elem-def
+(definition set-elem
   "Membership for powersets.
 Th set `x` is an element of the powerset `X`."
-  [[T :type] [x (set T)] [X (powerset T)]]
+  [[x (set ?T)] [X (powerset ?T)]]
   (X x))
 
 (defn fetch-powerset-type [def-env ctx s-type]
@@ -42,31 +43,22 @@ This function is used for implicit in sets."
         T (s/fetch-set-type def-env ctx ST)]
     T))
 
-(defimplicit set-elem
-  "The set `x` is an element of the powerset `X`, cf. [[set-elem-def]]."
-  [def-env ctx [x x-ty] [X X-ty]]
-  (let [T (fetch-powerset-type def-env ctx X-ty)]
-    (list #'set-elem-def T x X)))
+(u/register-implicit-type-parameters-handler! 'powerset fetch-powerset-type 1)
 
-(definition set-ex-def
+(definition set-ex
   "The powerset existential.
+There exists a set `s` element of the powerset `X` such that...
 This is the definition of [[latte.quant/ex]] but
 adpated for sets."
-  [[T :type] [X (powerset T)]]
+  [[X (powerset ?T)]]
   (forall [α :type]
     (==> (forall [x (set T)]
            (==> (set-elem x X) α))
          α)))
 
-(defimplicit set-ex
-  "There exists an element set `s` of the powerset `X` such that... cf. [[set-ex-def]]."
-  [def-env ctx [X X-ty]]
-  (let [T (fetch-powerset-type def-env ctx X-ty)]
-    (list #'set-ex-def T X)))
-
-(defthm set-ex-elim-thm
+(defthm set-ex-elim
   "The elimination rule for the set existential."
-  [[T :type] [X (powerset T)] [A :type]]
+  [[X (powerset ?T)] [A :type]]
   (==> (set-ex X)
        (forall [x (set T)]
          (==> (set-elem x X) A))
@@ -81,15 +73,9 @@ adpated for sets."
     (have <b> A :by (<a> H2)))
   (qed <b>))
 
-(defimplicit set-ex-elim
-  "The elimination rule for the set existential, cf. [[set-ex-elim-thm]]."
-  [def-env ctx [X X-ty] [A A-ty]]
-  (let [T (fetch-powerset-type def-env ctx X-ty)]
-    (list #'set-ex-elim-thm T X A)))
-
-(defthm set-ex-intro-thm
+(defthm set-ex-intro
   "Introduction rule for [[set-ex]]."
-  [[T :type] [X (powerset T)] [x (set T)]]
+  [[X (powerset ?T)] [x (set ?T)]]
   (==> (set-elem x X)
        (set-ex X)))
 
@@ -101,68 +87,45 @@ adpated for sets."
     (have <b> A :by (<a> H)))
   (qed <b>))
 
-(defimplicit set-ex-intro
-  "Introduction rule for set existential, cf. [[set-ex-intro-thm]]."
-  [def-env ctx [X X-ty] [x x-ty]]
-  (let [T (fetch-powerset-type def-env ctx X-ty)]
-    (list #'set-ex-intro-thm T X x)))
-
-(definition set-single-def
+(definition set-single
   "The powerset version of [[latte-prelude.quant/single]].
-There exists at most one set ..."
-  [[T :type] [X (powerset T)]]
+There exists at most one set in `X` such that..."
+  [[X (powerset ?T)]]
   (forall [x y (set T)]
     (==> (set-elem x X)
          (set-elem y X)
          (seteq x y))))
 
-(defimplicit set-single
-  "There is a single set element in `X` such that...
-cf. [[set-single-def]]"
-  [def-env ctx [X X-ty]]
-  (let [T (fetch-powerset-type def-env ctx X-ty)]
-    (list #'set-single-def T X)))
-
-(definition set-unique-def
+(definition set-unique
   "The powerset version of [[latte-prelude.quant/unique]].
-There exists a unique set ..."
-  [[T :type] [X (powerset T)]]
+There exists a unique set in `X` such that ..."
+  [[X (powerset ?T)]]
   (and (set-ex X)
        (set-single X)))
 
-(defimplicit set-unique
-  "There exists a unique set element in `X` such that...
-cf. [[set-unique-def]]"
-  [def-env ctx [X X-ty]]
-  (let [T (fetch-powerset-type def-env ctx X-ty)]
-    (list #'set-unique-def T X)))
+(defaxiom the-set
+  "The unique set in powerset `X` such that ...
+With `u` the uniqueness proof.
 
-(defaxiom the-set-ax
-  "The powerset version of [[latte-prelude.quant/the]]."
-  [[T :type] [X (powerset T)] [u (set-unique X)]]
+This is the powerset version of [[latte-prelude.quant/the]]."
+  [[X (powerset ?T)] [u (set-unique X)]]
   (set T))
-
-(defimplicit the-set
-  "The unique descriptor for powerset `X`, cf. [[the-set-ax]]."
-  [def-env ctx [X X-ty] [u u-ty]]
-  (let [T (fetch-powerset-type def-env ctx X-ty)]
-    (list #'the-set-ax T X u)))
 
 (defaxiom the-set-prop
   "The property of the unique set descriptor [[the-set]]."
-  [[T :type] [X (powerset T)] [u (set-unique X)]]
+  [[X (powerset ?T)] [u (set-unique X)]]
   (set-elem (the-set X u) X))
 
 (defthm the-set-lemma
   "The unique set ... is unique."
-  [[T :type] [X (powerset T)] [u (set-unique X)]]
+  [[X (powerset ?T)] [u (set-unique X)]]
   (forall [y (set T)]
     (==> (set-elem y X)
          (seteq y (the-set X u)))))
 
-(proof 'the-set-lemma
+(proof 'the-set-lemma-thm
   (have <a> (set-single X) :by (p/and-elim-right u))
-  (have <b> (set-elem (the-set X u) X) :by (the-set-prop T X u))
+  (have <b> (set-elem (the-set X u) X) :by (the-set-prop X u))
   (assume [y (set T)
            Hy (set-elem y X)]
     (have <c> (==> (set-elem y X)
@@ -171,31 +134,24 @@ cf. [[set-unique-def]]"
     (have <d> (seteq y (the-set X u)) :by (<c> Hy <b>)))
   (qed <d>))
 
-(definition unions-def
+(definition unions
   "Generalized union.
 This is the set {y:T | ∃x∈X, y∈x}."
-  [[T :type] [X (powerset T)]]
+  [[X (powerset ?T)]]
   (lambda [y T]
-          (set-ex (lambda [x (set T)]
-                          (and (set-elem x X)
-                               (elem y x))))))
-
-(defimplicit unions
-  "Generalized union.
-This is the set {y:T | ∃x∈X, y∈x}."
-  [def-env ctx [X X-ty]]
-  (let [T (fetch-powerset-type def-env ctx X-ty)]
-    (list #'unions-def T X)))
+    (set-ex (lambda [x (set T)]
+              (and (set-elem x X)
+                   (elem y x))))))
 
 (defthm unions-upper-bound
    "The generalized union is an upper bound wrt. 
 the subset relation."
-   [[T :type] [X (powerset T)]]
+   [[X (powerset ?T)]]
    (forall [x (set T)]
      (==>  (set-elem x X)
            (subset x (unions X)))))
 
-(proof 'unions-upper-bound
+(proof 'unions-upper-bound-thm
   (assume [x (set T)
            Hx (set-elem x X)]
     (assume [y T
@@ -207,30 +163,23 @@ the subset relation."
       (have <b> (elem y (unions X)) :by ((set-ex-intro I x) <a>))))
   (qed <b>))
 
-(definition intersections-def
+(definition intersections
   "Generalize intersections.
 This is the set {y:T | ∀x∈X, y∈x}."
-  [[T :type] [X (powerset T)]]
+  [[X (powerset ?T)]]
   (lambda [y T]
     (forall [x (set T)]
       (==> (set-elem x X)
            (elem y x)))))
 
-(defimplicit intersections
-  "Generalize intersections.
-This is the set {y:T | ∀x∈X, y∈x}."
-  [def-env ctx [X X-ty]]
-  (let [T (fetch-powerset-type def-env ctx X-ty)]
-    (list #'intersections-def T X)))
-
 (defthm intersections-lower-bound
   "The generalized intersection is a lower bound wrt. the subset relation."
-  [[T :type] [X (powerset T)]]
+  [[X (powerset ?T)]]
   (forall [x (set T)]
     (==> (set-elem x X)
          (subset (intersections X) x))))
 
-(proof 'intersections-lower-bound
+(proof 'intersections-lower-bound-thm
   (assume [x (set T)
            Hx (set-elem x X)]
     (assume [y T
@@ -240,7 +189,7 @@ This is the set {y:T | ∀x∈X, y∈x}."
 
 (defthm intersections-prop
   "Preservation of properties on intersections."
-  [[T :type] [P (==> T :type)] [X (powerset T)]]
+  [[P (==> ?T :type)] [X (powerset ?T)]]
   (forall [x (set T)]
     (==> (set-elem x X)
          (forall [y T]
@@ -250,7 +199,7 @@ This is the set {y:T | ∀x∈X, y∈x}."
            (==> (elem z (intersections X))
                 (P z))))))
 
-(proof 'intersections-prop
+(proof 'intersections-prop-thm
   (assume [x (set T)
            H1 (set-elem x X)
            H2 (forall [y T]
@@ -261,10 +210,9 @@ This is the set {y:T | ∀x∈X, y∈x}."
       (have <a> (==> (elem z x)
                      (P z)) :by (H2 z))
       (have <b> (elem z x)
-            :by ((intersections-lower-bound T X) x H1 z Hz))
+            :by ((intersections-lower-bound X) x H1 z Hz))
       (have <c> (P z) :by (<a> <b>))))
   (qed <c>))
-
 
 (definition full-powerset
   "The powerset containing all the subsets of type `T`."
@@ -306,21 +254,21 @@ This is the set {y:T | ∀x∈X, y∈x}."
     (not (s/set-equal x (s/emptyset T)))))
 
 (defthm powerset1-prop
-  [[T :type] [x (set T)]]
+  [[x (set ?T)]]
   (==> (not (s/set-equal x (s/emptyset T)))
        (set-elem x (powerset1 T))))
 
-(proof 'powerset1-prop
+(proof 'powerset1-prop-thm
   (assume [H (not (s/set-equal x (s/emptyset T)))]
     (have <a> (set-elem x (powerset1 T)) :by H))
   (qed <a>))
 
 (defthm powerset1-prop-conv
-  [[T :type] [x (set T)]]
+  [[x (set ?T)]]
   (==> (set-elem x (powerset1 T))
        (not (s/set-equal x (s/emptyset T)))))
 
-(proof 'powerset1-prop-conv
+(proof 'powerset1-prop-conv-thm
   (assume [H (set-elem x (powerset1 T))]
     (assume [Heq (s/set-equal x (s/emptyset T))]
       (have <a> (not (s/set-equal x (s/emptyset T)))
@@ -329,11 +277,13 @@ This is the set {y:T | ∀x∈X, y∈x}."
   (qed <b>))
 
 (defthm powerset1-prop-equiv
-  [[T :type] [x (set T)]]
+  [[x (set ?T)]]
   (<=> (set-elem x (powerset1 T))
        (not (s/set-equal x (s/emptyset T)))))
 
-(proof 'powerset1-prop-equiv
-  (qed (p/and-intro (powerset1-prop T x)
-                    (powerset1-prop-conv T x))))
+(proof 'powerset1-prop-equiv-thm
+  (qed (p/and-intro (powerset1-prop x)
+                    (powerset1-prop-conv x))))
+
+
 
