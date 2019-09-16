@@ -10,6 +10,7 @@
                                             defimplicit
                                             forall lambda
                                             assume have pose proof qed lambda]]
+              [latte.utils :as u]
               [latte-prelude.quant :as q :refer [exists]]
               [latte-prelude.prop :as p :refer [<=> and or not]]
               [latte-prelude.equal :as eq :refer [equal]]
@@ -25,10 +26,10 @@ of sets whose elements are relations of type `(rel T U)`."
   [[T :type] [U :type]]
   (==> (rel T U) :type))
 
-(definition rel-elem-def
+(definition rel-elem
   "Membership for powersets.
 Th relation `R` is an element of the set `X`."
-  [[T :type] [U :type] [R (rel T U)] [X (powerrel T U)]]
+  [[R (rel ?T ?U)] [X (powerrel ?T ?U)]]
   (X R))
 
 (defn fetch-powerrel-types [def-env ctx r-type]
@@ -37,31 +38,25 @@ This function is used for implicit in relations."
   (let [[RT _] (p/decompose-impl-type def-env ctx r-type)]
     (r/fetch-rel-type def-env ctx RT)))
 
-(defimplicit rel-elem
-  "The relation `R` is an element of the powerrel `X`, cf. [[rel-elem-def]]."
-  [def-env ctx [R R-ty] [X X-ty]]
-  (let [[T U] (fetch-powerrel-types def-env ctx X-ty)]
-    (list #'rel-elem-def T U R X)))
+;; implicit type parameters for power-relations
+(u/register-implicit-type-parameters-handler! 'powerrel fetch-powerrel-types 2)
 
-(definition rel-ex-def
+(definition rel-ex
   "The powerset existential for relations.
+
+There exists an element relation `R` of the powerset `X` such that...
+
 This is the definition of [[latte.quant/ex]] but
 adpated for relations."
-  [[T :type] [U :type] [X (powerrel T U)]]
+  [[X (powerrel ?T ?U)]]
   (forall [α :type]
     (==> (forall [R (rel T U)]
            (==> (rel-elem R X) α))
          α)))
 
-(defimplicit rel-ex
-  "There exists an element relation `R` of the powerset `X` such that... cf. [[rel-ex-def]]."
-  [def-env ctx [X X-ty]]
-  (let [[T U] (fetch-powerrel-types def-env ctx X-ty)]
-    (list #'rel-ex-def T U X)))
-
-(defthm rel-ex-elim-thm
+(defthm rel-ex-elim
   "The elimination rule for the relation existential."
-  [[T :type] [U :type] [X (powerrel T U)] [A :type]]
+  [[X (powerrel ?T ?U)] [A :type]]
   (==> (rel-ex X)
        (forall [R (rel T U)]
          (==> (rel-elem R X) A))
@@ -76,15 +71,9 @@ adpated for relations."
     (have <b> A :by (<a> H2)))
   (qed <b>))
 
-(defimplicit rel-ex-elim
-  "The elimination rule for the relation existential, cf. [[rel-ex-elim-thm]]."
-  [def-env ctx [X X-ty] [A A-ty]]
-  (let [[T U] (fetch-powerrel-types def-env ctx X-ty)]
-    (list #'rel-ex-elim-thm T U X A)))
-
-(defthm rel-ex-intro-thm
+(defthm rel-ex-intro
   "Introduction rule for [[rel-ex]]."
-  [[T :type] [U :type] [X (powerrel T U)] [R (rel T U)]]
+  [[X (powerrel ?T ?U)] [R (rel ?T ?U)]]
   (==> (rel-elem R X)
        (rel-ex X)))
 
@@ -96,68 +85,42 @@ adpated for relations."
     (have <b> A :by (<a> H)))
   (qed <b>))
 
-(defimplicit rel-ex-intro
-  "Introduction rule for relation existential, cf. [[rel-ex-intro-thm]]."
-  [def-env ctx [X X-ty] [R R-ty]]
-  (let [[T U] (fetch-powerrel-types def-env ctx X-ty)]
-    (list #'rel-ex-intro-thm T U X R)))
-
-(definition rel-single-def
+(definition rel-single
   "The relational powerset version of [[latte-prelude.quant/single]].
-There exists at most one set ..."
-  [[T :type] [U :type] [X (powerrel T U)]]
+ There is a single relation element in `X` such that..."
+  [[X (powerrel ?T ?U)]]
   (forall [R S (rel T U)]
     (==> (rel-elem R X)
          (rel-elem S X)
          (releq R S))))
 
-(defimplicit rel-single
-  "There is a single set element in `X` such that...
-cf. [[set-single-def]]"
-  [def-env ctx [X X-ty]]
-  (let [[T U] (fetch-powerrel-types def-env ctx X-ty)]
-    (list #'rel-single-def T U X)))
-
-(definition rel-unique-def
+(definition rel-unique
   "The relational powerset version of [[latte-prelude.quant/unique]].
-There exists a unique set ..."
-  [[T :type] [U :type] [X (powerrel T U)]]
+There exists a unique relation R in the set of relations X such that ..."
+  [[X (powerrel ?T ?U)]]
   (and (rel-ex X)
        (rel-single X)))
 
-(defimplicit rel-unique
-  "There exists a unique set element in `X` such that...
-cf. [[rel-unique-def]]"
-  [def-env ctx [X X-ty]]
-  (let [[T U] (fetch-powerrel-types def-env ctx X-ty)]
-    (list #'rel-unique-def T U X)))
-
-(defaxiom the-rel-ax
+(defaxiom the-rel
   "The relation powerset version of [[latte-prelude.quant/the]]."
-  [[T :type] [U :type] [X (powerrel T U)] [u (rel-unique X)]]
+  [[X (powerrel ?T ?U)] [u (rel-unique X)]]
   (rel T U))
-
-(defimplicit the-rel
-  "The unique descriptor for relation powerset `X`, cf. [[the-rel-ax]]."
-  [def-env ctx [X X-ty] [u u-ty]]
-  (let [[T U] (fetch-powerrel-types def-env ctx X-ty)]
-    (list #'the-rel-ax T U X u)))
 
 (defaxiom the-rel-prop
   "The property of the unique set descriptor [[the-rel]]."
-  [[T :type] [U :type] [X (powerrel T U)] [u (rel-unique X)]]
+  [[X (powerrel ?T ?U)] [u (rel-unique X)]]
   (rel-elem (the-rel X u) X))
 
 (defthm the-rel-lemma
   "The unique relation ... is unique."
-  [[T :type] [U :type] [X (powerrel T U)] [u (rel-unique X)]]
+  [[X (powerrel ?T ?U)] [u (rel-unique X)]]
   (forall [R (rel T U)]
     (==> (rel-elem R X)
          (releq R (the-rel X u)))))
 
-(proof 'the-rel-lemma
+(proof 'the-rel-lemma-thm
   (have <a> (rel-single X) :by (p/and-elim-right u))
-  (have <b> (rel-elem (the-rel X u) X) :by (the-rel-prop T U X u))
+  (have <b> (rel-elem (the-rel X u) X) :by (the-rel-prop X u))
   (assume [R (rel T U)
            HR (rel-elem R X)]
     (have <c> (==> (rel-elem R X)
@@ -165,7 +128,6 @@ cf. [[rel-unique-def]]"
                    (releq R (the-rel X u))) :by (<a> R (the-rel X u)))
     (have <d> (releq R (the-rel X u)) :by (<c> HR <b>)))
   (qed <d>))
-
 
 (comment
 
