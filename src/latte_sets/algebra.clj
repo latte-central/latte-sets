@@ -18,13 +18,13 @@
 
 (definition union
   "Set union, `(union s1 s2)` is the set `s1`∪`s2`."
-  [[s1 (set ?T)] [s2 (set ?T)]]
+  [?T :type, [s1 s2 (set T)]]
   (lambda [x T]
     (or (elem x s1)
         (elem x s2))))
 
 (defthm union-idem
-  [[s (set ?T)]]
+  [?T :type, s (set T)]
   (seteq (union s s) s))
 
 (proof 'union-idem-thm
@@ -46,7 +46,7 @@
   (qed (p/and-intro <c> <d>)))
 
 (defthm union-empty
-  [[s (set ?T)]]
+  [?T :type, s (set T)]
   (seteq (union s (emptyset T))
          s))
 
@@ -72,7 +72,7 @@
 
 (defthm union-commute
   "Set union commutes."
-  [[s1 (set ?T)] [s2 (set ?T)]]
+  [?T :type, [s1 s2 (set T)]]
   (seteq (union s1 s2)
          (union s2 s1)))
 
@@ -95,7 +95,7 @@
   (qed <c>))
 
 (defthm union-assoc
-  [[s1 (set ?T)] [s2 (set ?T)] [s3 (set ?T)]]
+  [?T :type, [s1 s2 s3 (set T)]]
   (seteq (union s1 (union s2 s3))
          (union (union s1 s2) s3)))
 
@@ -182,7 +182,7 @@
   (qed (p/and-intro <f> <l>)))
 
 (defthm union-assoc-sym
-  [[s1 (set ?T)] [s2 (set ?T)] [s3 (set ?T)]]
+  [?T :type, [s1 s2 s3 (set T)]]
   (seteq (union (union s1 s2) s3)
          (union s1 (union s2 s3))))
 
@@ -196,14 +196,14 @@
 
 (definition inter
   "Set intersection, i.e. the set `s1`∩`s2`."
-  [[s1 (set ?T)] [s2 (set ?T)]]
+  [?T :type, [s1 s2 (set T)]]
   (lambda [x T]
     (and (elem x s1)
          (elem x s2))))
 
 (defthm inter-elim-left
   "Elimination rule for intersection (left operand)."
-  [[s1 (set ?T)] [s2 (set ?T)] [x ?T]]
+  [?T :type, [s1 s2 (set T)], x T]
   (==> (elem x (inter s1 s2))
        (elem x s1)))
 
@@ -214,7 +214,7 @@
 
 (defthm inter-elim-right
   "Elimination rule for intersection (right operand)."
-  [[s1 (set ?T)] [s2 (set ?T)] [x ?T]]
+  [?T :type, [s1 s2 (set T)], x T]
   (==> (elem x (inter s1 s2))
        (elem x s2)))
 
@@ -224,7 +224,7 @@
     (qed <a>))
 
 (defthm inter-idem
-  [[s (set ?T)]]
+  [?T :type, s (set T)]
   (seteq (inter s s) s))
 
 (proof 'inter-idem-thm
@@ -240,7 +240,7 @@
   (qed (p/and-intro <a> <b>)))
 
 (defthm inter-empty
-  [[s (set ?T)]]
+  [?T :type, s (set T)]
   (seteq (inter s (emptyset T))
          (emptyset T)))
 
@@ -259,7 +259,7 @@
 
 (defthm inter-commute
   "Set intersection commutes."
-  [[s1 (set ?T)] [s2 (set ?T)]]
+  [?T :type, [s1 s2 (set T)]]
   (seteq (inter s1 s2)
          (inter s2 s1)))
 
@@ -278,7 +278,7 @@
   (qed <c>))
 
 (defthm inter-assoc
-  [[s1 (set ?T)] [s2 (set ?T)] [s3 (set ?T)]]
+  [?T :type, [s1 s2 s3 (set T)]]
   (seteq (inter s1 (inter s2 s3))
          (inter (inter s1 s2) s3)))
 
@@ -306,7 +306,7 @@
   (qed (p/and-intro <a> <b>)))
 
 (defthm inter-assoc-sym
-  [[s1 (set ?T)] [s2 (set ?T)] [s3 (set ?T)]]
+  [?T :type, [s1 s2 s3 (set T)]]
   (seteq (inter (inter s1 s2) s3)
          (inter s1 (inter s2 s3))))
 
@@ -320,7 +320,7 @@
 
 (defthm dist-union-inter
   "Distributivity of union over intersection."
-  [[s1 (set ?T)] [s2 (set ?T)] [s3 (set ?T)]]
+  [?T :type, [s1 s2 s3 (set T)]]
   (seteq (union s1 (inter s2 s3))
          (inter (union s1 s2) (union s1 s3))))
 
@@ -396,7 +396,7 @@
 
 (defthm dist-union-inter-sym
   "Symmetric case of [[dist-union-inter]]."
-  [[s1 (set ?T)] [s2 (set ?T)] [s3 (set ?T)]]
+  [?T :type, [s1 s2 s3 (set T)]]
   (seteq (inter (union s1 s2) (union s1 s3))
          (union s1 (inter s2 s3))))
 
@@ -409,7 +409,7 @@
 
 (defthm dist-inter-union
   "Distributivity of intersection over union."
-  [[s1 (set ?T)] [s2 (set ?T)] [s3 (set ?T)]]
+  [?T :type, [s1 s2 s3 (set T)]]
   (seteq (inter s1 (union s2 s3))
          (union (inter s1 s2) (inter s1 s3))))
 
@@ -471,7 +471,7 @@
 
 (defthm dist-inter-union-sym
   "Symmetric case of [[dist-inter-union]]."
-  [[s1 (set ?T)] [s2 (set ?T)] [s3 (set ?T)]]
+  [?T :type, [s1 s2 s3 (set T)]]
   (seteq
          (union (inter s1 s2) (inter s1 s3))
          (inter s1 (union s2 s3))))
@@ -488,13 +488,13 @@
   "Set difference
 
 `(difference T s1 s2)` is the set `s1`∖`s2`."
-  [[s1 (set ?T)] [s2 (set ?T)]]
+  [?T :type, [s1 s2 (set T)]]
   (lambda [x T]
     (and (elem x s1)
          (not (elem x s2)))))
 
 (defthm diff-empty-right
-  [[s (set ?T)]]
+  [?T :type, s (set T)]
   (seteq (diff s (emptyset T)) s))
 
 (proof 'diff-empty-right-thm
@@ -515,7 +515,7 @@
   (qed (p/and-intro <b> <d>)))
 
 (defthm diff-empty-left
-  [[s (set ?T)]]
+  [?T :type, s (set T)]
   (seteq (diff (emptyset T) s) (emptyset T)))
 
 (proof 'diff-empty-left-thm
@@ -532,7 +532,7 @@
   (qed (p/and-intro <a> <c>)))
 
 (defthm diff-cancel
-  [[s (set ?T)]]
+  [?T :type, s (set T)]
   (seteq (diff s s) (emptyset T)))
 
 (proof 'diff-cancel-thm
@@ -551,14 +551,14 @@
 
 (definition symdiff
   "Symmetric difference, often denoted by `s1`∆`s2`."
-  [[s1 (set ?T)] [s2 (set ?T)]]
+  [?T :type, [s1 s2 (set T)]]
   (lambda [x T]
     (or (and (elem x s1) (not (elem x s2)))
         (and (elem x s2) (not (elem x s1))))))
 
 (defthm symdiff-alt
   "An alternative caracterisation of the symmetric difference."
-  [[s1 (set ?T)] [s2 (set ?T)]]
+  [?T :type, [s1 s2 (set T)]]
   (seteq (symdiff s1 s2)
          (union (diff s1 s2)
                 (diff s2 s1))))
@@ -591,12 +591,12 @@ in type theory than with classical sets. The complement
 is here wrt. a type `T` which is well defined,
  wherease in classical set theory one has to introduce
 a somewhat unsatisfying notion of \"a universe of discourse\"."
-  [[s (set ?T)]]
+  [?T :type, [s (set T)]]
   (set-of [x T]
           (not (elem x s))))
 
 (defthm comp-full-empty
-  [[T :type]]
+  [T :type]
   (seteq (complement (fullset T))
          (emptyset T)))
 
@@ -614,7 +614,7 @@ a somewhat unsatisfying notion of \"a universe of discourse\"."
   (qed (p/and-intro <b> <d>)))
 
 (defthm comp-empty-full
-  [[T :type]]
+  [T :type]
   (seteq (complement (emptyset T))
          (fullset T)))
 
