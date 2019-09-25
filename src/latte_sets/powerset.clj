@@ -27,13 +27,13 @@ to deal with powersets."
 
 The term `(powerset T)' is the type
 of sets whose elements are sets of type `T`."
-  [[T :type]]
+  [T :type]
   (==> (set T) :type))
 
 (definition set-elem
   "Membership for powersets.
 Th set `x` is an element of the powerset `X`."
-  [[x (set ?T)] [X (powerset ?T)]]
+  [?T :type, x (set T), X (powerset T)]
   (X x))
 
 (defn fetch-powerset-type [def-env ctx s-type]
@@ -50,7 +50,7 @@ This function is used for implicit in sets."
 There exists a set `s` element of the powerset `X` such that...
 This is the definition of [[latte.quant/ex]] but
 adpated for sets."
-  [[X (powerset ?T)]]
+  [?T :type, X (powerset T)]
   (forall [α :type]
     (==> (forall [x (set T)]
            (==> (set-elem x X) α))
@@ -58,7 +58,7 @@ adpated for sets."
 
 (defthm set-ex-elim
   "The elimination rule for the set existential."
-  [[X (powerset ?T)] [A :type]]
+  [?T :type, X (powerset T), A :type]
   (==> (set-ex X)
        (forall [x (set T)]
          (==> (set-elem x X) A))
@@ -75,7 +75,7 @@ adpated for sets."
 
 (defthm set-ex-intro
   "Introduction rule for [[set-ex]]."
-  [[X (powerset ?T)] [x (set ?T)]]
+  [?T :type, X (powerset T), x (set T)]
   (==> (set-elem x X)
        (set-ex X)))
 
@@ -90,7 +90,7 @@ adpated for sets."
 (definition set-single
   "The powerset version of [[latte-prelude.quant/single]].
 There exists at most one set in `X` such that..."
-  [[X (powerset ?T)]]
+  [?T :type, X (powerset T)]
   (forall [x y (set T)]
     (==> (set-elem x X)
          (set-elem y X)
@@ -99,7 +99,7 @@ There exists at most one set in `X` such that..."
 (definition set-unique
   "The powerset version of [[latte-prelude.quant/unique]].
 There exists a unique set in `X` such that ..."
-  [[X (powerset ?T)]]
+  [?T :type, X (powerset T)]
   (and (set-ex X)
        (set-single X)))
 
@@ -108,17 +108,17 @@ There exists a unique set in `X` such that ..."
 With `u` the uniqueness proof.
 
 This is the powerset version of [[latte-prelude.quant/the]]."
-  [[X (powerset ?T)] [u (set-unique X)]]
+  [?T :type, X (powerset T) [u (set-unique X)]]
   (set T))
 
 (defaxiom the-set-prop
   "The property of the unique set descriptor [[the-set]]."
-  [[X (powerset ?T)] [u (set-unique X)]]
+  [?T :type, X (powerset T) [u (set-unique X)]]
   (set-elem (the-set X u) X))
 
 (defthm the-set-lemma
   "The unique set ... is unique."
-  [[X (powerset ?T)] [u (set-unique X)]]
+  [?T :type, X (powerset T) [u (set-unique X)]]
   (forall [y (set T)]
     (==> (set-elem y X)
          (seteq y (the-set X u)))))
@@ -137,7 +137,7 @@ This is the powerset version of [[latte-prelude.quant/the]]."
 (definition unions
   "Generalized union.
 This is the set {y:T | ∃x∈X, y∈x}."
-  [[X (powerset ?T)]]
+  [?T :type, X (powerset T)]
   (lambda [y T]
     (set-ex (lambda [x (set T)]
               (and (set-elem x X)
@@ -146,7 +146,7 @@ This is the set {y:T | ∃x∈X, y∈x}."
 (defthm unions-upper-bound
    "The generalized union is an upper bound wrt. 
 the subset relation."
-   [[X (powerset ?T)]]
+   [?T :type, X (powerset T)]
    (forall [x (set T)]
      (==>  (set-elem x X)
            (subset x (unions X)))))
@@ -166,7 +166,7 @@ the subset relation."
 (definition intersections
   "Generalize intersections.
 This is the set {y:T | ∀x∈X, y∈x}."
-  [[X (powerset ?T)]]
+  [?T :type, X (powerset T)]
   (lambda [y T]
     (forall [x (set T)]
       (==> (set-elem x X)
@@ -174,7 +174,7 @@ This is the set {y:T | ∀x∈X, y∈x}."
 
 (defthm intersections-lower-bound
   "The generalized intersection is a lower bound wrt. the subset relation."
-  [[X (powerset ?T)]]
+  [?T :type, X (powerset T)]
   (forall [x (set T)]
     (==> (set-elem x X)
          (subset (intersections X) x))))
@@ -189,7 +189,7 @@ This is the set {y:T | ∀x∈X, y∈x}."
 
 (defthm intersections-prop
   "Preservation of properties on intersections."
-  [[P (==> ?T :type)] [X (powerset ?T)]]
+  [?T :type, P (==> T :type) , X (powerset T)]
   (forall [x (set T)]
     (==> (set-elem x X)
          (forall [y T]
@@ -254,7 +254,7 @@ This is the set {y:T | ∀x∈X, y∈x}."
     (not (s/set-equal x (s/emptyset T)))))
 
 (defthm powerset1-prop
-  [[x (set ?T)]]
+  [?T :type, x (set T)]
   (==> (not (s/set-equal x (s/emptyset T)))
        (set-elem x (powerset1 T))))
 
@@ -264,7 +264,7 @@ This is the set {y:T | ∀x∈X, y∈x}."
   (qed <a>))
 
 (defthm powerset1-prop-conv
-  [[x (set ?T)]]
+  [?T :type, x (set T)]
   (==> (set-elem x (powerset1 T))
        (not (s/set-equal x (s/emptyset T)))))
 
@@ -277,7 +277,7 @@ This is the set {y:T | ∀x∈X, y∈x}."
   (qed <b>))
 
 (defthm powerset1-prop-equiv
-  [[x (set ?T)]]
+  [?T :type, x (set T)]
   (<=> (set-elem x (powerset1 T))
        (not (s/set-equal x (s/emptyset T)))))
 

@@ -23,13 +23,13 @@
 
 The term `(powerrel T U)' is the type
 of sets whose elements are relations of type `(rel T U)`."
-  [[T :type] [U :type]]
+  [[T U :type]]
   (==> (rel T U) :type))
 
 (definition rel-elem
   "Membership for powersets.
 Th relation `R` is an element of the set `X`."
-  [[R (rel ?T ?U)] [X (powerrel ?T ?U)]]
+  [[?T ?U :type] [R (rel T U)] [X (powerrel T U)]]
   (X R))
 
 (defn fetch-powerrel-types [def-env ctx r-type]
@@ -48,7 +48,7 @@ There exists an element relation `R` of the powerset `X` such that...
 
 This is the definition of [[latte.quant/ex]] but
 adpated for relations."
-  [[X (powerrel ?T ?U)]]
+  [[?T ?U :type] [X (powerrel T U)]]
   (forall [α :type]
     (==> (forall [R (rel T U)]
            (==> (rel-elem R X) α))
@@ -56,7 +56,7 @@ adpated for relations."
 
 (defthm rel-ex-elim
   "The elimination rule for the relation existential."
-  [[X (powerrel ?T ?U)] [A :type]]
+  [[?T ?U :type] [X (powerrel T U)] [A :type]]
   (==> (rel-ex X)
        (forall [R (rel T U)]
          (==> (rel-elem R X) A))
@@ -73,7 +73,7 @@ adpated for relations."
 
 (defthm rel-ex-intro
   "Introduction rule for [[rel-ex]]."
-  [[X (powerrel ?T ?U)] [R (rel ?T ?U)]]
+  [[?T ?U :type] [X (powerrel T U)] [R (rel T U)]]
   (==> (rel-elem R X)
        (rel-ex X)))
 
@@ -88,7 +88,7 @@ adpated for relations."
 (definition rel-single
   "The relational powerset version of [[latte-prelude.quant/single]].
  There is a single relation element in `X` such that..."
-  [[X (powerrel ?T ?U)]]
+  [[?T ?U :type] [X (powerrel T U)]]
   (forall [R S (rel T U)]
     (==> (rel-elem R X)
          (rel-elem S X)
@@ -97,23 +97,23 @@ adpated for relations."
 (definition rel-unique
   "The relational powerset version of [[latte-prelude.quant/unique]].
 There exists a unique relation R in the set of relations X such that ..."
-  [[X (powerrel ?T ?U)]]
+  [[?T ?U :type] [X (powerrel T U)]]
   (and (rel-ex X)
        (rel-single X)))
 
 (defaxiom the-rel
   "The relation powerset version of [[latte-prelude.quant/the]]."
-  [[X (powerrel ?T ?U)] [u (rel-unique X)]]
+  [[?T ?U :type] [X (powerrel T U)] [u (rel-unique X)]]
   (rel T U))
 
 (defaxiom the-rel-prop
   "The property of the unique set descriptor [[the-rel]]."
-  [[X (powerrel ?T ?U)] [u (rel-unique X)]]
+  [[?T ?U :type] [X (powerrel T U)] [u (rel-unique X)]]
   (rel-elem (the-rel X u) X))
 
 (defthm the-rel-lemma
   "The unique relation ... is unique."
-  [[X (powerrel ?T ?U)] [u (rel-unique X)]]
+  [[?T ?U :type] [X (powerrel T U)] [u (rel-unique X)]]
   (forall [R (rel T U)]
     (==> (rel-elem R X)
          (releq R (the-rel X u)))))
@@ -136,7 +136,7 @@ There exists a unique relation R in the set of relations X such that ..."
 (definition unions-def
   "Generalized union.
 This is the set {y:T | ∃x∈X, y∈x}."
-  [[T :type] [X (powerset T)]]
+  [[?T :type] [X (powerset T)]]
   (lambda [y T]
           (set-ex (lambda [x (set T)]
                           (and (set-elem x X)
@@ -152,12 +152,12 @@ This is the set {y:T | ∃x∈X, y∈x}."
 (defthm unions-upper-bound
    "The generalized union is an upper bound wrt. 
 the subset relation."
-   [[T :type] [X (powerset T)]]
+   [[?T :type] [X (powerset T)]]
    (forall [x (set T)]
      (==>  (set-elem x X)
            (subset x (unions X)))))
 
-(proof 'unions-upper-bound
+(proof 'unions-upper-bound-thm
   (assume [x (set T)
            Hx (set-elem x X)]
     (assume [y T
@@ -172,7 +172,7 @@ the subset relation."
 (definition intersections-def
   "Generalize intersections.
 This is the set {y:T | ∀x∈X, y∈x}."
-  [[T :type] [X (powerset T)]]
+  [[?T :type] [X (powerset T)]]
   (lambda [y T]
     (forall [x (set T)]
       (==> (set-elem x X)
