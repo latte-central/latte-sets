@@ -18,7 +18,7 @@ a given type `T` to elements of `U` is formalized with type `(==> T U :type)`.
 
 (definition rel
   "The type of relations."
-  [[T :type] [U :type]]
+  [T :type, U :type]
   (==> T U :type))
 
 (defn fetch-rel-type [def-env ctx r-type]
@@ -32,13 +32,13 @@ This function is used for implicits in relations."
 
 (definition dom
   "The domain of relation `R`."
-  [[R (rel ?T ?U)]]
+  [[?T ?U :type] [R (rel T U)]]
   (set-of [x T]
           (exists [y U] (R x y))))
 
 (definition ran
   "The range of relation `R`."
-  [[R (rel ?T ?U)]]
+  [[?T ?U :type] [R (rel T U)]]
   (set-of [y U]
           (exists [x T] (R x y))))
 
@@ -50,11 +50,11 @@ This function is used for implicits in relations."
 
 (definition reflexive
   "A reflexive relation."
-  [[R (rel ?T ?T)]]
+  [?T :type, R (rel T T)]
   (forall [x T] (R x x)))
 
 (defthm ident-refl
-  [[T :type]]
+  [T :type]
   (reflexive (identity T)))
 
 (proof 'ident-refl
@@ -64,13 +64,13 @@ This function is used for implicits in relations."
 
 (definition symmetric
   "A symmetric relation."
-  [[R (rel ?T ?T)]]
+  [?T :type, R (rel T T)]
   (forall [x y T]
     (==> (R x y)
          (R y x))))
 
 (defthm ident-sym
-  [[T :type]]
+  [T :type]
   (symmetric (identity T)))
 
 (proof 'ident-sym
@@ -83,14 +83,14 @@ This function is used for implicits in relations."
 
 (definition transitive
   "A transitive relation."
-  [[R (rel ?T ?T)]]
+  [?T :type, R (rel T T)]
   (forall [x y z T]
     (==> (R x y)
          (R y z)
          (R x z))))
 
 (defthm ident-trans
-  [[T :type]]
+  [T :type]
   (transitive (identity T)))
 
 (proof 'ident-trans
@@ -106,14 +106,14 @@ This function is used for implicits in relations."
 
 (definition equivalence
   "An equivalence relation."
-  [[R (rel ?T ?T)]]
+  [?T :type, R (rel T T)]
   (and* (reflexive R)
         (symmetric R)
         (transitive R)))
 
 (defthm ident-equiv
   "The indentity on `T` is an equivalence relation."
-  [[T :type]]
+  [T :type]
   (equivalence (identity T)))
 
 (proof 'ident-equiv
@@ -123,12 +123,12 @@ This function is used for implicits in relations."
 
 (definition fullrel
   "The full (total) relation between `T` and `U`."
-  [[T :type] [U :type]]
+  [T :type, U :type]
   (lambda [x T]
     (lambda [y U] p/truth)))
 
 (defthm fullrel-prop
-  [[T :type] [U :type]]
+  [T :type, U :type]
   (forall [x T]
     (forall [y U]
       ((fullrel T U) x y))))
@@ -141,13 +141,13 @@ This function is used for implicits in relations."
 
 (definition emptyrel
   "The empty relation."
-  [[T :type] [U :type]]
+  [T :type, U :type]
   (lambda [x T]
     (lambda [y U]
       p/absurd)))
 
 (defthm emptyrel-prop
-  [[T :type] [U :type]]
+  [T :type, U :type]
   (forall [x T]
     (forall [y U]
       (not ((emptyrel T U) x y)))))
@@ -161,14 +161,14 @@ This function is used for implicits in relations."
 
 (definition subrel
   "The subset ordering for relations, i.e. `R1`⊆`R2`"
-  [[R1 (rel ?T ?U)] [R2 (rel ?T ?U)]]
+  [[?T ?U :type] [R1 R2 (rel T U)]]
   (forall [x T]
     (forall [y U]
       (==> (R1 x y)
            (R2 x y)))))
 
 (defthm subrel-refl
-  [[R (rel ?T ?U)]]
+  [[?T ?U :type] [R (rel T U)]]
   (subrel R R))
 
 (proof 'subrel-refl-thm
@@ -179,7 +179,7 @@ This function is used for implicits in relations."
   (qed <a>))
 
 (defthm subrel-trans
-  [[R1 (rel ?T ?U)] [R2 (rel ?T ?U)] [R3 (rel ?T ?U)]]
+  [[?T ?U :type] [R1 R2 R3 (rel T U)]]
   (==> (subrel R1 R2)
        (subrel R2 R3)
        (subrel R1 R3)))
@@ -197,7 +197,7 @@ This function is used for implicits in relations."
 
 (defthm subrel-prop
   "Preservation of properties on relational subsets."
-  [[P (==> ?T ?U :type)] [R1 (rel ?T ?U)] [R2 (rel ?T ?U)]]
+  [[?T ?U :type], P (==> T U :type), [R1 R2 (rel T U)]]
   (==> (forall [x T]
          (forall [y U]
            (==> (R2 x y)
@@ -223,7 +223,7 @@ This function is used for implicits in relations."
 
 (defthm subrel-emptyrel-lower-bound
   "The empty relation is a subset of every other relations."
-  [[R (rel ?T ?U)]]
+  [[?T ?U :type] [R (rel T U)]]
   (subrel (emptyrel T U) R))
 
 (proof 'subrel-emptyrel-lower-bound-thm
@@ -236,7 +236,7 @@ This function is used for implicits in relations."
 
 (defthm subrel-fullrel-upper-bound
   "The full relation is a superset of every other relations."
-  [[R (rel ?T ?U)]]
+  [[?T ?U :type] [R (rel T U)]]
   (subrel R (fullrel T U)))
 
 (proof 'subrel-fullrel-upper-bound-thm
@@ -250,12 +250,12 @@ This function is used for implicits in relations."
 
 (definition releq
   "Subset-based equality on relations."
-  [[R1 (rel ?T ?U)] [R2 (rel ?T ?U)]]
+  [[?T ?U :type] [R1 R2 (rel T U)]]
   (and (subrel R1 R2)
        (subrel R2 R1)))
 
 (defthm releq-refl
-  [[R (rel ?T ?U)]]
+  [[?T ?U :type] [R (rel T U)]]
   (releq R R))
 
 (proof 'releq-refl-thm
@@ -263,7 +263,7 @@ This function is used for implicits in relations."
   (qed (p/and-intro <a> <a>)))
 
 (defthm releq-sym
-  [[R1 (rel ?T ?U)] [R2 (rel ?T ?U)]]
+  [[?T ?U :type] [R1 R2 (rel T U)]]
   (==> (releq R1 R2)
        (releq R2 R1)))
 
@@ -274,7 +274,7 @@ This function is used for implicits in relations."
   (qed <a>))
 
 (defthm releq-trans
-  [[R1 (rel ?T ?U)] [R2 (rel ?T ?U)] [R3 (rel ?T ?U)]]
+  [[?T ?U :type] [R1 R2 R3 (rel T U)]]
   (==> (releq R1 R2)
        (releq R2 R3)
        (releq R1 R3)))
@@ -299,12 +299,12 @@ any predicate `P` then `(P R1)` if and only if `(P R2)`.
 
 Note that the identification with [[seteq]] is non-trivial,
  and requires an axiom."
-  [[R1 (rel ?T ?U)] [R2 (rel ?T ?U)]]
+  [[?T ?U :type] [R1 R2 (rel T U)]]
   (forall [P (==> (rel T U) :type)]
           (<=> (P R1) (P R2))))
 
 (defthm rel-equal-prop
-  [[R1 (rel ?T ?U)] [R2 (rel ?T ?U)] [P (==> (rel ?T ?U) :type)]]
+  [[?T ?U :type] [R1 R2 (rel T U)], P (==> (rel T U) :type)]
   (==> (rel-equal R1 R2)
        (P R1)
        (P R2)))
@@ -320,7 +320,7 @@ Note that the identification with [[seteq]] is non-trivial,
   (qed <c>))
 
 (defthm rel-equal-refl
-  [[R (rel ?T ?U)]]
+  [[?T ?U :type] [R (rel T U)]]
   (rel-equal R R))
 
 (proof 'rel-equal-refl-thm
@@ -331,7 +331,7 @@ Note that the identification with [[seteq]] is non-trivial,
   (qed <b>))
 
 (defthm rel-equal-sym
-  [[R1 (rel ?T ?U)] [R2 (rel ?T ?U)]]
+  [[?T ?U :type] [R1 R2 (rel T U)]]
   (==> (rel-equal R1 R2)
        (rel-equal R2 R1)))
 
@@ -350,7 +350,7 @@ Note that the identification with [[seteq]] is non-trivial,
   (qed <e>))
 
 (defthm rel-equal-trans
-  [[R1 (rel ?T ?U)] [R2 (rel ?T ?U)] [R3 (rel ?T ?U)]]
+  [[?T ?U :type] [R1 R2 R3 (rel T U)]]
   (==> (rel-equal R1 R2)
        (rel-equal R2 R3)
        (rel-equal R1 R3)))
@@ -377,7 +377,7 @@ Note that the identification with [[seteq]] is non-trivial,
   (qed <i>))
 
 (defthm rel-equal-implies-subrel
-  [[R1 (rel ?T ?U)] [R2 (rel ?T ?U)]]
+  [[?T ?U :type] [R1 R2 (rel T U)]]
   (==> (rel-equal R1 R2)
        (subrel R1 R2)))
 
@@ -394,7 +394,7 @@ Note that the identification with [[seteq]] is non-trivial,
   (qed <b>))
 
 (defthm rel-equal-implies-releq
-  [[R1 (rel ?T ?U)] [R2 (rel ?T ?U)]]
+  [[?T ?U :type] [R1 R2 (rel T U)]]
   (==> (rel-equal R1 R2)
        (releq R1 R2)))
 
@@ -413,13 +413,13 @@ Note that the identification with [[seteq]] is non-trivial,
   "As for the set case (cf. [[sets/seteq-implies-set-equal]]),
 going from the subset-based equality to the (thus more general) *leibniz*-style
 one requires an axiom."
-  [[R1 (rel ?T ?U)] [R2 (rel ?T ?U)]]
+  [[?T ?U :type] [R1 R2 (rel T U)]]
   (==> (releq R1 R2)
        (rel-equal R1 R2)))
 
 (defthm rel-equal-releq
   "Coincidence of *Leibniz*-style and subset-based equality for relations."
-  [[R1 (rel ?T ?U)] [R2 (rel ?T ?U)]]
+  [[?T ?U :type] [R1 R2 (rel T U)]]
   (<=> (rel-equal R1 R2)
        (releq R1 R2)))
 
@@ -429,15 +429,14 @@ one requires an axiom."
 
 (definition rcomp
   "Sequential relational composition."
-  [[R1 (rel ?T ?U)] [R2 (rel ?U ?V)]]
+  [[?T ?U ?V :type], R1 (rel T U), R2 (rel U V)]
   (lambda [x T]
     (lambda [z V]
       (exists [y U]
         (and (R1 x y) (R2 y z))))))
 
 (deflemma rcomp-assoc-subrel-aux
-  [[T :type] [U :type] [V :type] [W :type]
-   [R1 (rel T U)] [R2 (rel U V)] [R3 (rel V W)] [x T] [z W]]
+  [[T U V W :type], R1 (rel T U), R2 (rel U V), R3 (rel V W), x T, z W]
   (==> ((rcomp R1 (rcomp R2 R3)) x z)
        ((rcomp (rcomp R1 R2) R3) x z)))
 
@@ -473,7 +472,7 @@ one requires an axiom."
   (qed <i>))
 
 (defthm rcomp-assoc-subrel
-  [[R1 (rel ?T ?U)] [R2 (rel ?U ?V)] [R3 (rel ?V ?W)]]
+  [[?T ?U ?V ?W :type], R1 (rel T U), R2 (rel U V), R3 (rel V W)]
   (subrel (rcomp R1 (rcomp R2 R3))
           (rcomp (rcomp R1 R2) R3)))
 
@@ -488,8 +487,7 @@ one requires an axiom."
   (qed <a>))
 
 (deflemma rcomp-assoc-suprel-aux
-  [[T :type] [U :type] [V :type] [W :type]
-   [R1 (rel T U)] [R2 (rel U V)] [R3 (rel V W)] [x T] [z W]]
+  [[T U V W :type] [R1 (rel T U)] [R2 (rel U V)] [R3 (rel V W)] [x T] [z W]]
   (==> ((rcomp (rcomp R1 R2) R3) x z)
        ((rcomp R1 (rcomp R2 R3)) x z)))
 
@@ -529,7 +527,7 @@ one requires an axiom."
   (qed <e>))
 
 (defthm rcomp-assoc-suprel
-  [[R1 (rel ?T ?U)] [R2 (rel ?U ?V)] [R3 (rel ?V ?W)]]
+  [[?T ?U ?V ?W :type], R1 (rel T U), R2 (rel U V), R3 (rel V W)]
   (subrel (rcomp (rcomp R1 R2) R3)
           (rcomp R1 (rcomp R2 R3))))
 
@@ -543,7 +541,7 @@ one requires an axiom."
 
 (defthm rcomp-assoc
   "Relational composition is associative."
-  [[R1 (rel ?T ?U)] [R2 (rel ?U ?V)] [R3 (rel ?V ?W)]]
+  [[?T ?U ?V ?W :type] [R1 (rel T U)] [R2 (rel U V)] [R3 (rel V W)]]
   (releq (rcomp R1 (rcomp R2 R3))
          (rcomp (rcomp R1 R2) R3)))
 
@@ -553,12 +551,12 @@ one requires an axiom."
 
 (definition psubrel
   "The anti-reflexive variant of [[subrel]]."
-  [[R1 (rel ?T ?U)] [R2 (rel ?T ?U)]]
+  [[?T ?U :type] [R1 R2 (rel T U)]]
   (and (subrel R1 R2)
        (not (releq R1 R2))))
 
 (defthm psubrel-antirefl
-  [[R (rel ?T ?U)]]
+  [[?T ?U :type] [R (rel T U)]]
   (not (psubrel R R)))
 
 (proof 'psubrel-antirefl-thm
@@ -569,7 +567,7 @@ one requires an axiom."
   (qed <b>))
 
 (defthm psubrel-antisym
-  [[R1 (rel ?T ?U)] [R2 (rel ?T ?U)]]
+  [[?T ?U :type] [R1 R2 (rel T U)]]
   (not (and (psubrel R1 R2)
             (psubrel R2 R1))))
 
@@ -585,7 +583,7 @@ one requires an axiom."
   (qed <c>))
 
 (defthm psubrel-trans
-  [[R1 (rel ?T ?U)] [R2 (rel ?T ?U)] [R3 (rel ?T ?U)]]
+  [[?T ?U :type] [R1 R2 R3 (rel T U)]]
   (==> (psubrel R1 R2)
        (psubrel R2 R3)
        (psubrel R1 R3)))
@@ -611,7 +609,7 @@ one requires an axiom."
   (qed <e>))
 
 (defthm psubrel-emptyrel
-  [[R (rel ?T ?U)]]
+  [[?T ?U :type] [R (rel T U)]]
   (==> (psubrel (emptyrel T U) R)
        (not (releq R (emptyrel T U)))))
 
@@ -626,7 +624,7 @@ one requires an axiom."
   (qed <c>))
 
 (defthm psubrel-emptyrel-conv
-  [[R (rel ?T ?U)]]
+  [[?T ?U :type] [R (rel T U)]]
   (==> (not (releq R (emptyrel T U)))
        (psubrel (emptyrel T U) R)))
 
@@ -643,7 +641,7 @@ one requires an axiom."
   (qed <d>))
 
 (defthm psubrel-emptyrel-equiv
-  [[R (rel ?T ?U)]]
+  [[?T ?U :type] [R (rel T U)]]
   (<=> (psubrel (emptyrel T U) R)
        (not (releq R (emptyrel T U)))))
 
@@ -653,7 +651,7 @@ one requires an axiom."
 
 (definition prod
   "The cartersian product of sets `s1` and `s2`, i.e. `s1`⨯`s2`."
-  [[s1 (set ?T)] [s2 (set ?U)]]
+  [[?T ?U :type], s1 (set T), s2 (set U)]
   (lambda [x T]
     (lambda [y U]
       (and (elem x s1)
