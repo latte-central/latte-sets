@@ -24,14 +24,14 @@
 
 (definition runion
   "Relational union."
-  [[R1 (rel ?T ?U)] [R2 (rel ?T ?U)]]
+  [[?T ?U :type] [R1 R2 (rel T U)]]
   (lambda [x T]
     (lambda [y U]
       (or (R1 x y)
           (R2 x y)))))
 
 (defthm runion-idem
-  [[R (rel ?T ?U)]]
+  [[?T ?U :type], R (rel T U)]
   (releq (runion R R) R))
 
 (proof 'runion-idem-thm
@@ -55,7 +55,7 @@
   (qed (p/and-intro <c> <d>)))
 
 (defthm runion-empty
-  [[R (rel ?T ?U)]]
+  [[?T ?U :type], R (rel T U)]
   (releq (runion R (emptyrel T U)) R))
 
 (proof 'runion-empty-thm
@@ -82,7 +82,7 @@
 
 (defthm runion-commute
   "Relational union commutes."
-  [[R1 (rel ?T ?U)] [R2 (rel ?T ?U)]]
+  [[?T ?U :type] [R1 R2 (rel T U)]]
   (releq (runion R1 R2)
          (runion R2 R1)))
 
@@ -103,7 +103,7 @@
   (qed (p/and-intro <a> <b>)))
 
 (defthm runion-assoc
-  [[R1 (rel ?T ?U)] [R2 (rel ?T ?U)] [R3 (rel ?T ?U)]]
+  [[?T ?U :type] [R1 R2 R3 (rel T U)]]
   (releq (runion R1 (runion R2 R3))
          (runion (runion R1 R2) R3)))
 
@@ -192,7 +192,7 @@
   (qed (p/and-intro <f> <l>)))
 
 (defthm runion-assoc-sym
-  [[R1 (rel ?T ?U)] [R2 (rel ?T ?U)] [R3 (rel ?T ?U)]]
+  [[?T ?U :type] [R1 R2 R3 (rel T U)]]
   (releq (runion (runion R1 R2) R3)
          (runion R1 (runion R2 R3))))
 
@@ -206,7 +206,7 @@
   (qed <b>))
 
 (defthm runion-dom
-  [[R1 (rel ?T ?U)] [R2 (rel ?T ?U)]]
+  [[?T ?U :type] [R1 R2 (rel T U)]]
   (seteq (dom (runion R1 R2))
          (set/union (dom R1) (dom R2))))
 
@@ -285,7 +285,7 @@
   (qed (p/and-intro <f> <n>)))
 
 (defthm runion-ran
-  [[R1 (rel ?T ?U)] [R2 (rel ?T ?U)]]
+  [[?T ?U :type] [R1 R2 (rel T U)]]
   (seteq (ran (runion R1 R2))
          (set/union (ran R1) (ran R2))))
 
@@ -366,7 +366,7 @@
 
 (definition rinter
   "Relational intersection."
-  [[R1 (rel ?T ?U)] [R2 (rel ?T ?U)]]
+  [[?T ?U :type] [R1 R2 (rel T U)]]
   (lambda [x T]
     (lambda [y U]
       (and (R1 x y)
@@ -375,7 +375,7 @@
 
 (defthm rinter-elim-left
   "Elimination rule for intersection (left operand)."
-  [[R1 (rel ?T ?U)] [R2 (rel ?T ?U)] [x ?T] [y ?U]]
+  [[?T ?U :type] [R1 R2 (rel T U)] [x T] [y U]]
   (==> ((rinter R1 R2) x y)
        (R1 x y)))
 
@@ -386,7 +386,7 @@
 
 (defthm rinter-elim-right
   "Elimination rule for intersection (right operand)."
-  [[R1 (rel ?T ?U)] [R2 (rel ?T ?U)] [x ?T] [y ?U]]
+  [[?T ?U :type] [R1 R2 (rel T U)] [x T] [y U]]
   (==> ((rinter R1 R2) x y)
        (R2 x y)))
 
@@ -396,7 +396,7 @@
   (qed <a>))
 
 (defthm rinter-idem
-  [[R (rel ?T ?U)]]
+  [[?T ?U :type], R (rel T U)]
   (releq (rinter R R) R))
 
 (proof 'rinter-idem-thm
@@ -417,7 +417,7 @@
   (qed (p/and-intro <b> <c>)))
 
 (defthm rinter-empty
-  [[R (rel ?T ?U)]]
+  [[?T ?U :type], R (rel T U)]
   (releq (rinter R (emptyrel T U))
          (emptyrel T U)))
 
@@ -438,7 +438,7 @@
 
 (defthm rinter-commute
   "Relation intersection commutes."
-  [[R1 (rel ?T ?U)] [R2 (rel ?T ?U)]]
+  [[?T ?U :type] [R1 R2 (rel T U)]]
   (releq (rinter R1 R2)
          (rinter R2 R1)))
 
@@ -456,7 +456,7 @@
   (qed (p/and-intro <a> <b>)))
 
 (defthm rinter-assoc
-  [[R1 (rel ?T ?U)] [R2 (rel ?T ?U)] [R3 (rel ?T ?U)]]
+  [[?T ?U :type] [R1 R2 R3 (rel T U)]]
   (releq (rinter R1 (rinter R2 R3))
          (rinter (rinter R1 R2) R3)))
 
@@ -486,7 +486,7 @@
   (qed (p/and-intro <a> <b>)))
 
 (defthm rinter-assoc-sym
-  [[R1 (rel ?T ?U)] [R2 (rel ?T ?U)] [R3 (rel ?T ?U)]]
+  [[?T ?U :type] [R1 R2 R3 (rel T U)]]
   (releq (rinter (rinter R1 R2) R3)
          (rinter R1 (rinter R2 R3))))
 
@@ -500,7 +500,7 @@
 
 (defthm dist-runion-rinter
   "Distributivity of union over intersection."
-  [[R1 (rel ?T ?U)] [R2 (rel ?T ?U)] [R3 (rel ?T ?U)]]
+  [[?T ?U :type] [R1 R2 R3 (rel T U)]]
   (releq (runion R1 (rinter R2 R3))
          (rinter (runion R1 R2) (runion R1 R3))))
 
@@ -578,7 +578,7 @@
 
 (defthm dist-runion-rinter-sym
   "Symmetric case of [[dist-runion-rinter]]."
-  [[R1 (rel ?T ?U)] [R2 (rel ?T ?U)] [R3 (rel ?T ?U)]]
+  [[?T ?U :type] [R1 R2 R3 (rel T U)]]
   (releq (rinter (runion R1 R2) (runion R1 R3))
          (runion R1 (rinter R2 R3))))
 
@@ -591,7 +591,7 @@
 
 (defthm dist-rinter-runion
   "Distributivity of intersection over union."
-  [[R1 (rel ?T ?U)] [R2 (rel ?T ?U)] [R3 (rel ?T ?U)]]
+  [[?T ?U :type] [R1 R2 R3 (rel T U)]]
   (releq (rinter R1 (runion R2 R3))
          (runion (rinter R1 R2) (rinter R1 R3))))
 
@@ -655,7 +655,7 @@
 
 (defthm dist-rinter-runion-sym
   "Symmetric case of [[dist-rinter-runion]]."
-  [[R1 (rel ?T ?U)] [R2 (rel ?T ?U)] [R3 (rel ?T ?U)]]
+  [[?T ?U :type] [R1 R2 R3 (rel T U)]]
   (releq (runion (rinter R1 R2) (rinter R1 R3))
          (rinter R1 (runion R2 R3))))
 
@@ -669,14 +669,14 @@
 
 (definition rdiff
   "Relational difference."
-  [[R1 (rel ?T ?U)] [R2 (rel ?T ?U)]]
+  [[?T ?U :type] [R1 R2 (rel T U)]]
   (lambda [x T]
     (lambda [y U]
       (and (R1 x y)
            (not (R2 x y))))))
 
 (defthm rdiff-empty-right
-  [[R (rel ?T ?U)]]
+  [[?T ?U :type], R (rel T U)]
   (releq (rdiff R (emptyrel T U)) R))
 
 (proof 'rdiff-empty-right-thm
@@ -699,7 +699,7 @@
   (qed (p/and-intro <b> <d>)))
 
 (defthm rdiff-empty-left
-  [[R (rel ?T ?U)]]
+  [[?T ?U :type], R (rel T U)]
   (releq (rdiff (emptyrel T U) R) (emptyrel T U)))
 
 (proof 'rdiff-empty-left-thm
@@ -718,7 +718,7 @@
   (qed (p/and-intro <a> <c>)))
 
 (defthm rdiff-cancel
-  [[R (rel ?T ?U)]]
+  [[?T ?U :type], R (rel T U)]
   (releq (rdiff R R) (emptyrel T U)))
 
 (proof 'rdiff-cancel-thm
@@ -740,7 +740,7 @@
 
 (definition rcomplement
   "The complement of relation `R`."
-  [[R (rel ?T ?U)]]
+  [[?T ?U :type], R (rel T U)]
   (lambda [x T]
     (lambda [y U]
             (not (R x y)))))
@@ -789,14 +789,14 @@
 (definition restrict-dom
   "Restriction of domain of relation `R` to
 the subset `s`."
-  [[R (rel ?T ?U)] [s (set ?T)]]
+  [[?T ?U :type], R (rel T U) [s (set T)]]
   (lambda [x T]
     (lambda [y U]
       (and (elem x s)
            (R x y)))))
 
 (defthm restrict-dom-dom
-  [[R (rel ?T ?U)] [s (set ?T)]]
+  [[?T ?U :type], R (rel T U) [s (set T)]]
   (seteq (dom (restrict-dom R s))
          (inter s (dom R))))
 
@@ -843,7 +843,7 @@ the subset `s`."
 
 (definition subtract-dom
   "Subtraction (or anti-restriction) of set `s` from the domain of relation `R`"
-  [[R (rel ?T ?U)] [s (set ?T)]]
+  [[?T ?U :type], R (rel T U) [s (set T)]]
   (lambda [x T]
     (lambda [y U]
       (and (not (elem x s))
@@ -852,7 +852,7 @@ the subset `s`."
 (definition restrict-ran
   "Restriction of range of relation `R` to
 the subset `s`."
-  [[R (rel ?T ?U)] [s (set ?U)]]
+  [[?T ?U :type], R (rel T U) [s (set U)]]
   (lambda [x T]
     (lambda [y U]
       (and (elem y s)
@@ -860,7 +860,7 @@ the subset `s`."
 
 (definition subtract-ran
   "Subtraction of set `s` from the range of relation `R`"
-  [[R (rel ?T ?U)] [s (set ?U)]]
+  [[?T ?U :type], R (rel T U) [s (set U)]]
   (lambda [x T]
     (lambda [y U]
       (and (not (elem y s))
@@ -868,7 +868,7 @@ the subset `s`."
 
 (definition rimage
   "Relational image of set `s` for relation `R`."
-  [[R (rel ?T ?U)] [s (set ?T)]]
+  [[?T ?U :type], R (rel T U) [s (set T)]]
   (lambda [y U]
     (exists [x T]
       (and (elem x s)
@@ -876,13 +876,13 @@ the subset `s`."
 
 (definition rinverse
   "The relational inverse of `R`."
-  [[R (rel ?T ?U)]]
+  [[?T ?U :type], R (rel T U)]
   (lambda [y U]
     (lambda [x T]
             (R x y))))
 
 (defthm rinverse-prop
-  [[R (rel ?T ?U)] [x ?T] [y ?U]]
+  [[?T ?U :type], R (rel T U) [x T] [y U]]
   (==> (R x y)
        ((rinverse R) y x)))
 
