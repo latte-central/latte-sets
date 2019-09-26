@@ -19,5 +19,7 @@
                        latte-sets.ralgebra
                        latte-sets.powerrel
                        latte-sets.pfun]}
+  :profiles {:uberjar {:aot [latte-sets.main]}}
   :plugins [[lein-codox "0.10.7"]])
+
 
