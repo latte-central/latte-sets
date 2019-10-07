@@ -16,7 +16,7 @@
 
               [latte-sets.core :as s :refer [set elem seteq subset]]
               
-              [latte-sets.rel :as r :refer [rel subrel releq]]
+              [latte-sets.rel :as r :refer [rel subrel releq transitive]]
               [latte-sets.powerset :as powerset :refer [powerset set-ex]]))
 
 (definition powerrel
@@ -141,8 +141,8 @@ There exists a unique relation R in the set of relations X such that ..."
                      (R x y)))))))
 
 (defthm runions-upper-bound
-   "The generalized union is an upper bound wrt. 
-the subrel relation."
+   "The generalized relational union is an upper bound wrt. 
+the [[subrel]] relation."
    [[?T ?U :type] [RR (powerrel T U)]]
    (forall [R (rel T U)]
      (==>  (rel-elem R RR)
@@ -160,66 +160,127 @@ the subrel relation."
       (have <b> ((runions RR) x y) :by ((rel-ex-intro U R) <a>))))
   (qed <b>))
 
-(comment
 
-(definition intersections
-  "Generalize intersections.
-This is the set {y:T | ∀x∈X, y∈x}."
-  [[?T :type] [X (powerset T)]]
-  (lambda [y T]
-    (forall [x (set T)]
-      (==> (set-elem x X)
-           (elem y x)))))
+(definition rintersections
+  "Generalized relational intersection."
+  [[?T ?U :type] [RR (powerrel T U)]]
+  (lambda [x T]
+    (lambda [y U]
+      (forall [R (rel T U)]
+      (==> (rel-elem R RR)
+           (R x y))))))
 
-(defthm intersections-lower-bound
-  "The generalized intersection is a lower bound wrt. the subset relation."
-  [[T :type] [X (powerset T)]]
-  (forall [x (set T)]
-    (==> (set-elem x X)
-         (subset (intersections X) x))))
+(defthm rintersections-lower-bound
+  "The generalized intersection is a lower bound wrt. the [[subrel]] relation."
+  [[?T ?U :type] [RR (powerrel T U)]]
+  (forall [R (rel T U)]
+    (==> (rel-elem R RR)
+         (subrel (rintersections RR) R))))
 
-(proof 'intersections-lower-bound
-  (assume [x (set T)
-           Hx (set-elem x X)]
-    (assume [y T
-             Hy (elem y (intersections X))]
-      (have <a> (elem y x) :by (Hy x Hx))))
+(proof 'rintersections-lower-bound-thm
+  (assume [R (rel T U)
+           Hx (rel-elem R RR)]
+    (assume [x T y U
+             Hxy ((rintersections RR) x y)]
+      (have <a> (R x y) :by (Hxy R Hx))))
   (qed <a>))
 
-(defthm intersections-prop
-  "Preservation of properties on intersections."
-  [[T :type] [P (==> T :type)] [X (powerset T)]]
-  (forall [x (set T)]
-    (==> (set-elem x X)
-         (forall [y T]
-           (==> (elem y x)
-                (P y)))
-         (forall [z T]
-           (==> (elem z (intersections X))
-                (P z))))))
+(defthm rintersections-prop
+  "Preservation of properties on relational intersections."
+  [[?T ?U :type] [P (==> T U :type)] [RR (powerrel T U)]]
+  (forall [R (rel T U)]
+    (==> (rel-elem R RR)
+         (forall [x T]
+           (forall [y U]
+             (==> (R x y)
+                  (P x y))))
+         (forall [x T]
+           (forall [y U]
+             (==> ((rintersections RR) x y)
+                  (P x y)))))))
 
-(proof 'intersections-prop
-  (assume [x (set T)
-           H1 (set-elem x X)
-           H2 (forall [y T]
-                (==> (elem y x)
-                     (P y)))]
-    (assume [z T
-             Hz (elem z (intersections X))]
-      (have <a> (==> (elem z x)
-                     (P z)) :by (H2 z))
-      (have <b> (elem z x)
-            :by ((intersections-lower-bound T X) x H1 z Hz))
-      (have <c> (P z) :by (<a> <b>))))
+(proof 'rintersections-prop-thm
+  (assume [R (rel T U)
+           H1 (rel-elem R RR)
+           H2 (forall [x T]
+                (forall [y U]
+                  (==> (R x y)
+                       (P x y))))]
+    (assume [x T y U
+             Hxy ((intersections RR) x y)]
+      (have <a> (==> (R x y)
+                     (P x y)) :by (H2 x y))
+      (have <b> (R x y)
+            :by ((rintersections-lower-bound RR) R H1 x y Hxy))
+      (have <c> (P x y) :by (<a> <b>))))
   (qed <c>))
+
+(definition trans-closure-set
+  "The set of transitively-closed relation."
+  [?T :type, R (rel T T)]
+  (lambda [S (rel T T)]
+    (and (subrel R S)
+         (transitive S))))
 
 (definition trans-closure
   "The transitive closure of `R`, cf. [[rel/transitive]]
 *Remark*: it is defined in the [[powerrel]] namespace
-because the definition requires [[intersections]]."
+because the definition requires [[rintersections]]."
   [?T :type, R (rel T T)]
+  (rintersections (trans-closure-set R)))
+
+(defthm transitive-trans-closure
+  [?T :type, R (rel T T)]
+  (transitive (trans-closure R)))
+
+(proof 'transitive-trans-closure-thm
+  (pose R+ := (trans-closure R))
+  (assume [x T y T z T
+           Hxy (R+ x y) Hyz (R+ y z)]
+    (assume [S (rel T T)
+             HS (rel-elem S (trans-closure-set R))]
+      (have <a> (subrel R+ S) :by ((rintersections-lower-bound (trans-closure-set R)) S HS))
+      (have <b> (S x y) :by (<a> x y Hxy))
+      (have <c> (S y z) :by (<a> y z Hyz))
+      (have <d> (transitive S) :by (p/and-elim-right HS))
+      (have <e> (S x z) :by (<d> x y z <b> <c>)))
+    (have <f> (R+ x z) :by <e>))
+  (qed <f>))
   
-)
+(defthm trans-closure-sub
+  [?T :type, R (rel T T)]
+  (subrel R (trans-closure R)))
+
+(proof 'trans-closure-sub-thm
+  (pose R+ := (rintersections (lambda [S (rel T T)]
+                                (and (subrel R S)
+                                     (transitive S)))))
+  (assume [x T y T
+           Hxy (R x y)]
+    (assume [S (rel T T)
+             HS (and (subrel R S)
+                     (transitive S))]
+      (have <a> (S x y) :by ((p/and-elim-left HS) x y Hxy)))
+    (have <b> (R+ x y) :by <a>))
+  (qed <a>))
+
+(defthm trans-closure-smallest
+  [?T :type, R (rel T T)]
+  (forall [S (rel T T)]
+    (==> (subrel R S)
+         (transitive S)
+         (subrel (trans-closure R) S))))
+
+(proof 'trans-closure-smallest-thm
+  (assume [S _ Hsub _ Htrans _]
+    (assume [x T y T
+             Hxy ((trans-closure R) x y)]
+      (have <a> (rel-elem S (trans-closure-set R))
+            :by (p/and-intro Hsub Htrans))
+      (have <b> (S x y) :by (Hxy S <a>))))
+  (qed <b>))
+
+(comment
 
 (definition full-powerset
   "The powerset containing all the subsets of type `T`."
