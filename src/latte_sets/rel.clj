@@ -62,6 +62,22 @@ This function is used for implicits in relations."
     (have <a> (equal x x) :by (eq/eq-refl x)))
   (qed <a>))
 
+(definition refl-closure
+  "The reflexive closure of relation `R`."
+  [?T :type, R (rel T T)]
+  (lambda [x y T]
+    (or (R x y)
+        (equal x y))))
+
+(defthm reflexive-refl-closure
+  [?T :type, R (rel T T)]
+  (reflexive (refl-closure R)))
+
+(proof 'reflexive-refl-closure-thm
+  (assume [x T]
+    (have <a> _ :by (p/or-intro-right (R x x) (eq/eq-refl x))))
+  (qed <a>))
+
 (definition symmetric
   "A symmetric relation."
   [?T :type, R (rel T T)]
@@ -81,6 +97,28 @@ This function is used for implicits in relations."
     (have <b> (equal y x) :by (eq/eq-sym <a>)))
   (qed <b>))
 
+(definition symm-closure
+  "The symmetric closure of relation `R`."
+  [?T :type, R (rel T T)]
+  (lambda [x y T]
+    (or (R x y)
+        (R y x))))
+
+(defthm symmetric-symm-closure
+  [?T :type, R (rel T T)]
+  (symmetric (symm-closure R)))
+
+(proof 'symmetric-symm-closure-thm
+  (pose R* := (symm-closure R))
+  (assume [x T y T
+           H (R* x y)]
+    (assume [Hxy (R x y)]
+      (have <a> (R* y x) :by (p/or-intro-right (R y x) Hxy)))
+    (assume [Hyx (R y x)]
+      (have <b> (R* y x) :by (p/or-intro-left Hyx (R x y))))
+    (have <c> (R* y x) :by (p/or-elim H (R* y x) <a> <b>)))
+  (qed <c>))
+
 (definition transitive
   "A transitive relation."
   [?T :type, R (rel T T)]
@@ -88,6 +126,10 @@ This function is used for implicits in relations."
     (==> (R x y)
          (R y z)
          (R x z))))
+
+;; remark : we cannot define the transitive clojure now
+;; because we need a fixed point definition
+;; It is thus defined in powerrel.
 
 (defthm ident-trans
   [T :type]
@@ -247,6 +289,72 @@ This function is used for implicits in relations."
           :by p/truth-is-true))
   (qed <a>))
 
+
+(defthm refl-closure-sub
+  [?T :type, R (rel T T)]
+  (subrel R (refl-closure R)))
+
+(proof 'refl-closure-sub-thm
+  (assume [x T y T
+           HR (R x y)]
+    (have <a> (or (R x y) (equal x y))
+          :by (p/or-intro-left HR (equal x y))))
+  (qed <a>))
+
+(defthm refl-closure-smallest
+  [?T :type, R (rel T T)]
+  (forall [S (rel T T)]
+    (==> (subrel R S)
+         (reflexive S)
+         (subrel (refl-closure R) S))))
+
+(proof 'refl-closure-smallest-thm
+  (pose R* := (refl-closure R))
+  (assume [S (rel T T)
+           Hsub (subrel R S) 
+           HSrefl (reflexive S)]
+    (assume [x T y T
+             HR* (R* x y)]
+      (assume [HR*1 (R x y)]
+        (have <a> (S x y) :by (Hsub x y HR*1)))
+      (assume [HR*2 (equal x y)]
+        (have <b1> (S x x) :by (HSrefl x))
+        (have <b> (S x y) :by (eq/eq-subst (lambda [$ T] (S x $)) HR*2 <b1>)))
+      (have <c> (S x y) :by (p/or-elim HR* (S x y) <a> <b>))))
+  (qed <c>))
+
+(defthm symm-closure-sub
+  [?T :type, R (rel T T)]
+  (subrel R (symm-closure R)))
+
+(proof 'symm-closure-sub-thm
+  (assume [x T y T
+           HR (R x y)]
+    (have <a> (or (R x y) (R y x))
+          :by (p/or-intro-left HR (R y x))))
+  (qed <a>))
+
+(defthm symm-closure-smallest
+  [?T :type, R (rel T T)]
+  (forall [S (rel T T)]
+    (==> (subrel R S)
+         (symmetric S)
+         (subrel (symm-closure R) S))))
+
+(proof 'symm-closure-smallest-thm
+  (pose R* := (symm-closure R))
+  (assume [S (rel T T)
+           Hsub (subrel R S) 
+           HSsym (symmetric S)]
+    (assume [x T y T
+             HR* (R* x y)]
+      (assume [HR*1 (R x y)]
+        (have <a> (S x y) :by (Hsub x y HR*1)))
+      (assume [HR*2 (R y x)]
+        (have <b1> (S y x) :by (Hsub y x HR*2))
+        (have <b> (S x y) :by (HSsym y x <b1>)))
+      (have <c> (S x y) :by (p/or-elim HR* (S x y) <a> <b>))))
+  (qed <c>))
 
 (definition releq
   "Subset-based equality on relations."
