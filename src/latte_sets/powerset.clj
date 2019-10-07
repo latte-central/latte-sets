@@ -12,7 +12,6 @@ to deal with powersets."
     (:refer-clojure :exclude [and or not set])
 
     (:require [latte.core :as latte :refer [definition defthm defaxiom defnotation
-                                            defimplicit
                                             forall lambda
                                             assume have pose proof qed lambda]]
               [latte.utils :as u]

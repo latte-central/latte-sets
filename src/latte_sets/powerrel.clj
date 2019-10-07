@@ -7,7 +7,6 @@
     (:refer-clojure :exclude [and or not set])
 
     (:require [latte.core :as latte :refer [definition defthm defaxiom defnotation
-                                            defimplicit
                                             forall lambda
                                             assume have pose proof qed lambda]]
               [latte.utils :as u]
@@ -16,7 +15,9 @@
               [latte-prelude.equal :as eq :refer [equal]]
 
               [latte-sets.core :as s :refer [set elem seteq subset]]
-              [latte-sets.rel :as r :refer [rel releq]]))
+              
+              [latte-sets.rel :as r :refer [rel subrel releq]]
+              [latte-sets.powerset :as powerset :refer [powerset set-ex]]))
 
 (definition powerrel
   "The powerset constructor for relations.
@@ -129,47 +130,39 @@ There exists a unique relation R in the set of relations X such that ..."
     (have <d> (releq R (the-rel X u)) :by (<c> HR <b>)))
   (qed <d>))
 
-(comment
 
-  ;; XXX : are generalization to relations of the following useful?
+(definition runions
+  "Generalized relation union."
+  [[?T ?U :type] [RR (powerrel T U)]]
+  (lambda [x T]
+    (lambda [y U]
+      (rel-ex (lambda [R (rel T U)]
+                (and (rel-elem R RR)
+                     (R x y)))))))
 
-(definition unions-def
-  "Generalized union.
-This is the set {y:T | ∃x∈X, y∈x}."
-  [[?T :type] [X (powerset T)]]
-  (lambda [y T]
-          (set-ex (lambda [x (set T)]
-                          (and (set-elem x X)
-                               (elem y x))))))
-
-(defimplicit unions
-  "Generalized union.
-This is the set {y:T | ∃x∈X, y∈x}."
-  [def-env ctx [X X-ty]]
-  (let [T (fetch-powerset-type def-env ctx X-ty)]
-    (list #'unions-def T X)))
-
-(defthm unions-upper-bound
+(defthm runions-upper-bound
    "The generalized union is an upper bound wrt. 
-the subset relation."
-   [[?T :type] [X (powerset T)]]
-   (forall [x (set T)]
-     (==>  (set-elem x X)
-           (subset x (unions X)))))
+the subrel relation."
+   [[?T ?U :type] [RR (powerrel T U)]]
+   (forall [R (rel T U)]
+     (==>  (rel-elem R RR)
+           (subrel R (runions RR)))))
 
-(proof 'unions-upper-bound-thm
-  (assume [x (set T)
-           Hx (set-elem x X)]
-    (assume [y T
-             Hy (elem y x)]
-      (pose I := (lambda [x (set T)]
-                         (and (set-elem x X)
-                              (elem y x))))
-      (have <a> (set-elem x I) :by (p/and-intro Hx Hy))
-      (have <b> (elem y (unions X)) :by ((set-ex-intro I x) <a>))))
+(proof 'runions-upper-bound-thm
+  (assume [R (rel T U)
+           HR (rel-elem R RR)]
+    (assume [x T y U
+             Hxy (R x y)]
+      (pose U := (lambda [S (rel T U)]
+                   (and (rel-elem S RR)
+                        (S x y))))
+      (have <a> (rel-elem R U) :by (p/and-intro HR Hxy))
+      (have <b> ((runions RR) x y) :by ((rel-ex-intro U R) <a>))))
   (qed <b>))
 
-(definition intersections-def
+(comment
+
+(definition intersections
   "Generalize intersections.
 This is the set {y:T | ∀x∈X, y∈x}."
   [[?T :type] [X (powerset T)]]
@@ -177,13 +170,6 @@ This is the set {y:T | ∀x∈X, y∈x}."
     (forall [x (set T)]
       (==> (set-elem x X)
            (elem y x)))))
-
-(defimplicit intersections
-  "Generalize intersections.
-This is the set {y:T | ∀x∈X, y∈x}."
-  [def-env ctx [X X-ty]]
-  (let [T (fetch-powerset-type def-env ctx X-ty)]
-    (list #'intersections-def T X)))
 
 (defthm intersections-lower-bound
   "The generalized intersection is a lower bound wrt. the subset relation."
@@ -227,6 +213,13 @@ This is the set {y:T | ∀x∈X, y∈x}."
       (have <c> (P z) :by (<a> <b>))))
   (qed <c>))
 
+(definition trans-closure
+  "The transitive closure of `R`, cf. [[rel/transitive]]
+*Remark*: it is defined in the [[powerrel]] namespace
+because the definition requires [[intersections]]."
+  [?T :type, R (rel T T)]
+  
+)
 
 (definition full-powerset
   "The powerset containing all the subsets of type `T`."
