@@ -207,7 +207,7 @@ the [[subrel]] relation."
                   (==> (R x y)
                        (P x y))))]
     (assume [x T y U
-             Hxy ((intersections RR) x y)]
+             Hxy ((rintersections RR) x y)]
       (have <a> (==> (R x y)
                      (P x y)) :by (H2 x y))
       (have <b> (R x y)
