@@ -19,28 +19,22 @@
             [latte-prelude.prop :as p :refer [<=> and or not]]
             [latte-prelude.equal :as eq :refer [equal]]
 
-            [latte-sets.core :as s :refer [set elem seteq subset forall-in exists-in]]
+            [latte-sets.core :as s :refer [set set-of elem set-equal]]
+            [latte-sets.quant :as sq :refer [exists-in forall-in]]
             [latte-sets.rel :as rel :refer [rel dom ran]]))
 
 
-(definition pfun-def
+(definition pfun
   "A partial function `f` based on a relation together with
 a domain set `from` and a range set `to`. Note that the relation `f` on
 outside `from` or `to` need not be a function."
-  [[T :type] [U :type] [f (rel T U)] [from (set T)] [to (set U)]]
+  [[?T ?U :type], f (rel T U), from (set T), to (set U)]
   (forall-in [x from]
     (forall-in [y1 to]
       (forall-in [y2 to]
         (==> (f x y1)
              (f x y2)
              (equal y1 y2))))))
-
-(defimplicit pfun
-  "The term `(pfun f from to)` means the relation `f` is a partial function over the
-domain set `from` and range set `to`, cf. [[pfun-def]]."
-  [def-env ctx [f f-ty] [from from-ty] [to to-ty]]
-  (let [[T U] (rel/fetch-rel-type def-env ctx f-ty)]
-    (list #'pfun-def T U f from to)))
 
 (defn fetch-pfun-type [def-env ctx t]
   (latte.utils/decomposer
@@ -52,20 +46,48 @@ domain set `from` and range set `to`, cf. [[pfun-def]]."
        (throw (ex-info "Not a partial function type." {:type t}))))
    def-env ctx t))
 
-(definition ptotal-def
+(definition pdom
+  "The domain of partial function `f`."
+  [[?T ?U :type], f (rel T U), from (set T), to (set U)]
+  (set-of [x T] (and (elem x from)
+                     (exists-in [y to] (f x y)))))
+
+(definition pran
+  "The range of partial function `f``."
+  [[?T ?U :type], f (rel T U), from (set T), to (set U)]
+  (set-of [y U] (and (elem y to)
+                     (exists-in [x from] (f x y)))))
+
+(definition ptotal
   "The partial function `f` is total wrt. the provided `from`/`to` sets."
-  [[T :type] [U :type] [f (rel T U)] [from (set T)] [to (set U)]]
-  (forall-in [x from]
-    (exists-in [y to]
-      (f x y))))
+  [[?T ?U :type], f (rel T U), from (set T), to (set U)]
+  (set-equal (pdom f from to) from))
 
-(defimplicit ptotal
-  "The term `(ptotal f from to)` means the partial function `f` is
-total wrt. the provided `from`/`to` sets, cf. [[ptotal-def]]."
-  [def-env ctx [f f-ty] [from from-ty] [to to-ty]]
-  (let [[T U] (rel/fetch-rel-type def-env ctx f-ty)]
-    (list #'ptotal-def T U f from to)))
+(comment 
 
+;;; XXX : intuitively the following should hold,
+;;; but we cannot prove it because the notion of domain does
+;;; not relate directly to the range.
+
+(defthm ptotal-domain
+  [[?T ?U :type], f (rel T U), from (set T), to (set U)]
+  (==> (ptotal f from to)
+       (forall-in [x from]
+         (exists-in [y to]
+           (f x y)))))
+
+(proof 'ptotal-domain-thm
+  (assume [Htot (ptotal f from to)]
+    (assume [x T
+             Hx (elem x from)]
+      (have <a> (set-equal from (dom f))
+            :by ((s/set-equal-sym (dom f) from) Htot))
+      (have <b> (elem x (dom f)) 
+            :by ((s/set-equal-prop from (dom f)
+                                  (lambda [$ (set T)]
+                                    (elem x $))) <a> Hx))
+      (have <c> (exists [y U] (f x y)) :by <b>))))
+)
 
 (definition application
   "An application is a total function on its whole domain/range."

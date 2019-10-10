@@ -10,8 +10,7 @@
             [latte-sets.core :as s :refer [set elem]]
             [latte-prelude.prop :as p :refer [and or not]]
             [latte-prelude.quant :as q :refer [exists]]
-            [latte-prelude.equal :as eq :refer [equal]])
-  )
+            [latte-prelude.equal :as eq :refer [equal]]))
 
 (defnotation forall-in
   "Universal quantification over sets.
