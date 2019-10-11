@@ -63,12 +63,6 @@ outside `from` or `to` need not be a function."
   [[?T ?U :type], f (rel T U), from (set T), to (set U)]
   (set-equal (pdom f from to) from))
 
-(comment 
-
-;;; XXX : intuitively the following should hold,
-;;; but we cannot prove it because the notion of domain does
-;;; not relate directly to the range.
-
 (defthm ptotal-domain
   [[?T ?U :type], f (rel T U), from (set T), to (set U)]
   (==> (ptotal f from to)
@@ -80,20 +74,17 @@ outside `from` or `to` need not be a function."
   (assume [Htot (ptotal f from to)]
     (assume [x T
              Hx (elem x from)]
-      (have <a> (set-equal from (dom f))
-            :by ((s/set-equal-sym (dom f) from) Htot))
-      (have <b> (elem x (dom f)) 
-            :by ((s/set-equal-prop from (dom f)
-                                  (lambda [$ (set T)]
-                                    (elem x $))) <a> Hx))
-      (have <c> (exists [y U] (f x y)) :by <b>))))
-)
+      (have <a> (set-equal from (pdom f from to))
+            :by ((s/set-equal-sym (pdom f from to) from) Htot))
+      (have <b> (s/seteq from (pdom f from to))
+            :by ((s/set-equal-implies-seteq from (pdom f from to)) <a>))
+      (have <c> (elem x (pdom f from to))
+            :by (((p/and-elim-left <b>) x) Hx))
+      (have <d> (exists-in [y to] (f x y))
+            :by (p/and-elim-right <c>))))
+  (qed <d>))
 
-(definition application
-  "An application is a total function on its whole domain/range."
-  [[T :type] [U :type] [f (rel T U)]]
-  (and (pfun f (dom f) (ran f))
-       (ptotal f (dom f) (ran f))))
+(comment
 
 (definition pinjective-def
   "An injective partial function."
@@ -138,7 +129,6 @@ outside `from` or `to` need not be a function."
   (let [[T U] (rel/fetch-rel-type def-env ctx f-ty)]
     (list #'pbijective-def T U f from to)))
 
-(comment
   (defthm pinjective-single
     [[T :type] [U :type] [f (rel T U)] [from (set T)] [to (set U)]]
     (==> (pfun f from to)
