@@ -84,11 +84,10 @@ outside `from` or `to` need not be a function."
             :by (p/and-elim-right <c>))))
   (qed <d>))
 
-(comment
 
-(definition pinjective-def
+(definition pinjective
   "An injective partial function."
-  [[T :type] [U :type] [f (rel T U)] [from (set T)] [to (set U)]]
+  [[?T ?U :type] [f (rel T U)] [from (set T)] [to (set U)]]
   (forall-in [x1 from]
     (forall-in [x2 from]
       (forall-in [y1 to]
@@ -98,64 +97,51 @@ outside `from` or `to` need not be a function."
                (equal y1 y2)
                (equal x1 x2)))))))
 
-(defimplicit pinjective
-  "An injective partial function, cf. [[pinjective-def]]."
-  [def-env ctx [f f-ty] [from from-ty] [to to-ty]]
-  (let [[T U] (rel/fetch-rel-type def-env ctx f-ty)]
-    (list #'pinjective-def T U f from to)))
-
-(definition psurjective-def
+(definition psurjective
   "A surjective partial function."
-  [[T :type] [U :type] [f (rel T U)] [from (set T)] [to (set U)]]
+  [[?T ?U :type] [f (rel T U)] [from (set T)] [to (set U)]]
   (forall-in [y to]
     (exists-in [x from]
       (f x y))))
 
-(defimplicit psurjective
-  "An surjective partial function, cf. [[psurjective-def]]."
-  [def-env ctx [f f-ty] [from from-ty] [to to-ty]]
-  (let [[T U] (rel/fetch-rel-type def-env ctx f-ty)]
-    (list #'psurjective-def T U f from to)))
-
-(definition pbijective-def
+(definition pbijective
   "A bijective partial function."
-  [[T :type] [U :type] [f (rel T U)] [from (set T)] [to (set U)]]
+  [[?T ?U :type] [f (rel T U)] [from (set T)] [to (set U)]]
   (and (pinjective f from to)
        (psurjective f from to)))
 
-(defimplicit pbijective
-  "An bijective partial function, cf. [[pbijective-def]]."
-  [def-env ctx [f f-ty] [from from-ty] [to to-ty]]
-  (let [[T U] (rel/fetch-rel-type def-env ctx f-ty)]
-    (list #'pbijective-def T U f from to)))
+(comment
 
-  (defthm pinjective-single
-    [[T :type] [U :type] [f (rel T U)] [from (set T)] [to (set U)]]
-    (==> (pfun f from to)
-         (pinjective f from to)
-         (forall-in [z to]
-                    (q/single (lambda [x T] (and (elem x from) 
-                                                 (forall [w U] 
-                                                         (==> (f x w)
-                                                              (equal w z)))))))))
 
-(proof 'pinjective-single
+(defthm pinjective-single
+  [[?T ?U :type] [f (rel T U)] [from (set T)] [to (set U)]]
+  (==> (pfun f from to)
+       (pinjective f from to)
+       (forall-in [z to]
+         (sq/single-in from (lambda [x T] (forall-in [w to] 
+                                            (==> (f x w)
+                                                 (equal w z))))))))
+
+(proof 'pinjective-single-thm
   (assume [Hfun _
            Hinj _
            z U
            Hz (elem z to)]
-    (pose P := (lambda [x T] (and (elem x from)
-                                  (forall [w U]
-                                    (==> (f x w)
-                                         (equal w z))))))
-    (assume [x T y T
-             Hx (P x)
-             Hy (P y)]
+    (pose P := (lambda [x T] (forall-in [w to]
+                               (==> (f x w)
+                                    (equal w z)))))
+    (assume [x T Hx (elem x from)
+             y T Hy (elem y from)
+             HPx (P x)
+             HPy (P y)]
       "We have to show that x equals y"
-      (have <a1> (elem x from) :by (p/and-elim-left Hx))
-      (have <a2> (elem y from) :by (p/and-elim-left Hy))
+      (assume [Hcontra (not (equal x y))]
+        (assume [w U Hw (elem w to)
+                 Hfw (f x w)]
+          (have <a> (equal w z) :by (HPx w Hw Hfw))
+        ))
       )))
 
 
+
 )
-      
