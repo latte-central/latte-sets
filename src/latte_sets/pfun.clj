@@ -2,12 +2,13 @@
   "Partial functions are defined in this namespace as
   a relation (in the type theoretic sense) of type
   `(==> T U :type)` together with a domain `dom` of type `(set T)`
-  and a range `ran` of type `(set U)`
+  and a codomain `cod` of type `(set U)`
    such that for any element of the domain there is a unique
-  image in the range.
+  image in the codomain.
 
   **Remark**: in type theory, it is best to rely on total functions because
-  these are 'native' through the function type `==>`. Partial functions are encoded and thus more complex and less 'natural', use with care."
+  these are 'native' through the function type `==>`. 
+  Partial functions are encoded and thus more complex and less 'natural', use with care."
 
   (:refer-clojure :exclude [and or not set])
 
@@ -16,17 +17,18 @@
                                           forall lambda
                                           assume have pose proof qed lambda]]
             [latte-prelude.quant :as q :refer [exists]]
-            [latte-prelude.prop :as p :refer [<=> and or not]]
+            [latte-prelude.prop :as p :refer [<=> and and* or not]]
             [latte-prelude.equal :as eq :refer [equal]]
+            [latte-prelude.fun :as fun]
 
             [latte-sets.core :as s :refer [set set-of elem set-equal]]
             [latte-sets.quant :as sq :refer [exists-in forall-in]]
+            [latte-sets.algebra :as sa]
             [latte-sets.rel :as rel :refer [rel dom ran]]))
-
 
 (definition pfun
   "A partial function `f` based on a relation together with
-a domain set `from` and a range set `to`. Note that the relation `f` on
+a domain set `from` and a codomain set `to`. Note that the relation `f` on
 outside `from` or `to` need not be a function."
   [[?T ?U :type], f (rel T U), from (set T), to (set U)]
   (forall-in [x from]
@@ -46,14 +48,35 @@ outside `from` or `to` need not be a function."
        (throw (ex-info "Not a partial function type." {:type t}))))
    def-env ctx t))
 
+(defthm ridentity-pfun
+  "The identity relation is a partial function on
+any domain and range sets."
+  [T :type]
+  (forall [t u (set T)]
+    (pfun (rel/identity T) t u)))
+
+(proof 'ridentity-pfun
+  (pose rid := (rel/identity T))
+  (assume [t (set T)
+           u (set T)
+           x T Hx (elem x t)
+           y1 T Hy1 (elem y1 u)
+           y2 T Hy2 (elem y2 u)
+           Hid1 (rid x y1)
+           Hid2 (rid x y2)]
+    (have <a> (equal y1 y2) :by (eq/eq-trans (eq/eq-sym Hid1) Hid2)))
+  (qed <a>))
+
 (definition pdom
-  "The domain of partial function `f`."
+  "The domain of partial function `f`, taking antecedents in `from`
+and images in `to`."
   [[?T ?U :type], f (rel T U), from (set T), to (set U)]
   (set-of [x T] (and (elem x from)
                      (exists-in [y to] (f x y)))))
 
 (definition pran
-  "The range of partial function `f``."
+  "The range of partial function `f``, taking antecedents in `from`
+and images in `to`."
   [[?T ?U :type], f (rel T U), from (set T), to (set U)]
   (set-of [y U] (and (elem y to)
                      (exists-in [x from] (f x y)))))
@@ -84,6 +107,40 @@ outside `from` or `to` need not be a function."
             :by (p/and-elim-right <c>))))
   (qed <d>))
 
+(definition pcompose
+  [[?T ?U ?V :type], f (rel U V), ffrom (set U), fto (set V), g (rel T U), gfrom (set T), gto (set U)]
+  (lambda [x T]
+    (lambda [z V]
+      (==> (elem x gfrom)
+           (elem z fto)
+           (exists [y U]
+             (and* (elem y gto)
+                  (elem y ffrom)
+                  (g x y)
+                  (f y z)))))))
+
+(defthm pcompose-pfun
+  "The composition of two partial functions `f` and `g`."
+  [[?T ?U ?V :type], f (rel U V), ffrom (set U), fto (set V), g (rel T U), gfrom (set T), gto (set U)]
+  (==> (pfun f ffrom fto)
+       (pfun g gfrom gto)
+       (pfun (pcompose f ffrom fto g gfrom gto) gfrom fto)))
+
+(proof 'pcompose-pfun-thm
+  (pose R := (pcompose f ffrom fto g gfrom gto))
+  (assume [Hf (pfun f ffrom fto)
+           Hg (pfun g gfrom gto)]
+    (assume [x T Hx (elem x gfrom)
+             y1 V Hy1 (elem y1 fto)
+             y2 V Hy2 (elem y2 fto)
+             H1 (R x y1)
+             H2 (R x y2)]
+      (have <a> (exists [z U]
+                  (and* (elem z gto)
+                        (elem y1 ffrom)
+                        (g x y1)
+                        (f y1 z))) :by (H1 Hx Hy1))
+      )))
 
 (definition pinjective
   "An injective partial function."
