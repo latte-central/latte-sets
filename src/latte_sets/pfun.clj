@@ -158,33 +158,50 @@ restriction."
   (lambda [x T]
     (lambda [z V]
       (==> (elem x gfrom)
-           (exists [y U]
-             (and* (elem y ffrom)
-                   (g x y)
-                   (f y z)))))))
+           (exists-in [y ffrom]
+             (and (g x y) (f y z)))))))
 
 (defthm pcompose-pfun
   "The composition of two partial functions `f` and `g`."
-  [[?T ?U ?V :type], f (rel U V), ffrom (set U), fto (set V), g (rel T U), gfrom (set T), gto (set U)]
-  (==> (pfun f ffrom fto)
-       (pfun g gfrom gto)
-       (pfun (pcompose f ffrom fto g gfrom gto) gfrom fto)))
+  [[?T ?U ?V :type], f (rel U V), ffrom (set U), g (rel T U), gfrom (set T)]
+  (==> (pfun f ffrom)
+       (pfun g gfrom)
+       (pfun (pcompose f ffrom g gfrom) gfrom)))
 
 (proof 'pcompose-pfun-thm
-  (pose R := (pcompose f ffrom fto g gfrom gto))
-  (assume [Hf (pfun f ffrom fto)
-           Hg (pfun g gfrom gto)]
+  (pose R := (pcompose f ffrom g gfrom))
+  (assume [Hf (pfun f ffrom)
+           Hg (pfun g gfrom)]
     (assume [x T Hx (elem x gfrom)
-             y1 V Hy1 (elem y1 fto)
-             y2 V Hy2 (elem y2 fto)
+             y1 V y2 V
              H1 (R x y1)
              H2 (R x y2)]
-      (have <a> (exists [z U]
-                  (and* (elem z gto)
-                        (elem y1 ffrom)
-                        (g x y1)
-                        (f y1 z))) :by (H1 Hx Hy1))
-      )))
+      (have <a> (exists-in [z1 ffrom] (and (g x z1) (f z1 y1)))
+            :by (H1 Hx))
+      (assume [z1 U Hz1 (elem z1 ffrom)
+               Hex1 (and (g x z1) (f z1 y1))]
+        (have <b> (exists-in [z2 ffrom] (and (g x z2) (f z2 y2)))
+              :by (H2 Hx))
+        (assume [z2 U Hz2 (elem z2 ffrom)
+                 Hex2 (and (g x z2) (f z2 y2))]
+          (have <c1> (equal z1 z2)
+                :by (Hg x Hx z1 z2 (p/and-elim-left Hex1) (p/and-elim-left Hex2)))
+          (have <c> (equal z2 z1) :by (eq/eq-sym <c1>))
+          (have <d> (f z1 y2) :by (eq/eq-subst (lambda [$ U] (f $ y2))
+                                               <c> (p/and-elim-right Hex2)))
+          (have <e> (equal y1 y2)
+                :by (Hf z1 Hz1 y1 y2 (p/and-elim-right Hex1) <d>)))
+        (have <f> _ :by ((sq/ex-in-elim 
+                          ffrom
+                          (lambda [z2 U] (and (g x z2) (f z2 y2)))
+                          (equal y1 y2)) <b> <e>)))
+      (have <g> _ :by ((sq/ex-in-elim
+                        ffrom
+                        (lambda [z1 U] (and (g x z1) (f z1 y1)))
+                        (equal y1 y2)) <a> <f>))))
+  (qed <g>))
+
+;; TODO FROM HERE
 
 (definition pinjective
   "An injective partial function."
