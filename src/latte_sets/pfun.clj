@@ -274,16 +274,16 @@ restriction."
 
 (definition psurjective
   "A surjective partial function."
-  [[?T ?U :type] [f (rel T U)] [from (set T)] [to (set U)]]
-  (forall-in [y to]
+  [[?T ?U :type] [f (rel T U)] [from (set T)]]
+  (forall [y U]
     (exists-in [x from]
       (f x y))))
 
 (definition pbijective
   "A bijective partial function."
-  [[?T ?U :type] [f (rel T U)] [from (set T)] [to (set U)]]
-  (and (pinjective f from to)
-       (psurjective f from to)))
+  [[?T ?U :type] [f (rel T U)] [from (set T)]]
+  (and (pinjective f from)
+       (psurjective f from)))
 
 (comment
 
