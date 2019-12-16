@@ -28,8 +28,8 @@
 
 (definition pfun
   "A partial function `f` based on a relation together with
-a restricted domain set `from`. Note that the relation `f` on
-outside `from` or `to` need not be a function."
+a restricted domain set `from`. Note that the relation `f` 
+outside `from` need not be a function."
   [[?T ?U :type], f (rel T U), from (set T)]
   (forall-in [x from]
     (forall [y1 y2 U]
@@ -201,19 +201,76 @@ restriction."
                         (equal y1 y2)) <a> <f>))))
   (qed <g>))
 
-;; TODO FROM HERE
-
 (definition pinjective
   "An injective partial function."
-  [[?T ?U :type] [f (rel T U)] [from (set T)] [to (set U)]]
+  [[?T ?U :type] [f (rel T U)] [from (set T)]]
   (forall-in [x1 from]
     (forall-in [x2 from]
-      (forall-in [y1 to]
-        (forall-in [y2 to]
-          (==> (f x1 y1)
-               (f x2 y2)
-               (equal y1 y2)
-               (equal x1 x2)))))))
+      (forall [y1 y2 U]
+        (==> (f x1 y1)
+             (f x2 y2)
+             (equal y1 y2)
+             (equal x1 x2))))))
+
+(defthm ridentity-pinjective
+  [T :type]
+  (forall [from (set T)]
+    (pinjective (rel/identity T) from)))
+
+(proof 'ridentity-pinjective
+  (pose rid := (rel/identity T))
+  (assume [from (set T)
+           x1 T Hx1 (elem x1 from)
+           x2 T Hx2 (elem x2 from)
+           y1 T y2 T
+           Hy1 (rid x1 y1)
+           Hy2 (rid x2 y2)
+           Heqy (equal y1 y2)]
+    (have <a> (equal y2 x2) :by (eq/eq-sym Hy2))
+    (have <b> (equal x1 x2) :by (eq/eq-trans* Hy1 Heqy <a>)))
+  (qed <b>))
+
+(defthm pcompose-pinjective
+  [[?T ?U ?V :type] [f (rel U V)] [ffrom (set U)] [g (rel T U)] [gfrom (set T)]]
+  (==> (pinjective f ffrom)
+       (pinjective g gfrom)
+       (pinjective (pcompose f ffrom g gfrom) gfrom)))
+
+(proof 'pcompose-pinjective-thm
+  (pose h := (pcompose f ffrom g gfrom))
+  (assume [Hf (pinjective f ffrom)
+           Hg (pinjective g gfrom)
+           x1 T Hx1 (elem x1 gfrom)
+           x2 T Hx2 (elem x2 gfrom)
+           y1 V y2 V
+           Hh1 (h x1 y1)
+           Hh2 (h x2 y2)
+           Heq (equal y1 y2)]
+    (have <a> (exists-in [z1 ffrom] (and (g x1 z1) (f z1 y1)))
+          :by (Hh1 Hx1))
+    (assume [z1 U Hz1 (elem z1 ffrom)
+             Hex1 (and (g x1 z1) (f z1 y1))]
+      (have <b> (exists-in [z2 ffrom] (and (g x2 z2) (f z2 y2)))
+            :by (Hh2 Hx2))
+      (assume [z2 U Hz2 (elem z2 ffrom)
+               Hex2 (and (g x2 z2) (f z2 y2))]
+        (have <c1> (equal z1 z2) 
+              :by (Hf z1 Hz1 z2 Hz2 y1 y2
+                      (p/and-elim-right Hex1)
+                      (p/and-elim-right Hex2)
+                      Heq))
+        (have <c> (equal x1 x2)
+              :by (Hg x1 Hx1 x2 Hx2 z1 z2
+                      (p/and-elim-left Hex1)
+                      (p/and-elim-left Hex2)
+                      <c1>)))
+      (have <d> _ 
+            :by ((sq/ex-in-elim ffrom (lambda [z2 U] (and (g x2 z2) (f z2 y2)))
+                                (equal x1 x2)) <b> <c>)))
+    (have <e> _
+          :by ((sq/ex-in-elim ffrom (lambda [z1 U] (and (g x1 z1) (f z1 y1)))
+                              (equal x1 x2)) <a> <d>)))
+  (qed <e>))
 
 (definition psurjective
   "A surjective partial function."
