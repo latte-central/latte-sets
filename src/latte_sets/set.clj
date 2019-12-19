@@ -1,4 +1,4 @@
-(ns latte-sets.core
+(ns latte-sets.set
   "Set-theoretic notions based on the subset
   approach of type theory.
 
