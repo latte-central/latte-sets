@@ -14,7 +14,7 @@ a given type `T` to elements of `U` is formalized with type `(==> T U :type)`.
             [latte-prelude.prop :as p :refer [and and* or not <=>]]
             [latte-prelude.equal :as eq :refer [equal]]
             [latte-prelude.quant :as q :refer [exists]]
-            [latte-sets.core :as sets :refer [set set-of elem]]))
+            [latte-sets.set :as sets :refer [set set-of elem]]))
 
 (definition rel
   "The type of relations."

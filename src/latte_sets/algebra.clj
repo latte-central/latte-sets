@@ -12,7 +12,7 @@
             [latte-prelude.prop :as p :refer [<=> and or not]]
             [latte-prelude.equal :as eq :refer [equal]]
 
-            [latte-sets.core :as sets
+            [latte-sets.set :as sets
              :refer [set set-of elem subset seteq set-equal emptyset fullset
                      fetch-set-type]]))
 
@@ -36,7 +36,7 @@
     (assume [Hor (elem x s)]
       (have <b> (elem x s) :by Hor))
     (have <c> (elem x s)
-          :by (p/or-elim <a> (elem x s) <b> <b>)))
+          :by (p/or-elim <a> <b> <b>)))
   "We next prove that `s`⊆ `s`∪`s`"
   (assume [x T
            Hx (elem x s)]
@@ -61,7 +61,7 @@
     (assume [H2 (elem x (emptyset T))]
       (have <c> p/absurd :by H2)
       (have <d> (elem x s) :by (<c> (elem x s))))
-    (have <e> _ :by (p/or-elim <a> (elem x s) <b> <d>)))
+    (have <e> _ :by (p/or-elim <a> <b> <d>)))
   "superset case"
   (assume [x T
            Hx (elem x s)]
@@ -131,15 +131,11 @@
               :by (p/or-intro-right (or (elem x s1)
                                         (elem x s2))
                                     H3)))
-      (have <c> _ :by (p/or-elim <c1> (or (or (elem x s1)
-                                              (elem x s2))
-                                          (elem x s3))
-                                  <d> <e>)))
+      (have <c> (or (or (elem x s1)
+                        (elem x s2))
+                    (elem x s3)) :by (p/or-elim <c1> <d> <e>)))
     (have <f> (elem x (union (union s1 s2) s3))
-          :by (p/or-elim <a> (or (or (elem x s1)
-                                     (elem x s2))
-                                 (elem x s3))
-                         <b> <c>)))
+          :by (p/or-elim <a> <b> <c>)))
   "Superset case"
   (assume [x T
            Hx (elem x (union (union s1 s2) s3))]
@@ -162,10 +158,9 @@
                       (or (elem x s2)
                           (elem x s3)))
               :by (p/or-intro-right (elem x s1) <j1>)))
-      (have <h> _ :by (p/or-elim <h1> (or (elem x s1)
-                                          (or (elem x s2)
-                                              (elem x s3)))
-                                  <i> <j>)))
+      (have <h> (or (elem x s1)
+                    (or (elem x s2)
+                        (elem x s3))) :by (p/or-elim <h1> <i> <j>)))
     (assume [H2 (elem x s3)]
       (have <k1> (or (elem x s2)
                      (elem x s3))
@@ -175,10 +170,7 @@
                         (elem x s3)))
             :by (p/or-intro-right (elem x s1) <k1>)))
     (have <l> (elem x (union s1 (union s2 s3)))
-          :by (p/or-elim <g> (or (elem x s1)
-                                 (or (elem x s2)
-                                     (elem x s3)))
-                         <h> <k>)))
+          :by (p/or-elim <g> <h> <k>)))
   (qed (p/and-intro <f> <l>)))
 
 (defthm union-assoc-sym

@@ -19,7 +19,7 @@ to deal with powersets."
               [latte-prelude.prop :as p :refer [<=> and or not]]
               [latte-prelude.equal :as eq :refer [equal]]
 
-              [latte-sets.core :as s :refer [set elem seteq subset]]))
+              [latte-sets.set :as s :refer [set elem seteq subset]]))
 
 (definition powerset
   "The powerset constructor.
