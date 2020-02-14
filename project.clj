@@ -10,7 +10,7 @@
             "clear-cert" ["run" ":clear-cert"]}
   :codox {:output-path "docs"
           :metadata {:doc/format :markdown}
-          :namespaces [latte-sets.core
+          :namespaces [latte-sets.set
                        latte-sets.quant
                        latte-sets.algebra
                        latte-sets.powerset

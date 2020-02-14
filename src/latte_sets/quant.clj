@@ -7,7 +7,7 @@
   (:require [latte.core :as latte :refer [definition defthm defaxiom defnotation defimplicit
                                           proof qed assume have pose lambda forall]]
 
-            [latte-sets.core :as s :refer [set elem]]
+            [latte-sets.set :as s :refer [set elem]]
             [latte-prelude.prop :as p :refer [and or not]]
             [latte-prelude.quant :as q :refer [exists]]
             [latte-prelude.equal :as eq :refer [equal]]))
@@ -96,7 +96,7 @@ shortcut for `(exists [x (element-type-of s)]
     (assume [z T
              Hz (Q z)]
       (have <a> A :by (HA z (p/and-elim-left Hz) (p/and-elim-right Hz))))
-    (have <b> A :by ((q/ex-elim Q A) Hex <a>)))
+    (have <b> A :by (q/ex-elim Hex <a>)))
   (qed <b>))
 
 (defimplicit ex-in-elim
