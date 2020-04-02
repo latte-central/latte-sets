@@ -12,7 +12,7 @@
             [latte-prelude.prop :as p :refer [<=> and or not]]
             [latte-prelude.equal :as eq :refer [equal]]
 
-            [latte-sets.core :as s
+            [latte-sets.set :as s
              :refer [set elem subset seteq set-equal emptyset fullset]]
 
             [latte-sets.algebra :as set

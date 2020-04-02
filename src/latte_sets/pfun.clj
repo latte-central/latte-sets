@@ -21,7 +21,7 @@
             [latte-prelude.equal :as eq :refer [equal]]
             [latte-prelude.fun :as fun]
 
-            [latte-sets.core :as s :refer [set set-of elem set-equal]]
+            [latte-sets.set :as s :refer [set set-of elem set-equal]]
             [latte-sets.quant :as sq :refer [exists-in forall-in]]
             [latte-sets.algebra :as sa]
             [latte-sets.rel :as rel :refer [rel dom ran]]))

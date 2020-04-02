@@ -14,7 +14,7 @@
               [latte-prelude.prop :as p :refer [<=> and or not]]
               [latte-prelude.equal :as eq :refer [equal]]
 
-              [latte-sets.core :as s :refer [set elem seteq subset]]
+              [latte-sets.set :as s :refer [set elem seteq subset]]
               
               [latte-sets.rel :as r :refer [rel subrel releq transitive]]
               [latte-sets.powerset :as powerset :refer [powerset set-ex]]))
