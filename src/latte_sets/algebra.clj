@@ -343,9 +343,7 @@
                                   (p/and-elim-right H2)))
       (have <c> _ :by (p/and-intro <c1> <c2>)))
     (have <d> (elem x (inter (union s1 s2) (union s1 s3)))
-          :by (p/or-elim <a>
-                         (elem x (inter (union s1 s2) (union s1 s3)))
-                         <b> <c>)))
+          :by (p/or-elim <a> <b> <c>)))
   "Superset case"
   (assume [x T
            Hx (elem x (inter (union s1 s2) (union s1 s3)))]
@@ -375,15 +373,9 @@
                             (elem x s3)))
                :by (p/or-intro-right (elem x s1)
                                      <i1>)))
-       (have <j> _ :by (p/or-elim <f> (or (elem x s1)
-                                          (and (elem x s2)
-                                               (elem x s3)))
-                                  <h> <i>)))
+       (have <j> _ :by (p/or-elim <f> <h> <i>)))
      (have <k> (elem x (union s1 (inter s2 s3)))
-           :by (p/or-elim <e> (or (elem x s1)
-                                  (and (elem x s2)
-                                       (elem x s3)))
-                          <g> <j>)))
+           :by (p/or-elim <e> <g> <j>)))
   (qed (p/and-intro <d> <k>)))
 
 (defthm dist-union-inter-sym
@@ -426,9 +418,7 @@
             :by (p/or-intro-right (and (elem x s1) (elem x s2))
                                   <d1>)))
     (have <e> (elem x (union (inter s1 s2) (inter s1 s3)))
-          :by (p/or-elim <b> (or (and (elem x s1) (elem x s2))
-                                 (and (elem x s1) (elem x s3)))
-                         <c> <d>)))
+          :by (p/or-elim <b> <c> <d>)))
   "Superset case"
   (assume [x T
            Hx (elem x (union (inter s1 s2) (inter s1 s3)))]
@@ -455,10 +445,7 @@
                          (elem x s3)))
             :by (p/and-intro <h1> <h2>)))
     (have <i> (elem x (inter s1 (union s2 s3)))
-          :by (p/or-elim <f> (and (elem x s1)
-                                  (or (elem x s2)
-                                      (elem x s3)))
-                         <g> <h>)))
+          :by (p/or-elim <f> <g> <h>)))
   (qed (p/and-intro <e> <i>)))
 
 (defthm dist-inter-union-sym
