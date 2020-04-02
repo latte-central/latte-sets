@@ -116,7 +116,7 @@ This function is used for implicits in relations."
       (have <a> (R* y x) :by (p/or-intro-right (R y x) Hxy)))
     (assume [Hyx (R y x)]
       (have <b> (R* y x) :by (p/or-intro-left Hyx (R x y))))
-    (have <c> (R* y x) :by (p/or-elim H (R* y x) <a> <b>)))
+    (have <c> (R* y x) :by (p/or-elim H <a> <b>)))
   (qed <c>))
 
 (definition transitive
@@ -320,7 +320,7 @@ This function is used for implicits in relations."
       (assume [HR*2 (equal x y)]
         (have <b1> (S x x) :by (HSrefl x))
         (have <b> (S x y) :by (eq/eq-subst (lambda [$ T] (S x $)) HR*2 <b1>)))
-      (have <c> (S x y) :by (p/or-elim HR* (S x y) <a> <b>))))
+      (have <c> (S x y) :by (p/or-elim HR* <a> <b>))))
   (qed <c>))
 
 (defthm symm-closure-sub
@@ -353,7 +353,7 @@ This function is used for implicits in relations."
       (assume [HR*2 (R y x)]
         (have <b1> (S y x) :by (Hsub y x HR*2))
         (have <b> (S x y) :by (HSsym y x <b1>)))
-      (have <c> (S x y) :by (p/or-elim HR* (S x y) <a> <b>))))
+      (have <c> (S x y) :by (p/or-elim HR* <a> <b>))))
   (qed <c>))
 
 (definition releq
@@ -569,14 +569,8 @@ one requires an axiom."
               :by ((q/ex-intro (lambda [k V]
                                        (and ((rcomp R1 R2) x k)
                                             (R3 k z))) t) <f>)))
-      (have <h> _ :by ((q/ex-elim  (lambda [k V]
-                                           (and (R2 y k) (R3 k z)))
-                                   ((rcomp (rcomp R1 R2) R3) x z))
-                       <b> <g>)))
-    (have <i> _ :by ((q/ex-elim (lambda [k U]
-                                        (and (R1 x k) ((rcomp R2 R3) k z)))
-                                ((rcomp (rcomp R1 R2) R3) x z))
-                     <a> <h>)))
+      (have <h> _ :by (q/ex-elim <b> <g>)))
+    (have <i> _ :by (q/ex-elim <a> <h>)))
   (qed <i>))
 
 (defthm rcomp-assoc-subrel
@@ -624,14 +618,8 @@ one requires an axiom."
                                        (and (R1 x k)
                                             ((rcomp R2 R3) k z))) t)
                    (p/and-intro <c1> <c3>))))
-      (have <d> _ :by ((q/ex-elim (lambda [t U] (and (R1 x t) (R2 t y)))
-                                  ((rcomp R1 (rcomp R2 R3)) x z))
-                       <b> <c>)))
-    (have <e> _ :by ((q/ex-elim (lambda [y V]
-                                        (and ((rcomp R1 R2) x y)
-                                             (R3 y z)))
-                                ((rcomp R1 (rcomp R2 R3)) x z))
-                     <a> <d>)))
+      (have <d> _ :by (q/ex-elim <b> <c>)))
+    (have <e> _ :by (q/ex-elim <a> <d>)))
   (qed <e>))
 
 (defthm rcomp-assoc-suprel

@@ -44,7 +44,7 @@
     (assume [Hor (R x y)]
       (have <b> (R x y) :by Hor))
     (have <c> (R x y)
-          :by (p/or-elim <a> (R x y) <b> <b>)))
+          :by (p/or-elim <a> <b> <b>)))
   "We next prove that `R`⊆ `R`∪`R`"
   (assume [x T
            y U
@@ -70,7 +70,7 @@
     (assume [H2 ((emptyrel T U) x y)]
       (have <c> p/absurd :by H2)
       (have <d> (R x y) :by (<c> (R x y))))
-    (have <e> _ :by (p/or-elim <a> (R x y) <b> <d>)))
+    (have <e> _ :by (p/or-elim <a> <b> <d>)))
   "superset case"
   (assume [x T
            y U
@@ -140,15 +140,9 @@
               :by (p/or-intro-right (or (R1 x y)
                                         (R2 x y))
                                     H3)))
-      (have <c> _ :by (p/or-elim <c1> (or (or (R1 x y)
-                                              (R2 x y))
-                                          (R3 x y))
-                                 <d> <e>)))
+      (have <c> _ :by (p/or-elim <c1> <d> <e>)))
     (have <f> ((runion (runion R1 R2) R3) x y)
-          :by (p/or-elim <a> (or (or (R1 x y)
-                                     (R2 x y))
-                                 (R3 x y))
-                         <b> <c>)))
+          :by (p/or-elim <a> <b> <c>)))
   "Superset case"
   (assume [x T
            y U
@@ -172,10 +166,7 @@
                       (or (R2 x y)
                           (R3 x y)))
               :by (p/or-intro-right (R1 x y) <j1>)))
-      (have <h> _ :by (p/or-elim <h1> (or (R1 x y)
-                                          (or (R2 x y)
-                                              (R3 x y)))
-                                 <i> <j>)))
+      (have <h> _ :by (p/or-elim <h1> <i> <j>)))
     (assume [H2 (R3 x y)]
       (have <k1> (or (R2 x y)
                      (R3 x y))
@@ -185,10 +176,7 @@
                         (R3 x y)))
             :by (p/or-intro-right (R1 x y) <k1>)))
     (have <l> ((runion R1 (runion R2 R3)) x y)
-          :by (p/or-elim <g> (or (R1 x y)
-                                 (or (R2 x y)
-                                     (R3 x y)))
-                         <h> <k>)))
+          :by (p/or-elim <g> <h> <k>)))
   (qed (p/and-intro <f> <l>)))
 
 (defthm runion-assoc-sym
@@ -238,13 +226,8 @@
                        (elem x (dom R2)))
               :by (p/or-intro-right (elem x (dom R1)) <d2>))
         (have <d> (elem x (set/union (dom R1) (dom R2))) :by <d3>))
-      (have <e> _ :by (p/or-elim <b1> 
-                                 (elem x (set/union (dom R1) (dom R2)))
-                                 <c> <d>)))
-    (have <f> _ :by ((q/ex-elim (lambda [k U]
-                                        ((runion R1 R2) x k))
-                                (elem x (set/union (dom R1) (dom R2))))
-                     <a> <e>)))
+      (have <e> _ :by (p/or-elim <b1> <c> <d>)))
+    (have <f> _ :by (q/ex-elim <a> <e>)))
   "Supset case"
   (assume [x T
            Hx (elem x (set/union (dom R1) (dom R2)))]
@@ -262,9 +245,7 @@
                                        ((runion R1 R2) x k))
                                y)
                    <i2>)))
-      (have <j> _ :by ((q/ex-elim (lambda [k U] (R1 x k))
-                                  (elem x (dom (runion R1 R2))))
-                       <h> <i>)))
+      (have <j> _ :by (q/ex-elim <h> <i>)))
     (assume [HR2 (elem x (dom R2))]
       (have <k> (exists [y U] (R2 x y)) :by HR2)
       (assume [y U
@@ -277,11 +258,8 @@
                                        ((runion R1 R2) x k))
                                y)
                    <l2>)))
-      (have <m> _ :by ((q/ex-elim (lambda [k U] (R2 x k))
-                                  (elem x (dom (runion R1 R2))))
-                       <k> <l>)))
-    (have <n> _ :by (p/or-elim <g> (elem x (dom (runion R1 R2)))
-                               <j> <m>)))
+      (have <m> _ :by (q/ex-elim <k> <l>)))
+    (have <n> _ :by (p/or-elim <g> <j> <m>)))
   (qed (p/and-intro <f> <n>)))
 
 (defthm runion-ran
@@ -317,13 +295,8 @@
                        (elem y (ran R2)))
               :by (p/or-intro-right (elem y (ran R1)) <d2>))
         (have <d> (elem y (set/union (ran R1) (ran R2))) :by <d3>))
-      (have <e> _ :by (p/or-elim <b1> 
-                                 (elem y (set/union (ran R1) (ran R2)))
-                                  <c> <d>)))
-    (have <f> _ :by ((q/ex-elim (lambda [k T]
-                                        ((runion R1 R2) k y))
-                                (elem y (set/union (ran R1) (ran R2))))
-                     <a> <e>)))
+      (have <e> _ :by (p/or-elim <b1> <c> <d>)))
+    (have <f> _ :by (q/ex-elim <a> <e>)))
 
   "Supset case"
    (assume [y U
@@ -342,9 +315,7 @@
                                         ((runion R1 R2) k y))
                                 x)
                     <i2>)))
-       (have <j> _ :by ((q/ex-elim (lambda [k T] (R1 k y))
-                                   (elem y (ran (runion R1 R2))))
-                        <h> <i>)))
+       (have <j> _ :by (q/ex-elim <h> <i>)))
      (assume [HR2 (elem y (ran R2))]
        (have <k> (exists [x T] (R2 x y)) :by HR2)
        (assume [x T
@@ -357,11 +328,8 @@
                                         ((runion R1 R2) k y))
                                 x)
                     <l2>)))
-       (have <m> _ :by ((q/ex-elim (lambda [k T] (R2 k y))
-                                   (elem y (ran (runion R1 R2))))
-                        <k> <l>)))
-     (have <n> _ :by (p/or-elim <g> (elem y (ran (runion R1 R2)))
-                                <j> <m>)))
+       (have <m> _ :by (q/ex-elim <k> <l>)))
+     (have <n> _ :by (p/or-elim <g> <j> <m>)))
    (qed (p/and-intro <f> <n>)))
 
 (definition rinter
@@ -532,9 +500,7 @@
                                    (p/and-elim-right H2)))
       (have <c> _ :by (p/and-intro <c1> <c2>)))
     (have <d> ((rinter (runion R1 R2) (runion R1 R3)) x y)
-          :by (p/or-elim <a>
-                         ((rinter (runion R1 R2) (runion R1 R3)) x y)
-                         <b> <c>)))
+          :by (p/or-elim <a> <b> <c>)))
   "Superset case"
   (assume [x T
            y U
@@ -565,15 +531,9 @@
                            (R3 x y)))
               :by (p/or-intro-right (R1 x y)
                                     <i1>)))
-      (have <j> _ :by (p/or-elim <f> (or (R1 x y)
-                                         (and (R2 x y)
-                                              (R3 x y)))
-                                 <h> <i>)))
+      (have <j> _ :by (p/or-elim <f> <h> <i>)))
     (have <k> ((runion R1 (rinter R2 R3)) x y)
-          :by (p/or-elim <e> (or (R1 x y)
-                                 (and (R2 x y)
-                                      (R3 x y)))
-                         <g> <j>)))
+          :by (p/or-elim <e> <g> <j>)))
   (qed (p/and-intro <d> <k>)))
 
 (defthm dist-runion-rinter-sym
@@ -617,9 +577,7 @@
             :by (p/or-intro-right(and (R1 x y) (R2 x y))
                                    <d1>)))
     (have <e> ((runion (rinter R1 R2) (rinter R1 R3)) x y)
-          :by (p/or-elim <b> (or (and (R1 x y) (R2 x y))
-                                 (and (R1 x y) (R3 x y)))
-                         <c> <d>)))
+          :by (p/or-elim <b> <c> <d>)))
   "Superset case"
   (assume [x T
            y U
@@ -647,10 +605,7 @@
                          (R3 x y)))
             :by (p/and-intro <h1> <h2>)))
     (have <i> ((rinter R1 (runion R2 R3)) x y)
-          :by (p/or-elim <f> (and (R1 x y)
-                                  (or (R2 x y)
-                                      (R3 x y)))
-                         <g> <h>)))
+          :by (p/or-elim <f> <g> <h>)))
   (qed (p/and-intro <e> <i>)))
 
 (defthm dist-rinter-runion-sym
@@ -814,10 +769,7 @@ the subset `s`."
       (have <c> (elem x (inter s (dom R)))
             :by (p/and-intro <a> <b>)))
     (have <d> _ :by
-          ((q/ex-elim (lambda [z U]
-                              ((restrict-dom R s) x z))
-                      (elem x (inter s (dom R))))
-           Hx <c>)))
+          (q/ex-elim Hx <c>)))
   "Superset case"
   (assume [x T
            Hx (elem x (inter s (dom R)))]
@@ -832,11 +784,7 @@ the subset `s`."
             :by ((q/ex-intro (lambda [z U]
                                      ((restrict-dom R s) x z)) y)
                  <f1>)))
-    (have <g> _ :by ((q/ex-elim (lambda [z U] (R x z))
-                                (exists [y U]
-                                  ((restrict-dom R s) x y)))
-                     (p/and-elim-right <e>)
-                     <f>))
+    (have <g> _ :by (q/ex-elim (p/and-elim-right <e>) <f>))
     (have <h> (elem x (dom (restrict-dom R s)))
           :by <g>))
   (qed (p/and-intro <d> <h>)))
