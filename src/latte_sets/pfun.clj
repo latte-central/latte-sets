@@ -24,7 +24,8 @@
             [latte-sets.set :as s :refer [set set-of elem seteq]]
             [latte-sets.quant :as sq :refer [exists-in forall-in]]
             [latte-sets.algebra :as sa]
-            [latte-sets.rel :as rel :refer [rel dom ran]]))
+            [latte-sets.rel :as rel :refer [rel dom ran]]
+            [latte-sets.powerrel :as prel :refer [rel-ex]]))
 
 (definition pfun
   "A partial function `f` based on a relation together with
@@ -220,65 +221,74 @@ restriction."
   (qed <g>))
 
 (definition pinjective
-  "An injective partial relation/function wrt. domain set `from`."
-  [[?T ?U :type] [f (rel T U)] [from (set T)]]
+  "An injective partial relation/function wrt. domain set `from`
+and range set `to`."
+  [[?T ?U :type] [f (rel T U)] [from (set T)] [to (set U)]]
   (forall-in [x1 from]
     (forall-in [x2 from]
-      (forall [y1 y2 U]
-        (==> (f x1 y1)
-             (f x2 y2)
-             (equal y1 y2)
-             (equal x1 x2))))))
+      (forall-in [y1 to]
+        (forall-in [y2 to]
+          (==> (f x1 y1)
+               (f x2 y2)
+               (equal y1 y2)
+               (equal x1 x2)))))))
 
 (defthm pinjective-contra
   "The contrapositive of [[pinjective]]."
-  [[?T ?U :type] [f (rel T U)] [from (set T)]]
-  (==> (pinjective f from)
+  [[?T ?U :type] [f (rel T U)] [from (set T)] [to (set U)]]
+  (==> (pinjective f from to)
        (forall-in [x1 from]
          (forall-in [x2 from]
-           (forall [y1 y2 U]
-             (==> (f x1 y1)
-                  (f x2 y2)
-                  (not (equal x1 x2))
-                  (not (equal y1 y2))))))))
+           (forall-in [y1 to]
+             (forall-in [y2 to]
+               (==> (f x1 y1)
+                    (f x2 y2)
+                    (not (equal x1 x2))
+                    (not (equal y1 y2)))))))))
 
 (proof 'pinjective-contra-thm
-  (assume [Hinj (pinjective f from)]
+  (assume [Hinj (pinjective f from to)]
     (assume [x1 T Hx1 (elem x1 from)
              x2 T Hx2 (elem x2 from)
-             y1 U y2 U
+             y1 U Hy1 (elem y1 to)
+             y2 U Hy2 (elem y2 to)
              Hfy1 (f x1 y1)
              Hfy2 (f x2 y2)
              Hneq (not (equal x1 x2))]
       (assume [Heq (equal y1 y2)]
         (have <a> (equal x1 x2) 
-              :by (Hinj x1 Hx1 x2 Hx2 y1 y2 Hfy1 Hfy2 Heq))
+              :by (Hinj x1 Hx1 x2 Hx2 y1 Hy1 y2 Hy2 Hfy1 Hfy2 Heq))
         (have <b> p/absurd :by (Hneq <a>)))))
   (qed <b>))
 
 (defthm ridentity-pinjective
   [T :type]
-  (forall [from (set T)]
-    (pinjective (rel/identity T) from)))
+  (forall [s (set T)]
+    (pinjective (rel/identity T) s s)))
 
+;; XXX : this proof fails with nbe activated
 (proof 'ridentity-pinjective
   (pose rid := (rel/identity T))
-  (assume [from (set T)
-           x1 T Hx1 (elem x1 from)
-           x2 T Hx2 (elem x2 from)
-           y1 T y2 T
-           Hy1 (rid x1 y1)
-           Hy2 (rid x2 y2)
+  (assume [s (set T)
+           x1 T Hx1 (elem x1 s)
+           x2 T Hx2 (elem x2 s)
+           y1 T Hy1 (elem y1 s)
+           y2 T Hy2 (elem y2 s)
+           Hr1 (rid x1 y1)
+           Hr2 (rid x2 y2)
            Heqy (equal y1 y2)]
-    (have <a> (equal y2 x2) :by (eq/eq-sym Hy2))
-    (have <b> (equal x1 x2) :by (eq/eq-trans* Hy1 Heqy <a>)))
+    (have <a> (equal y2 x2) :by (eq/eq-sym Hr2))
+    (have <b> (equal x1 x2) :by (eq/eq-trans* Hr1 Heqy <a>)))
   (qed <b>))
 
+(comment
+  ;; TODO
+
 (defthm pcompose-pinjective
-  [[?T ?U ?V :type] [f (rel U V)] [ffrom (set U)] [g (rel T U)] [gfrom (set T)]]
-  (==> (pinjective f ffrom)
-       (pinjective g gfrom)
-       (pinjective (pcompose f ffrom g gfrom) gfrom)))
+  [[?T ?U ?V :type] [f (rel U V)] [ffrom (set U)] [fto (set V)] [g (rel T U)] [gfrom (set T)] [gto (set U)]]
+  (==> (pinjective f ffrom fto)
+       (pinjective g gfrom gto)
+       (pinjective (pcompose f ffrom g gfrom) gfrom fto)))
 
 (proof 'pcompose-pinjective-thm
   (pose h := (pcompose f ffrom g gfrom))
@@ -315,19 +325,28 @@ restriction."
           :by ((sq/ex-in-elim ffrom (lambda [z1 U] (and (g x1 z1) (f z1 y1)))
                               (equal x1 x2)) <a> <d>)))
   (qed <e>))
+)
+
+(definition psmaller
+  "The set `s1` is \"smaller\" than `s2`."
+  [[?T :type] [s1 (set T)] [s2 (set T)]]
+  (rel-ex (lambda [f (rel T T)]
+            (and* (pfun f s1)
+                  (ptotal f s1)
+                  (pinjective f s1 s2)))))
 
 (definition psurjective
-  "A surjective partial function."
-  [[?T ?U :type] [f (rel T U)] [from (set T)]]
-  (forall [y U]
+  "A surjective partial relation/function."
+  [[?T ?U :type] [f (rel T U)] [from (set T)] [to (set U)]]
+  (forall-in [y to]
     (exists-in [x from]
       (f x y))))
 
 (definition pbijective
-  "A bijective partial function."
-  [[?T ?U :type] [f (rel T U)] [from (set T)]]
-  (and (pinjective f from)
-       (psurjective f from)))
+  "A bijective partial relation/function."
+  [[?T ?U :type] [f (rel T U)] [from (set T)] [to (set U)]]
+  (and (pinjective f from to)
+       (psurjective f from to)))
 
 (comment
 
