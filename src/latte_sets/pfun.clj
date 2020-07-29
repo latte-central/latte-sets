@@ -21,7 +21,7 @@
             [latte-prelude.equal :as eq :refer [equal]]
             [latte-prelude.fun :as fun]
 
-            [latte-sets.set :as s :refer [set set-of elem set-equal]]
+            [latte-sets.set :as s :refer [set set-of elem seteq]]
             [latte-sets.quant :as sq :refer [exists-in forall-in]]
             [latte-sets.algebra :as sa]
             [latte-sets.rel :as rel :refer [rel dom ran]]))
@@ -89,41 +89,61 @@ restriction."
   (qed <a>))
 
 (definition pdom
-  "The actual domain of partial function `f`, taking antecedents in `from`."
+  "The actual domain of partial relation/function `f`, taking antecedents in `from`."
   [[?T ?U :type], f (rel T U), from (set T)]
   (set-of [x T] (and (elem x from)
                      (exists [y U] (f x y)))))
 
 (definition pran
-  "The range of partial function `f``, taking antecedents in `from`."
+  "The range of partial relation/function `f``, taking antecedents in `from`."
   [[?T ?U :type], f (rel T U), from (set T)]
   (set-of [y U] (exists-in [x from] (f x y))))
 
 (definition ptotal
-  "The partial function `f` is total wrt. the provided `from` domain set."
+  "The partial relation/function `f` is total wrt. the provided `from` domain set."
   [[?T ?U :type], f (rel T U), from (set T)]
-  (set-equal (pdom f from) from))
+  (forall-in [x from]
+    (exists [y U]
+      (f x y))))
 
-(defthm ptotal-domain
+(definition ptotal-alt
+  "Alternative definition for [[ptotal]]."
+  [[?T ?U :type], f (rel T U), from (set T)]
+  (seteq (pdom f from) from))
+
+(defthm ptotal-ptotal-alt
   [[?T ?U :type], f (rel T U), from (set T)]
   (==> (ptotal f from)
-       (forall-in [x from]
-         (exists [y U]
-           (f x y)))))
+       (ptotal-alt f from)))
 
-(proof 'ptotal-domain-thm
+(proof 'ptotal-ptotal-alt-thm
   (assume [Htot (ptotal f from)]
-    (assume [x T
-             Hx (elem x from)]
-      (have <a> (set-equal from (pdom f from))
-            :by ((s/set-equal-sym (pdom f from) from) Htot))
-      (have <b> (s/seteq from (pdom f from))
-            :by ((s/set-equal-implies-seteq from (pdom f from)) <a>))
-      (have <c> (elem x (pdom f from))
-            :by (((p/and-elim-left <b>) x) Hx))
-      (have <d> (exists [y U] (f x y))
-            :by (p/and-elim-right <c>))))
-  (qed <d>))
+    "First the subset direction."
+    (assume [x T Hx (elem x (pdom f from))]
+      "We have to prove that `x` is in `from`."
+      (have <a> (elem x from) :by (p/and-elim-left Hx)))
+    "Second the superset direction."
+    (assume [x T Hx (elem x from)]
+      "We have to prove that `x` is in `(pdom f from)`"
+      (have <b1> (exists [y U] (f x y)) :by (Htot x Hx))
+      (have <b> (elem x (pdom f from)) :by (p/and-intro Hx <b1>)))
+    "Deduce set-equality."
+    (have <c> (seteq (pdom f from) from) :by (p/and-intro <a> <b>)))
+  (qed <c>))
+      
+(defthm ptotal-alt-ptotal
+  [[?T ?U :type], f (rel T U), from (set T)]
+  (==> (ptotal-alt f from)
+       (ptotal f from)))
+
+(proof 'ptotal-alt-ptotal-thm
+  (assume [Htot (ptotal-alt f from)]
+    (assume [x T Hx (elem x from)]
+      (have <a> (elem x (pdom f from)) 
+            :by ((p/and-elim-right Htot) x Hx))
+      (have <b> (exists [y U] (f x y))
+            :by (p/and-elim-right <a>))))
+  (qed <b>))
 
 (defthm pfun-fun-total
   "A type-theoretic function `f` is always total."
@@ -146,12 +166,10 @@ restriction."
             :by ((q/ex-intro (lambda [y U] (rf x y)) (f x)) <b1>))
       (have <b> (elem x (pdom rf from)) :by (p/and-intro Hx <b2>)))
     "(sub)set equality"
-    (have <c> (s/seteq (pdom rf from) from) :by (p/and-intro <a> <b>))
-    "to set equality"
-    (have <d> (set-equal (pdom rf from) from)
-          :by ((s/seteq-implies-set-equal (pdom rf from) from)
-               <c>)))
-  (qed <d>))
+    (have <c> (seteq (pdom rf from) from) :by (p/and-intro <a> <b>))
+    (have <d> (ptotal-alt rf from) :by <c>)
+    (have <e> (ptotal rf from) :by ((ptotal-alt-ptotal rf from) <d>)))
+  (qed <e>))
 
 (definition pcompose
   [[?T ?U ?V :type], f (rel U V), ffrom (set U), g (rel T U), gfrom (set T)]
@@ -202,7 +220,7 @@ restriction."
   (qed <g>))
 
 (definition pinjective
-  "An injective partial function."
+  "An injective partial relation/function wrt. domain set `from`."
   [[?T ?U :type] [f (rel T U)] [from (set T)]]
   (forall-in [x1 from]
     (forall-in [x2 from]
@@ -211,6 +229,32 @@ restriction."
              (f x2 y2)
              (equal y1 y2)
              (equal x1 x2))))))
+
+(defthm pinjective-contra
+  "The contrapositive of [[pinjective]]."
+  [[?T ?U :type] [f (rel T U)] [from (set T)]]
+  (==> (pinjective f from)
+       (forall-in [x1 from]
+         (forall-in [x2 from]
+           (forall [y1 y2 U]
+             (==> (f x1 y1)
+                  (f x2 y2)
+                  (not (equal x1 x2))
+                  (not (equal y1 y2))))))))
+
+(proof 'pinjective-contra-thm
+  (assume [Hinj (pinjective f from)]
+    (assume [x1 T Hx1 (elem x1 from)
+             x2 T Hx2 (elem x2 from)
+             y1 U y2 U
+             Hfy1 (f x1 y1)
+             Hfy2 (f x2 y2)
+             Hneq (not (equal x1 x2))]
+      (assume [Heq (equal y1 y2)]
+        (have <a> (equal x1 x2) 
+              :by (Hinj x1 Hx1 x2 Hx2 y1 y2 Hfy1 Hfy2 Heq))
+        (have <b> p/absurd :by (Hneq <a>)))))
+  (qed <b>))
 
 (defthm ridentity-pinjective
   [T :type]
