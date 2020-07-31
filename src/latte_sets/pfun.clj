@@ -292,11 +292,12 @@ and range set `to`."
 
 (proof 'pcompose-pinjective-thm
   (pose h := (pcompose f ffrom g gfrom))
-  (assume [Hf (pinjective f ffrom)
-           Hg (pinjective g gfrom)
+  (assume [Hf (pinjective f ffrom fto)
+           Hg (pinjective g gfrom gto)
            x1 T Hx1 (elem x1 gfrom)
            x2 T Hx2 (elem x2 gfrom)
-           y1 V y2 V
+           y1 V Hy1 (elem y1 fto)
+           y2 V Hy2 (elem y2 fto)
            Hh1 (h x1 y1)
            Hh2 (h x2 y2)
            Heq (equal y1 y2)]
