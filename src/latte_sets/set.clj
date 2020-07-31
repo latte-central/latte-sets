@@ -53,13 +53,18 @@ Note that it is exactly the same as `(lambda [x T] (P x))`"
           :binding binding}]
     [:ok (list 'lambda [(first binding) (second binding)] body)]))
 
-(definition elem
+(definition elem-def
   "Set membership. 
 
  `(elem x s)` means that `x` (of implicit type `T`) is an element of set `s`.
  The standard mathematical notation is: `x`∊`s`."
-  [?T :type, x T, s (set T)]
+  [[T :type] [x T] [s (set T)]]
   (s x))
+
+(defimplicit elem
+  "`(elem x s)` means `x` is an element of set `s`, cf. [[elem-def]]."
+  [def-env ctx [x x-ty] [s s-ty]]
+  (with-meta (list #'elem-def x-ty x s) {::elem-set s}))
 
 (defimplicit element-type-of
   "Replaces `sterm` by its element type (if it is a set type)."
