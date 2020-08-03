@@ -178,6 +178,73 @@ This is a set-theoretic variant of [[latte-prelude.quant/single]]."
            (P y)
            (equal x y)))))
 
+(defn decompose-single-in-type [def-env ctx t]
+  (u/decomposer
+   (fn [t]
+     (if (clojure.core/and (seq t)
+                           (= (count t) 4)
+                           (= (first t) #'latte-sets.quant/single-in-def))
+       [(second t) (nth t 2) (nth t 3)]
+       (throw (ex-info "Cannot infer a \"single-in\" type" {:type t}))))
+   def-env ctx t))
+
+(defthm single-in-intro
+  "Introduction rule for [[single-in]]."
+  [?T :type, s (set T), P (==> T :type)]
+  (==> (forall-in [x s]
+         (forall-in [y s]
+           (==> (P x)
+                (P y)
+                (equal x y))))
+       (single-in s P)))
+
+(proof 'single-in-intro-thm
+  (assume [H _]
+    (have <a> (single-in s P) :by H))
+  (qed <a>))
+
+(defthm single-in-elim-rule
+  "Elimination rule for [[single-in]]."
+  [?T :type, s (set T), P (==> T :type), x T, y T]
+  (==> (single-in s P)
+       (elem x s)
+       (elem y s)
+       (P x)
+       (P y)
+       (equal x y)))
+
+(proof 'single-in-elim-rule-thm
+  (assume [Hsingle _
+           Hx _ Hy _
+           HPx _ HPy _]
+    (have <a> (equal x y) :by (Hsingle x Hx y Hy HPx HPy)))
+  (qed <a>))
+
+(defimplicit single-in-elim
+  "Elimination rule for [[single-in]]. `(single-in-elim s-proof x y)`
+ such that the type of `s-proof` is `(single-in s P)` for some property `P`, then
+ we have `(==> (P x) (P y) (equal x y))` thanks to `[[single-in-elim-rule]]`."
+  [def-env ctx [s-proof s-proof-type] [x x-type] [y y-type]]
+  (let [[T s P] (decompose-single-in-type def-env ctx s-proof-type)]
+    [(list #'single-in-elim-rule-thm T s P x y) s-proof]))
+
+(example [[T :type] [s (set T)] [P (==> T :type)] [Hs (single-in s P)] [x T] [y T]]
+    (==> (elem x s)
+         (elem y s)
+         (P x)
+         (P y)
+         (equal x y))
+  ;; proof
+  (assume [Hx (elem x s)
+           Hy (elem y s)
+           HPx (P x)
+           HPy (P y)]
+    (have <a> (equal x y) :by ((single-in-elim Hs x y) Hx Hy HPx HPy)))
+  (qed <a>))
+
+;; single-in is made opaque
+(u/set-opacity! #'single-in-def true)
+
 (definition unique-in
   "The constraint that \"there exists a unique element of type `T`
  in set `s` such that ...\".
@@ -197,51 +264,69 @@ This is a set-theoretic variant of [[latte-prelude.quant/the-ax]]."
 (defimplicit the-element
   "The unique element descriptor for sets.
 
-`(the-element s P u)` defines the unique element of
+`(the-element u)` defines the unique element of
  set `s` satisfying the predicate `P`. This is provided
  thanks to the uniqueness proof `u` (of type `(unique-in s P)`.
 
 This is the set-theoretic version of the [[latte-prelude.quant/the]]."
-  [def-env ctx [s s-ty] [P P-ty] [u u-ty]]
-  (let [T (s/fetch-set-type def-env ctx s-ty)]
+  [def-env ctx [u u-ty]]
+  (let [[_ S] (p/decompose-and-type def-env ctx u-ty)
+        [T s P] (decompose-single-in-type def-env ctx S)]
     (list #'the-element-ax T s P u)))
+
+(example [[T :type] [s (set T)] [P (==> T :type)]]
+    (==> (exists-in [x s] (P x))
+         (single-in s P)
+         T)
+  ;; proof
+  (assume [Hex _
+           Hs _]
+    (have <a> T :by (the-element (p/and-intro Hex Hs))))
+  (qed <a>))
 
 (defaxiom the-element-prop-ax
   "The property of the unique element descriptor, cf. [[latte-prelude.quant/the-prop-ax]]."
   [[T :type] [s (set T)] [P (==> T :type)] [u (unique-in s P)]]
-  (and (elem (the-element s P u) s)
-       (P (the-element s P u))))
+  (and (elem (the-element u) s)
+       (P (the-element u))))
 
 (defimplicit the-element-prop
-  "The property of `the-element`, from [[the-element-prop-ax]]."
-  [def-env ctx [s s-type ][P P-type] [u u-type]]
-  (let [[T _] (p/decompose-impl-type def-env ctx P-type)]
+   "`(the-element-prop u)` proves `(P (the-element u))` from the proof `u` of `(unique-in s P)`, for some property `P` and set `s`. This is the main property of the unique descriptor [[the-element]], cf [[the-element-prop-ax]]."
+  [def-env ctx [u u-ty]]
+  (let [[_ S] (p/decompose-and-type def-env ctx u-ty)
+        [T s P] (decompose-single-in-type def-env ctx S)]
     (list #'the-element-prop-ax T s P u)))
 
-(defthm the-element-lemma-thm
+(example [[T :type] [s (set T)] [P (==> T :type)] [u (unique-in s P)]]
+    (P (the-element u))
+  ;; proof
+  (qed (p/and-elim-right (the-element-prop u))))
+
+(defthm the-element-lemma-prop
   "The unique element ... in `s` is ... unique, cf [[latte-prelude.quand/the-lemma-thm]]."
-  [[T :type] [s (set T)] [P (==> T :type)] [u (unique-in s P)]]
+  [[?T :type] [s (set T)] [P (==> T :type)] [u (unique-in s P)]]
   (forall-in [y s]
     (==> (P y)
-         (equal y (the-element s P u)))))
+         (equal y (the-element u)))))
 
-(proof 'the-element-lemma-thm
-  (assume [y T
-           Hy1 (elem y s)
-           Hy2 (P y)]
-    (pose Hsingle := (p/and-elim-right u))
-    (pose elem := (the-element s P u))
-    (have <a> _ :by (Hsingle y Hy1
-                             (the-element s P u) 
-                             (p/and-elim-left (the-element-prop s P u))
-                             Hy2
-                             (p/and-elim-right (the-element-prop s P u)))))
-  (qed <a>))
+(proof 'the-element-lemma-prop-thm
+  (have <a> (single-in s P) :by (p/and-elim-right u))
+  (have <b> (elem (the-element u) s) :by (p/and-elim-left (the-element-prop u)))
+  (have <c> (P (the-element u)) :by (p/and-elim-right (the-element-prop u)))
+  (assume [y T Hy (elem y s)
+           HPy (P y)]
+    (have <d> (equal y (the-element u)) 
+          :by ((single-in-elim <a> y (the-element u)) Hy <b> HPy <c>)))
+  (qed <d>))
 
 (defimplicit the-element-lemma
-  "The unique element ... in `s` is ... unique, cf. [[the-element-lemma-thm]]."
-  [def-env ctx [s s-ty] [P P-ty] [u u-ty]]
-  (let [T (s/fetch-set-type def-env ctx s-ty)]
-    (list #'the-element-lemma-thm T s P u)))
+  "`(the-element-lemma u)` proves that `(forall-in [y s] (==> (P y) (equal y (the-element u))))`
+from the proof `u` that `(unique-in s P)` for some property `P` and set `s`."
+  [def-env ctx [u u-ty]]
+  (let [[_ S] (p/decompose-and-type def-env ctx u-ty)
+        [T s P] (decompose-single-in-type def-env ctx S)]
+    (list #'the-element-lemma-prop-thm T s P u)))
+
+
 
     

@@ -210,14 +210,8 @@ restriction."
                                                <c> (p/and-elim-right Hex2)))
           (have <e> (equal y1 y2)
                 :by (Hf z1 Hz1 y1 y2 (p/and-elim-right Hex1) <d>)))
-        (have <f> _ :by ((sq/ex-in-elim 
-                          ffrom
-                          (lambda [z2 U] (and (g x z2) (f z2 y2)))
-                          (equal y1 y2)) <b> <e>)))
-      (have <g> _ :by ((sq/ex-in-elim
-                        ffrom
-                        (lambda [z1 U] (and (g x z1) (f z1 y1)))
-                        (equal y1 y2)) <a> <f>))))
+        (have <f> _ :by (sq/ex-in-elim <b> <e>)))
+      (have <g> _ :by (sq/ex-in-elim <a> <f>))))
   (qed <g>))
 
 (definition pinjective
