@@ -260,7 +260,7 @@ and range set `to`."
   (forall [s (set T)]
     (pinjective (rel/identity T) s s)))
 
-;; XXX : this proof fails with nbe activated
+;; XXX : this proof fails with nbe activated (not anymore ?)
 (proof 'ridentity-pinjective
   (pose rid := (rel/identity T))
   (assume [s (set T)
