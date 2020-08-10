@@ -1,6 +1,6 @@
 (ns latte-sets.pfun
   "Partial functions are defined in this namespace as
-  a relation (in the type theoretic sense) of type
+  relations (in the type theoretic sense) of type
   `(==> T U :type)` together with a domain `dom` of type `(set T)`
   and a codomain `cod` of type `(set U)`
    such that for any element of the domain there is a unique
@@ -8,7 +8,8 @@
 
   **Remark**: in type theory, it is best to rely on total functions because
   these are 'native' through the function type `==>`. 
-  Partial functions are encoded and thus more complex and less 'natural', use with care."
+  Partial functions are encoded and thus more complex and less 'natural', however
+  there are needed for many related (and set-theoretic) concepts (e.g. finite sets)."
 
   (:refer-clojure :exclude [and or not set])
 
@@ -216,7 +217,8 @@ restriction."
 
 (definition pinjective
   "An injective partial relation/function wrt. domain set `from`
-and range set `to`."
+and range set `to`. Note that this notion of injectivity is about
+comparing sets, not types."
   [[?T ?U :type] [f (rel T U)] [from (set T)] [to (set U)]]
   (forall-in [x1 from]
     (forall-in [x2 from]
@@ -343,24 +345,20 @@ and range set `to`."
   (and (pinjective f from to)
        (psurjective f from to)))
 
-(comment
-
-
 (defthm pinjective-single
   [[?T ?U :type] [f (rel T U)] [from (set T)] [to (set U)]]
-  (==> (pfun f from to)
+  (==> (ptotal f from) ;; totality is needed, although not functionality
        (pinjective f from to)
        (forall-in [z to]
-         (sq/single-in from (lambda [x T] (forall-in [w to] 
+         (sq/single-in from (lambda [x T] (forall [w U] 
                                             (==> (f x w)
                                                  (equal w z))))))))
 
 (proof 'pinjective-single-thm
-  (assume [Hfun _
+  (assume [Htot _
            Hinj _
-           z U
-           Hz (elem z to)]
-    (pose P := (lambda [x T] (forall-in [w to]
+           z U Hz (elem z to)]
+    (pose P := (lambda [x T] (forall [w U]
                                (==> (f x w)
                                     (equal w z)))))
     (assume [x T Hx (elem x from)
@@ -368,13 +366,56 @@ and range set `to`."
              HPx (P x)
              HPy (P y)]
       "We have to show that x equals y"
-      (assume [Hcontra (not (equal x y))]
-        (assume [w U Hw (elem w to)
-                 Hfw (f x w)]
-          (have <a> (equal w z) :by (HPx w Hw Hfw))
-        ))
-      )))
+      (assume [xim U
+               Hxim (f x xim)]
+        (have <a1> (equal xim z) :by (HPx xim Hxim))
+        (have <a2> (f x z) :by (eq/eq-subst (lambda [$ U] (f x $)) <a1> Hxim)))
+      (have <a> (f x z) :by (q/ex-elim (Htot x Hx) <a2>))
+      (assume [yim U
+               Hyim (f y yim)]
+        (have <b1> (equal yim z) :by (HPy yim Hyim))
+        (have <b2> (f y z) :by (eq/eq-subst (lambda [$ U] (f y $)) <b1> Hyim)))
+      (have <b> (f y z) :by (q/ex-elim (Htot y Hy) <b2>))
+      (have <c> (equal x y) :by (Hinj x Hx y Hy z Hz z Hz <a> <b> (eq/eq-refl z))))
+    (have <d> _ :by ((sq/single-in-intro from P) <c>)))
+  (qed <d>))
 
 
+(defthm pbijective-unique
+  [[?T ?U :type] [f (rel T U)] [from (set T)] [to (set U)]]
+  (==> (pfun f from)
+       (ptotal f from)
+       (pbijective f from to)
+       (forall-in [z to]
+         (sq/unique-in from (lambda [x T] (forall [w U] 
+                                            (==> (f x w)
+                                                 (equal w z))))))))
 
-)
+(proof 'pbijective-unique-thm
+  (assume [Hfun _
+           Htot _
+           Hbij _
+           z U Hz (elem z to)]
+    (have Hinj (pinjective f from to) :by (p/and-elim-left Hbij))
+    (have Hsurj (psurjective f from to) :by (p/and-elim-right Hbij))
+    (pose P := (lambda [x T] (forall [w U]
+                               (==> (f x w)
+                                    (equal w z)))))
+    "First we have to show  that there's an `x` in `s` such as `(P x)`"
+    "We exploit surjectivity."
+    (assume [x T Hx (elem x from)
+             Hfx (f x z)]
+      (assume [w U Hw (f x w)]
+        (have <a1> (equal w z) :by (Hfun x Hx w z Hw Hfx)))
+      (have <a2> (P x) :by <a1>)
+      (have <a3> (exists-in [x from] (P x)) :by ((sq/ex-in-intro from P x) Hx <a2>)))
+    (have <a4> (exists-in [x from] (f x z)) :by (Hsurj z Hz))
+    ;; XXX : this does not work if <a4> is inlined within the elimination below
+    (have <a> (exists-in [x from] (P x)) :by (sq/ex-in-elim <a4> <a3>))
+    "The second part is thanks to injectivity."
+    (have <b> _ :by ((pinjective-single f from to) Htot Hinj z Hz))
+    "The uniqueness follows"
+    (have <c> _ :by (p/and-intro <a> <b>)))
+  (qed <c>))
+      
+      
