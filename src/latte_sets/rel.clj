@@ -14,6 +14,7 @@ a given type `T` to elements of `U` is formalized with type `(==> T U :type)`.
             [latte-prelude.prop :as p :refer [and and* or not <=>]]
             [latte-prelude.equal :as eq :refer [equal]]
             [latte-prelude.quant :as q :refer [exists]]
+            [latte-prelude.fun :as fun]
             [latte-sets.set :as sets :refer [set set-of elem]]))
 
 (definition rel
@@ -311,7 +312,7 @@ This function is used for implicits in relations."
 (proof 'refl-closure-smallest-thm
   (pose R* := (refl-closure R))
   (assume [S (rel T T)
-           Hsub (subrel R S) 
+           Hsub (subrel R S)
            HSrefl (reflexive S)]
     (assume [x T y T
              HR* (R* x y)]
@@ -344,7 +345,7 @@ This function is used for implicits in relations."
 (proof 'symm-closure-smallest-thm
   (pose R* := (symm-closure R))
   (assume [S (rel T T)
-           Hsub (subrel R S) 
+           Hsub (subrel R S)
            HSsym (symmetric S)]
     (assume [x T y T
              HR* (R* x y)]
@@ -402,7 +403,7 @@ This function is used for implicits in relations."
 (definition rel-equal
   "A *Leibniz*-stype equality for relations.
 
-It says that two relations `R1` and `R2` are equal iff for 
+It says that two relations `R1` and `R2` are equal iff for
 any predicate `P` then `(P R1)` if and only if `(P R2)`.
 
 Note that the identification with [[seteq]] is non-trivial,
@@ -753,6 +754,73 @@ one requires an axiom."
       (and (elem x s1)
            (elem y s2)))))
 
+(definition funrel
+  "The relation corresponding to function `f`."
+  [[?T ?U :type] [f (==> T U)]]
+  (lambda [x T]
+    (lambda [y U]
+      (equal (f x) y))))
 
+(definition functional
+  [[?T ?U :type] [R (rel T U)]]
+  (forall [x T]
+    (q/unique (lambda [y U] (R x y)))))
 
+(defthm funrel-functional
+  [[?T ?U :type] [f (==> T U)]]
+  (functional (funrel f)))
 
+(proof 'funrel-functional-thm
+  (pose R := (funrel f))
+  (assume [x T]
+    (have <a1> (equal (f x) (f x)) :by (eq/eq-refl (f x)))
+    (have <a> (exists [y U] (R x y))
+          :by ((q/ex-intro (lambda [y U] (R x y)) (f x)) <a1>))
+    (assume [y1 U
+             y2 U
+             Hy1 (R x y1)
+             Hy2 (R x y2)]
+      (have <b1> (equal (f x) y1) :by Hy1)
+      (have <b2> (equal (f x) y2) :by Hy2)
+      (have <b> (equal y1 y2) :by (eq/eq-trans (eq/eq-sym <b1>)
+                                               <b2>)))
+    (have <c> (q/unique (lambda [y U] (R x y)))
+          :by (p/and-intro <a> <b>)))
+  (qed <c>))
+
+(definition relfun
+  "The function corresponding to a total, functional relation."
+  [[?T ?U :type] [R (rel T U)] [fproof (functional R)]]
+  (lambda [x T] (q/the (fproof x))))
+
+(defthm relfunrel-ext-equal
+  "This is the extensional equality of a function `f` and
+its relational characterization."
+  [[?T ?U :type] [f (==> T U)]]
+  (forall [x T]
+    (equal (f x) ((relfun (funrel f) (funrel-functional f)) x))))
+
+(proof 'relfunrel-ext-equal-thm
+  (pose R := (funrel f))
+  (pose fproof := (funrel-functional f))
+  (assume [x T]
+    (have <a> (R x (f x)) :by (eq/eq-refl (f x)))
+    (have <b> (R x (q/the (fproof x)))
+          :by (q/the-prop (fproof x)))
+    (have <c> (equal (f x) (q/the (fproof x)))
+          :by ((p/and-elim-right (fproof x))
+               (f x)
+               (q/the (fproof x))
+               <a> <b>)))
+  (qed <c>))
+
+(defthm relfunrel-equal
+  "This is the intentional variant of [[relfunrel-ext-equal]]."
+  [[?T ?U :type] [f (==> T U)]]
+  (equal f (relfun (funrel f) (funrel-functional f))))
+
+(proof 'relfunrel-equal-thm
+  (qed ((fun/functional-extensionality
+         f
+         (relfun (funrel f) (funrel-functional f)))
+        (relfunrel-ext-equal f))))

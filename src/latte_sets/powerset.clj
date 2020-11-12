@@ -143,7 +143,7 @@ This is the set {y:T | ∃x∈X, y∈x}."
                    (elem y x))))))
 
 (defthm unions-upper-bound
-   "The generalized union is an upper bound wrt. 
+   "The generalized union is an upper bound wrt.
 the subset relation."
    [?T :type, X (powerset T)]
    (forall [x (set T)]
@@ -185,6 +185,21 @@ This is the set {y:T | ∀x∈X, y∈x}."
              Hy (elem y (intersections X))]
       (have <a> (elem y x) :by (Hy x Hx))))
   (qed <a>))
+
+(comment
+  ;; is this true ? provable ?
+  (defthm intersections-set-elem
+    [?T :type , X (powerset T)]
+    (set-elem (intersections X) X))
+
+  (proof 'intersections-set-elem-thm
+    (assume [Hneg (not (set-elem (intersections X) X))]
+      (assume [x (set T)
+               Hx (set-elem x X)]
+        (have <a> (subset (intersections X) x)
+              :by ((intersections-lower-bound X) x Hx)))))
+
+  )
 
 (defthm intersections-prop
   "Preservation of properties on intersections."
@@ -283,6 +298,3 @@ This is the set {y:T | ∀x∈X, y∈x}."
 (proof 'powerset1-prop-equiv-thm
   (qed (p/and-intro (powerset1-prop x)
                     (powerset1-prop-conv x))))
-
-
-
