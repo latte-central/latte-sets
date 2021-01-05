@@ -793,6 +793,16 @@ one requires an axiom."
   [[?T ?U :type] [R (rel T U)] [fproof (functional R)]]
   (lambda [x T] (q/the (fproof x))))
 
+(defthm relfun-img-prop
+  "The property of the relational/functional image."
+  [[?T ?U :type] [R (rel T U)] [fproof (functional R)]]
+  (forall [x T] (R x ((relfun R fproof) x))))
+
+(proof 'relfun-img-prop-thm
+  (assume [x T]
+    (have <a> _ :by (q/the-prop (fproof x))))
+  (qed <a>))
+
 (defthm relfun-img
   "The image of a functional relation"
   [[?T ?U :type] [R (rel T U)] [fproof (functional R)]]
