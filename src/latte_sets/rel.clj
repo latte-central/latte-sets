@@ -793,6 +793,25 @@ one requires an axiom."
   [[?T ?U :type] [R (rel T U)] [fproof (functional R)]]
   (lambda [x T] (q/the (fproof x))))
 
+(defthm relfun-img
+  "The image of a functional relation"
+  [[?T ?U :type] [R (rel T U)] [fproof (functional R)]]
+  (forall [x T]
+    (forall [y U]
+      (==> (R x y)
+           (equal ((relfun R fproof) x) y)))))
+
+(proof 'relfun-img-thm
+  (assume [x T y U
+           H (R x y)]
+    (pose yy := (q/the (fproof x)))
+    (have <a> (equal ((relfun R fproof) x) yy)
+          :by (eq/eq-refl ((relfun R fproof) x)))
+    (have <b> (equal y yy) :by ((q/the-lemma (fproof x)) y H))
+    (have <c> (equal ((relfun R fproof) x) y)
+          :by (eq/eq-trans <a> (eq/eq-sym <b>))))
+  (qed <c>))
+
 (defthm relfunrel-ext-equal
   "This is the extensional equality of a function `f` and
 its relational characterization."
