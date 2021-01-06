@@ -11,7 +11,7 @@
             [latte-prelude.prop :as p :refer [<=> and or not]]
             [latte-prelude.equal :as eq :refer [equal]]
 
-            [latte-sets.core :as s :refer [set elem seteq subset forall-in exists-in]]
+            [latte-sets.set :as s :refer [set elem seteq subset forall-in exists-in]]
             [latte-sets.rel :as rel :refer [rel dom ran]]))
 
 (definition app-def
