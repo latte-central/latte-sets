@@ -207,8 +207,7 @@ restriction."
           (have <c1> (equal z1 z2)
                 :by (Hg x Hx z1 z2 (p/and-elim-left Hex1) (p/and-elim-left Hex2)))
           (have <c> (equal z2 z1) :by (eq/eq-sym <c1>))
-          (have <d> (f z1 y2) :by (eq/eq-subst (lambda [$ U] (f $ y2))
-                                               <c> (p/and-elim-right Hex2)))
+          (have <d> (f z1 y2) :by (eq/rewrite (p/and-elim-right Hex2) <c>))
           (have <e> (equal y1 y2)
                 :by (Hf z1 Hz1 y1 y2 (p/and-elim-right Hex1) <d>)))
         (have <f> _ :by (sq/ex-in-elim <b> <e>)))
@@ -369,12 +368,12 @@ comparing sets, not types."
       (assume [xim U
                Hxim (f x xim)]
         (have <a1> (equal xim z) :by (HPx xim Hxim))
-        (have <a2> (f x z) :by (eq/eq-subst (lambda [$ U] (f x $)) <a1> Hxim)))
+        (have <a2> (f x z) :by (eq/rewrite Hxim <a1>)))
       (have <a> (f x z) :by (q/ex-elim (Htot x Hx) <a2>))
       (assume [yim U
                Hyim (f y yim)]
         (have <b1> (equal yim z) :by (HPy yim Hyim))
-        (have <b2> (f y z) :by (eq/eq-subst (lambda [$ U] (f y $)) <b1> Hyim)))
+        (have <b2> (f y z) :by (eq/rewrite Hyim <b1>)))
       (have <b> (f y z) :by (q/ex-elim (Htot y Hy) <b2>))
       (have <c> (equal x y) :by (Hinj x Hx y Hy z Hz z Hz <a> <b> (eq/eq-refl z))))
     (have <d> _ :by ((sq/single-in-intro from P) <c>)))

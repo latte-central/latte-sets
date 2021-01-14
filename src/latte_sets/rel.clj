@@ -320,7 +320,7 @@ This function is used for implicits in relations."
         (have <a> (S x y) :by (Hsub x y HR*1)))
       (assume [HR*2 (equal x y)]
         (have <b1> (S x x) :by (HSrefl x))
-        (have <b> (S x y) :by (eq/eq-subst (lambda [$ T] (S x $)) HR*2 <b1>)))
+        (have <b> (S x y) :by (eq/nrewrite 2 <b1> HR*2)))
       (have <c> (S x y) :by (p/or-elim HR* <a> <b>))))
   (qed <c>))
 
