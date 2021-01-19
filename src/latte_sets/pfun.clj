@@ -16,7 +16,7 @@
   (:require [latte.core :as latte :refer [definition defthm defaxiom defnotation
                                           defimplicit
                                           forall lambda
-                                          assume have pose proof qed lambda]]
+                                          assume have pose proof try-proof qed lambda]]
             [latte-prelude.quant :as q :refer [exists]]
             [latte-prelude.prop :as p :refer [<=> and and* or not]]
             [latte-prelude.equal :as eq :refer [equal]]
@@ -28,10 +28,9 @@
             [latte-sets.rel :as rel :refer [rel dom ran]]
             [latte-sets.powerrel :as prel :refer [rel-ex]]))
 
-(definition pfun
-  "A partial function `f` based on a relation together with
-a restricted domain set `from`. Note that the relation `f` 
-outside `from` need not be a function."
+(definition functional
+  "The relation `f` is functional (a.k.a. right-unique) on the domain-set `from`.
+ Note that the relation `f`  outside `from` is not consrained."
   [[?T ?U :type], f (rel T U), from (set T)]
   (forall-in [x from]
     (forall [y1 y2 U]
@@ -39,24 +38,24 @@ outside `from` need not be a function."
            (f x y2)
            (equal y1 y2)))))
 
-(defn fetch-pfun-type [def-env ctx t]
+(defn fetch-functional-type [def-env ctx t]
   (latte.utils/decomposer
    (fn [t]
      (if (clojure.core/and (seq? t)
                            (= (count t) 4)
-                           (= (first t) #'latte-sets.pfun/pfun-def))
+                           (= (first t) #'latte-sets.pfun/functional-def))
        (into [] (rest t))
-       (throw (ex-info "Not a partial function type." {:type t}))))
+       (throw (ex-info "Not a functional type." {:type t}))))
    def-env ctx t))
 
-(defthm ridentity-pfun
+(defthm ridentity-functional
   "The identity relation is a partial function on
 any domain set."
   [T :type]
   (forall [from (set T)]
-    (pfun (rel/identity T) from)))
+    (functional (rel/identity T) from)))
 
-(proof 'ridentity-pfun
+(proof 'ridentity-functional
   (pose rid := (rel/identity T))
   (assume [from (set T)
            x T Hx (elem x from)
@@ -66,22 +65,22 @@ any domain set."
     (have <a> (equal y1 y2) :by (eq/eq-trans (eq/eq-sym Hid1) Hid2)))
   (qed <a>))
 
-(definition pfun-fun
+(definition functional-fun
   "The \"partial\" function of a (total) type-theoretic function `f` on its whole domain"
   [[?T ?U :type] [f (==> T U)]]
   (lambda [x T]
     (lambda [y U]
       (equal (f x) y))))
 
-(defthm pfun-fun-prop
+(defthm functional-fun-prop
   "A type-theoretic function `f` is a partial function for any domain
 restriction."
   [[?T ?U :type], f (==> T U)]
   (forall [from (set T)]
-    (pfun (pfun-fun f) from)))
+    (functional (functional-fun f) from)))
 
-(proof 'pfun-fun-prop-thm
-  (pose pf := (pfun-fun f))
+(proof 'functional-fun-prop-thm
+  (pose pf := (functional-fun f))
   (assume [from (set T)
            x T Hx (elem x from)
            y1 U y2 U
@@ -90,75 +89,78 @@ restriction."
     (have <a> (equal y1 y2) :by (eq/eq-trans (eq/eq-sym Hy1) Hy2)))
   (qed <a>))
 
-(definition pdom
-  "The actual domain of partial relation/function `f`, taking antecedents in `from`."
+(definition domain
+  "The actual domain of relation `f`, taking antecedents in `from`.
+It is sometimes called the active domain of `f`."
   [[?T ?U :type], f (rel T U), from (set T)]
   (set-of [x T] (and (elem x from)
                      (exists [y U] (f x y)))))
 
-(definition pran
-  "The range of partial relation/function `f``, taking antecedents in `from`."
+(definition image
+  "The image of set `from` through relation `f`. This is also
+sometimes called the *range* or *codomain* but image is less ambiguous
+(especially in type theory)."
   [[?T ?U :type], f (rel T U), from (set T)]
   (set-of [y U] (exists-in [x from] (f x y))))
 
-(definition ptotal
-  "The partial relation/function `f` is total wrt. the provided `from` domain set."
+(definition serial
+  "The relation `f` covers all of (is total wrt.) the provided `from` domain set."
   [[?T ?U :type], f (rel T U), from (set T)]
   (forall-in [x from]
     (exists [y U]
       (f x y))))
 
-(definition ptotal-alt
-  "Alternative definition for [[ptotal]]."
+(definition serial-alt
+  "Alternative definition for [[serial]]."
   [[?T ?U :type], f (rel T U), from (set T)]
-  (seteq (pdom f from) from))
+  (seteq (domain f from) from))
 
-(defthm ptotal-ptotal-alt
+(defthm serial-serial-alt
   [[?T ?U :type], f (rel T U), from (set T)]
-  (==> (ptotal f from)
-       (ptotal-alt f from)))
+  (==> (serial f from)
+       (serial-alt f from)))
 
-(proof 'ptotal-ptotal-alt-thm
-  (assume [Htot (ptotal f from)]
+(proof 'serial-serial-alt-thm
+  (assume [Htot (serial f from)]
     "First the subset direction."
-    (assume [x T Hx (elem x (pdom f from))]
+    (assume [x T Hx (elem x (domain f from))]
       "We have to prove that `x` is in `from`."
       (have <a> (elem x from) :by (p/and-elim-left Hx)))
     "Second the superset direction."
     (assume [x T Hx (elem x from)]
-      "We have to prove that `x` is in `(pdom f from)`"
+      "We have to prove that `x` is in `(domain f from)`"
       (have <b1> (exists [y U] (f x y)) :by (Htot x Hx))
-      (have <b> (elem x (pdom f from)) :by (p/and-intro Hx <b1>)))
+      (have <b> (elem x (domain f from)) :by (p/and-intro Hx <b1>)))
     "Deduce set-equality."
-    (have <c> (seteq (pdom f from) from) :by (p/and-intro <a> <b>)))
+    (have <c> (seteq (domain f from) from) :by (p/and-intro <a> <b>)))
   (qed <c>))
       
-(defthm ptotal-alt-ptotal
+(defthm serial-alt-serial
   [[?T ?U :type], f (rel T U), from (set T)]
-  (==> (ptotal-alt f from)
-       (ptotal f from)))
+  (==> (serial-alt f from)
+       (serial f from)))
 
-(proof 'ptotal-alt-ptotal-thm
-  (assume [Htot (ptotal-alt f from)]
+(proof 'serial-alt-serial-thm
+  (assume [Htot (serial-alt f from)]
     (assume [x T Hx (elem x from)]
-      (have <a> (elem x (pdom f from)) 
+      (have <a> (elem x (domain f from)) 
             :by ((p/and-elim-right Htot) x Hx))
       (have <b> (exists [y U] (f x y))
             :by (p/and-elim-right <a>))))
   (qed <b>))
 
-(defthm pfun-fun-total
-  "A type-theoretic function `f` is always total."
+(defthm functional-fun-serial
+  "A type-theoretic function `f` is always serial."
   [[?T ?U :type], f (==> T U)]
   (forall [from (set T)]
-    (ptotal (pfun-fun f) from)))
+    (serial (functional-fun f) from)))
 
-(proof 'pfun-fun-total-thm
-  (pose rf := (pfun-fun f))
+(proof 'functional-fun-serial-thm
+  (pose rf := (functional-fun f))
   (assume [from (set T)]
     "subset (if) part"
     (assume [x T
-             Hx (elem x (pdom rf from))]
+             Hx (elem x (domain rf from))]
       (have <a> (elem x from) :by (p/and-elim-left Hx)))
     "cosubset (only if) part"
     (assume [x T
@@ -166,55 +168,89 @@ restriction."
       (have <b1> (rf x (f x)) :by (eq/eq-refl (f x)))
       (have <b2> (exists [y U] (rf x y))
             :by ((q/ex-intro (lambda [y U] (rf x y)) (f x)) <b1>))
-      (have <b> (elem x (pdom rf from)) :by (p/and-intro Hx <b2>)))
+      (have <b> (elem x (domain rf from)) :by (p/and-intro Hx <b2>)))
     "(sub)set equality"
-    (have <c> (seteq (pdom rf from) from) :by (p/and-intro <a> <b>))
-    (have <d> (ptotal-alt rf from) :by <c>)
-    (have <e> (ptotal rf from) :by ((ptotal-alt-ptotal rf from) <d>)))
+    (have <c> (seteq (domain rf from) from) :by (p/and-intro <a> <b>))
+    (have <d> (serial-alt rf from) :by <c>)
+    (have <e> (serial rf from) :by ((serial-alt-serial rf from) <d>)))
   (qed <e>))
 
-(definition pcompose
-  [[?T ?U ?V :type], f (rel U V), ffrom (set U), g (rel T U), gfrom (set T)]
-  (lambda [x T]
-    (lambda [z V]
-      (==> (elem x gfrom)
-           (exists-in [y ffrom]
-             (and (g x y) (f y z)))))))
+(defthm rcomp-functional
+  [[?T ?U ?V :type] [f (rel T U)] [g (rel U V)] [from (set T)]]
+  (==> (functional f from)
+       (functional g (image f from))
+       (functional (rel/rcomp f g) from)))
 
-(defthm pcompose-pfun
-  "The composition of two partial functions `f` and `g`."
-  [[?T ?U ?V :type], f (rel U V), ffrom (set U), g (rel T U), gfrom (set T)]
-  (==> (pfun f ffrom)
-       (pfun g gfrom)
-       (pfun (pcompose f ffrom g gfrom) gfrom)))
+(proof 'rcomp-functional-thm
+  (assume [Hf _
+           Hg _]
+    (assume [x T
+             Hx (elem x from)
+             z1 V z2 V
+             Hz1 ((rel/rcomp f g) x z1)
+             Hz2 ((rel/rcomp f g) x z2)]
+      (have <a> (exists [y1 U] (and (f x y1) (g y1 z1)))
+            :by Hz1)
+      (assume [y1 U
+               Hy1 (and (f x y1) (g y1 z1))]
+        (have <b> (exists [y2 U] (and (f x y2) (g y2 z2)))
+              :by Hz2)
+        (assume [y2 U
+                 Hy2 (and (f x y2) (g y2 z2))]
+          (have <c1> (equal y1 y2)
+                :by (Hf x Hx y1 y2 (p/and-elim-left Hy1) (p/and-elim-left Hy2)))
+          (have <c2> (elem y1 (image f from))
+                :by ((q/ex-intro (lambda [$ T]
+                                   (and (elem $ from)
+                                        (f $ y1))) x) (p/and-intro Hx (p/and-elim-left Hy1))))
+          (have <c3> (g y1 z2) 
+                :by (eq/rewrite (p/and-elim-right Hy2) (eq/eq-sym <c1>)))
 
-(proof 'pcompose-pfun-thm
-  (pose R := (pcompose f ffrom g gfrom))
-  (assume [Hf (pfun f ffrom)
-           Hg (pfun g gfrom)]
-    (assume [x T Hx (elem x gfrom)
-             y1 V y2 V
-             H1 (R x y1)
-             H2 (R x y2)]
-      (have <a> (exists-in [z1 ffrom] (and (g x z1) (f z1 y1)))
-            :by (H1 Hx))
-      (assume [z1 U Hz1 (elem z1 ffrom)
-               Hex1 (and (g x z1) (f z1 y1))]
-        (have <b> (exists-in [z2 ffrom] (and (g x z2) (f z2 y2)))
-              :by (H2 Hx))
-        (assume [z2 U Hz2 (elem z2 ffrom)
-                 Hex2 (and (g x z2) (f z2 y2))]
-          (have <c1> (equal z1 z2)
-                :by (Hg x Hx z1 z2 (p/and-elim-left Hex1) (p/and-elim-left Hex2)))
-          (have <c> (equal z2 z1) :by (eq/eq-sym <c1>))
-          (have <d> (f z1 y2) :by (eq/rewrite (p/and-elim-right Hex2) <c>))
-          (have <e> (equal y1 y2)
-                :by (Hf z1 Hz1 y1 y2 (p/and-elim-right Hex1) <d>)))
-        (have <f> _ :by (sq/ex-in-elim <b> <e>)))
-      (have <g> _ :by (sq/ex-in-elim <a> <f>))))
-  (qed <g>))
+          (have <c> (equal z1 z2)
+                :by (Hg y1 <c2> z1 z2 (p/and-elim-right Hy1) <c3>)))
+        (have <d> _ :by (q/ex-elim <b> <c>)))
+      (have <e> _ :by (q/ex-elim <a> <d>))))
+  (qed <e>))
 
-(definition pinjective
+(defthm rcomp-serial
+  [[?T ?U ?V :type] [f (rel T U)] [g (rel U V)] [from (set T)]]
+  (==> (serial f from)
+       (serial g (image f from))
+       (serial (rel/rcomp f g) from)))
+
+(proof 'rcomp-serial-thm
+  (assume [Hf _
+           Hg _]
+    (assume [x T
+             Hx (elem x from)]
+      (have <a> (exists [y U] (f x y)) :by (Hf x Hx))
+      (assume [y U
+               Hy (f x y)]
+        (have <b1> (elem y (image f from))
+              :by ((q/ex-intro (lambda [z T]
+                                 (and (elem z from)
+                                      (f z y))) x) (p/and-intro Hx Hy)))
+        (have <b> (exists [z V] (g y z))
+              :by (Hg y <b1>))
+        (assume [z V
+                 Hz (g y z)]
+          (have <c1> (and (f x y) (g y z))
+                :by (p/and-intro Hy Hz))
+          (have <c2> ((rel/rcomp f g) x z)
+                :by ((q/ex-intro (lambda [$ U]
+                                   (and (f x $) (g $ z))) y) <c1>))
+          (have <c> (exists [z V]
+                      ((rel/rcomp f g) x z))
+                :by ((q/ex-intro (lambda [$ V]
+                                   ((rel/rcomp f g) x $)) z) <c2>)))
+
+        (have <d> (exists [z V] ((rel/rcomp f g) x z))
+              :by (q/ex-elim <b> <c>)))
+      (have <e> _ :by (q/ex-elim <a> <d>))))
+  (qed <e>))
+  
+
+(definition injective
   "An injective partial relation/function wrt. domain set `from`
 and range set `to`. Note that this notion of injectivity is about
 comparing sets, not types."
@@ -228,10 +264,10 @@ comparing sets, not types."
                (equal y1 y2)
                (equal x1 x2)))))))
 
-(defthm pinjective-contra
+(defthm injective-contra
   "The contrapositive of [[pinjective]]."
   [[?T ?U :type] [f (rel T U)] [from (set T)] [to (set U)]]
-  (==> (pinjective f from to)
+  (==> (injective f from to)
        (forall-in [x1 from]
          (forall-in [x2 from]
            (forall-in [y1 to]
@@ -241,8 +277,8 @@ comparing sets, not types."
                     (not (equal x1 x2))
                     (not (equal y1 y2)))))))))
 
-(proof 'pinjective-contra-thm
-  (assume [Hinj (pinjective f from to)]
+(proof 'injective-contra-thm
+  (assume [Hinj (injective f from to)]
     (assume [x1 T Hx1 (elem x1 from)
              x2 T Hx2 (elem x2 from)
              y1 U Hy1 (elem y1 to)
@@ -256,13 +292,12 @@ comparing sets, not types."
         (have <b> p/absurd :by (Hneq <a>)))))
   (qed <b>))
 
-(defthm ridentity-pinjective
+(defthm ridentity-injective
   [T :type]
   (forall [s (set T)]
-    (pinjective (rel/identity T) s s)))
+    (injective (rel/identity T) s s)))
 
-;; XXX : this proof fails with nbe activated (not anymore ?)
-(proof 'ridentity-pinjective
+(proof 'ridentity-injective
   (pose rid := (rel/identity T))
   (assume [s (set T)
            x1 T Hx1 (elem x1 s)
@@ -279,14 +314,14 @@ comparing sets, not types."
 (comment
   ;; TODO
 
-(defthm pcompose-pinjective
+(defthm compose-pinjective
   [[?T ?U ?V :type] [f (rel U V)] [ffrom (set U)] [fto (set V)] [g (rel T U)] [gfrom (set T)] [gto (set U)]]
   (==> (pinjective f ffrom fto)
        (pinjective g gfrom gto)
-       (pinjective (pcompose f ffrom g gfrom) gfrom fto)))
+       (pinjective (compose f ffrom g gfrom) gfrom fto)))
 
-(proof 'pcompose-pinjective-thm
-  (pose h := (pcompose f ffrom g gfrom))
+(proof 'compose-pinjective-thm
+  (pose h := (compose f ffrom g gfrom))
   (assume [Hf (pinjective f ffrom fto)
            Hg (pinjective g gfrom gto)
            x1 T Hx1 (elem x1 gfrom)
@@ -327,8 +362,8 @@ comparing sets, not types."
   "The set `s1` is \"smaller\" than `s2`."
   [[?T :type] [s1 (set T)] [s2 (set T)]]
   (rel-ex (lambda [f (rel T T)]
-            (and* (pfun f s1)
-                  (ptotal f s1)
+            (and* (functional f s1)
+                  (serial f s1)
                   (pinjective f s1 s2)))))
 
 (definition psurjective
@@ -346,7 +381,7 @@ comparing sets, not types."
 
 (defthm pinjective-single
   [[?T ?U :type] [f (rel T U)] [from (set T)] [to (set U)]]
-  (==> (ptotal f from) ;; totality is needed, although not functionality
+  (==> (serial f from) ;; totality is needed, although not functionality
        (pinjective f from to)
        (forall-in [z to]
          (sq/single-in from (lambda [x T] (forall [w U] 
@@ -382,8 +417,8 @@ comparing sets, not types."
 
 (defthm pbijective-unique
   [[?T ?U :type] [f (rel T U)] [from (set T)] [to (set U)]]
-  (==> (pfun f from)
-       (ptotal f from)
+  (==> (functional f from)
+       (serial f from)
        (pbijective f from to)
        (forall-in [z to]
          (sq/unique-in from (lambda [x T] (forall [w U] 
