@@ -251,9 +251,16 @@ sometimes called the *range* or *codomain* but image is less ambiguous
   
 
 (definition injective
-  "An injective partial relation/function wrt. domain set `from`
-and range set `to`. Note that this notion of injectivity is about
-comparing sets, not types."
+  "The relation `f` is injective wrt. domain set `from`
+and range set `to`. 
+
+Note that this notion of injectivity is about
+comparing sets, not types. Here, the actual meaning is that
+`s1` is less than `s2`.
+
+Also, the relation is not constrained to be e.g. [[functional]]
+ or [[serial]] (and in practice these are frequent although
+ not always required assumptions.)."
   [[?T ?U :type] [f (rel T U)] [from (set T)] [to (set U)]]
   (forall-in [x1 from]
     (forall-in [x2 from]
@@ -265,7 +272,8 @@ comparing sets, not types."
                (equal x1 x2)))))))
 
 (defthm injective-contra
-  "The contrapositive of [[pinjective]]."
+  "The contrapositive of [[injective]], useful for
+proofs by contradiction."
   [[?T ?U :type] [f (rel T U)] [from (set T)] [to (set U)]]
   (==> (injective f from to)
        (forall-in [x1 from]
@@ -310,6 +318,55 @@ comparing sets, not types."
     (have <a> (equal y2 x2) :by (eq/eq-sym Hr2))
     (have <b> (equal x1 x2) :by (eq/eq-trans* Hr1 Heqy <a>)))
   (qed <b>))
+
+(defthm rcomp-injective
+  [[?T ?U ?V :type] [f1 (rel T U)] [f2 (rel U V)] [s1 (set T)] [s2 (set V)]]
+  (==> (injective f1 s1 (image f1 s1))
+       (injective f2 (image f1 s1) s2)
+       (injective (rel/rcomp f1 f2) s1 s2)))
+
+(try-proof 'rcomp-injective-thm
+  (assume [Hf1 _
+           Hf2 _]
+    (assume [x1 T Hx1 (elem x1 s1)
+             x2 T Hx2 (elem x2 s1)
+             z1 V Hz1 (elem z1 s2)
+             z2 V Hz2 (elem z2 s2)
+             H1 ((rel/rcomp f1 f2) x1 z1)
+             H2 ((rel/rcomp f1 f2) x2 z2)
+             Heq (equal z1 z2)]
+      "We have to prove x1=x2"
+      (have <a> (exists [y1 U] (and (f1 x1 y1) (f2 y1 z1)))
+            :by H1)
+      (assume [y1 U
+               Hy1 (and (f1 x1 y1) (f2 y1 z1))]
+        (have <b> (elem y1 (image f1 s1))
+              :by ((q/ex-intro (lambda [$ T]
+                                 (and (elem $ s1)
+                                      (f1 $ y1))) x1)
+                   (p/and-intro Hx1 (p/and-elim-left Hy1))))
+        (have <c> (exists [y2 U] (and (f1 x2 y2) (f2 y2 z2)))
+              :by H2)
+        (assume [y2 U
+                 Hy2 (and (f1 x2 y2) (f2 y2 z2))]
+          (have <d> (elem y2 (image f1 s1))
+                :by ((q/ex-intro (lambda [$ T]
+                                   (and (elem $ s1)
+                                        (f1 $ y2))) x2)
+                     (p/and-intro Hx2 (p/and-elim-left Hy2))))
+
+          (have <e> (equal y1 y2)
+                :by (Hf2 y1 <b> y2 <d> z1 Hz1 z2 Hz2 
+                         (p/and-elim-right Hy1) (p/and-elim-right Hy2)
+                         Heq))
+          (have <f> (equal x1 x2)
+                :by (Hf1 x1 Hx1 x2 Hx2 y1 <b> y2 <d>
+                         (p/and-elim-left Hy1) (p/and-elim-left Hy2)
+                         <e>)))
+        (have <g> _ :by (q/ex-elim <c> <f>)))
+      (have <h> _ :by (q/ex-elim <a> <g>))))
+
+  (qed <h>))
 
 (comment
   ;; TODO
