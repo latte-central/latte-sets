@@ -368,84 +368,50 @@ proofs by contradiction."
 
   (qed <h>))
 
-(comment
-  ;; TODO
+(definition injection
+  [[?T ?U :type] [f (rel T U)] [s1 (set T)] [s2 (set U)]]
+  (and* (functional f s1)
+        (serial f s1)
+        (injective f s1 s2)))
 
-(defthm compose-pinjective
-  [[?T ?U ?V :type] [f (rel U V)] [ffrom (set U)] [fto (set V)] [g (rel T U)] [gfrom (set T)] [gto (set U)]]
-  (==> (pinjective f ffrom fto)
-       (pinjective g gfrom gto)
-       (pinjective (compose f ffrom g gfrom) gfrom fto)))
-
-(proof 'compose-pinjective-thm
-  (pose h := (compose f ffrom g gfrom))
-  (assume [Hf (pinjective f ffrom fto)
-           Hg (pinjective g gfrom gto)
-           x1 T Hx1 (elem x1 gfrom)
-           x2 T Hx2 (elem x2 gfrom)
-           y1 V Hy1 (elem y1 fto)
-           y2 V Hy2 (elem y2 fto)
-           Hh1 (h x1 y1)
-           Hh2 (h x2 y2)
-           Heq (equal y1 y2)]
-    (have <a> (exists-in [z1 ffrom] (and (g x1 z1) (f z1 y1)))
-          :by (Hh1 Hx1))
-    (assume [z1 U Hz1 (elem z1 ffrom)
-             Hex1 (and (g x1 z1) (f z1 y1))]
-      (have <b> (exists-in [z2 ffrom] (and (g x2 z2) (f z2 y2)))
-            :by (Hh2 Hx2))
-      (assume [z2 U Hz2 (elem z2 ffrom)
-               Hex2 (and (g x2 z2) (f z2 y2))]
-        (have <c1> (equal z1 z2) 
-              :by (Hf z1 Hz1 z2 Hz2 y1 y2
-                      (p/and-elim-right Hex1)
-                      (p/and-elim-right Hex2)
-                      Heq))
-        (have <c> (equal x1 x2)
-              :by (Hg x1 Hx1 x2 Hx2 z1 z2
-                      (p/and-elim-left Hex1)
-                      (p/and-elim-left Hex2)
-                      <c1>)))
-      (have <d> _ 
-            :by ((sq/ex-in-elim ffrom (lambda [z2 U] (and (g x2 z2) (f z2 y2)))
-                                (equal x1 x2)) <b> <c>)))
-    (have <e> _
-          :by ((sq/ex-in-elim ffrom (lambda [z1 U] (and (g x1 z1) (f z1 y1)))
-                              (equal x1 x2)) <a> <d>)))
-  (qed <e>))
-)
-
-(definition psmaller
+;;; XXX : are functionality and seriality required in the definition ?
+(definition smaller
   "The set `s1` is \"smaller\" than `s2`."
-  [[?T :type] [s1 (set T)] [s2 (set T)]]
-  (rel-ex (lambda [f (rel T T)]
-            (and* (functional f s1)
-                  (serial f s1)
-                  (pinjective f s1 s2)))))
+  [[?T ?U :type] [s1 (set T)] [s2 (set U)]]
+  (rel-ex (lambda [f (rel T U)]
+            (injection f s1 s2))))
 
-(definition psurjective
-  "A surjective partial relation/function."
+(definition surjective
+  "The relation `f` is surjective onto `to` for domain `from`."
   [[?T ?U :type] [f (rel T U)] [from (set T)] [to (set U)]]
   (forall-in [y to]
     (exists-in [x from]
       (f x y))))
 
-(definition pbijective
-  "A bijective partial relation/function."
-  [[?T ?U :type] [f (rel T U)] [from (set T)] [to (set U)]]
-  (and (pinjective f from to)
-       (psurjective f from to)))
+(definition bijective
+  "The relational `f` is both [[injective]] and [[bijective]] wrt. sets `s1`
+and `s2`. A [[bijection]] needs to be also [[functional]] and [[serial]]."
+  [[?T ?U :type] [f (rel T U)] [s1 (set T)] [s2 (set U)]]
+  (and (injective f s1 s2)
+       (surjective f s1 s2)))
 
-(defthm pinjective-single
+(definition bijection
+  [[?T ?U :type] [f (rel T U)] [s1 (set T)] [s2 (set U)]]
+  (and* (functional f s1)
+        (serial f s1)
+        (injective f s1 s2)
+        (surjective f s1 s2)))
+
+(defthm injective-single
   [[?T ?U :type] [f (rel T U)] [from (set T)] [to (set U)]]
-  (==> (serial f from) ;; totality is needed, although not functionality
-       (pinjective f from to)
+  (==> (serial f from) ;; seriality is needed, although not functionality
+       (injective f from to)
        (forall-in [z to]
          (sq/single-in from (lambda [x T] (forall [w U] 
                                             (==> (f x w)
                                                  (equal w z))))))))
 
-(proof 'pinjective-single-thm
+(proof 'injective-single-thm
   (assume [Htot _
            Hinj _
            z U Hz (elem z to)]
@@ -472,23 +438,23 @@ proofs by contradiction."
   (qed <d>))
 
 
-(defthm pbijective-unique
+(defthm bijective-unique
   [[?T ?U :type] [f (rel T U)] [from (set T)] [to (set U)]]
   (==> (functional f from)
        (serial f from)
-       (pbijective f from to)
+       (bijective f from to)
        (forall-in [z to]
          (sq/unique-in from (lambda [x T] (forall [w U] 
                                             (==> (f x w)
                                                  (equal w z))))))))
 
-(proof 'pbijective-unique-thm
+(proof 'bijective-unique-thm
   (assume [Hfun _
            Htot _
            Hbij _
            z U Hz (elem z to)]
-    (have Hinj (pinjective f from to) :by (p/and-elim-left Hbij))
-    (have Hsurj (psurjective f from to) :by (p/and-elim-right Hbij))
+    (have Hinj (injective f from to) :by (p/and-elim-left Hbij))
+    (have Hsurj (surjective f from to) :by (p/and-elim-right Hbij))
     (pose P := (lambda [x T] (forall [w U]
                                (==> (f x w)
                                     (equal w z)))))
@@ -504,7 +470,7 @@ proofs by contradiction."
     ;; XXX : this does not work if <a4> is inlined within the elimination below
     (have <a> (exists-in [x from] (P x)) :by (sq/ex-in-elim <a4> <a3>))
     "The second part is thanks to injectivity."
-    (have <b> _ :by ((pinjective-single f from to) Htot Hinj z Hz))
+    (have <b> _ :by ((injective-single f from to) Htot Hinj z Hz))
     "The uniqueness follows"
     (have <c> _ :by (p/and-intro <a> <b>)))
   (qed <c>))
