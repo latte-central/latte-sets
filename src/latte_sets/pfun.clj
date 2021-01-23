@@ -26,6 +26,7 @@
             [latte-sets.quant :as sq :refer [exists-in forall-in]]
             [latte-sets.algebra :as sa]
             [latte-sets.rel :as rel :refer [rel dom ran]]
+            [latte-sets.ralgebra :as ra]
             [latte-sets.powerrel :as prel :refer [rel-ex]]))
 
 (definition functional
@@ -388,20 +389,46 @@ proofs by contradiction."
     (exists-in [x from]
       (f x y))))
 
+;;; TODO :  if functional and serial (to check), then
+;;; the   'to' set is a subset of (image f from)
+;;; (or even (image f s1) ...
+
+(definition surjection
+  "The relation `f` is a functional surjection on-to set `s2`."
+  [[?T ?U :type] [f (rel T U)] [s1 (set T)] [s2 (set U)]]
+  (and* (functional f s1)
+        (serial f s1)
+        (surjective f s1 s2)))
+
 (definition bijective
-  "The relational `f` is both [[injective]] and [[bijective]] wrt. sets `s1`
+  "The relation `f` is both [[injective]] and [[bijective]] wrt. sets `s1`
 and `s2`. A [[bijection]] needs to be also [[functional]] and [[serial]]."
   [[?T ?U :type] [f (rel T U)] [s1 (set T)] [s2 (set U)]]
   (and (injective f s1 s2)
        (surjective f s1 s2)))
 
 (definition bijection
+  "The relation `f` is a bijection between sets `s1` and `s2`."
   [[?T ?U :type] [f (rel T U)] [s1 (set T)] [s2 (set U)]]
   (and* (functional f s1)
         (serial f s1)
-        (injective f s1 s2)
-        (surjective f s1 s2)))
+        (bijective f s1 s2)))
 
+(defthm bijection-injective
+  [[?T ?U :type] [f (rel T U)] [s1 (set T)] [s2 (set U)] [b (bijection f s1 s2)]]
+  (injective f s1 s2))
+
+(proof 'bijection-injective-thm
+  (qed (p/and-elim-left (p/and-elim* 3 b))))
+
+(defthm bijection-surjective
+  [[?T ?U :type] [f (rel T U)] [s1 (set T)] [s2 (set U)] [b (bijection f s1 s2)]]
+  (surjective f s1 s2))
+
+(proof 'bijection-surjective-thm
+  (qed (p/and-elim-right (p/and-elim* 3 b))))
+
+ 
 (defthm injective-single
   [[?T ?U :type] [f (rel T U)] [from (set T)] [to (set U)]]
   (==> (serial f from) ;; seriality is needed, although not functionality
@@ -475,4 +502,48 @@ and `s2`. A [[bijection]] needs to be also [[functional]] and [[serial]]."
     (have <c> _ :by (p/and-intro <a> <b>)))
   (qed <c>))
       
-      
+(defthm bijection-unique
+  "The relation `f` is a bijection between sets `s1` and `s2`, 
+hence it is *unique*."
+  [[?T ?U :type] [f (rel T U)] [s1 (set T)] [s2 (set U)]]
+  (==> (bijection f s1 s2)
+       (forall-in [z s2]
+         (sq/unique-in s1 (lambda [x T] (forall [w U] 
+                                          (==> (f x w)
+                                               (equal w z))))))))
+
+(proof 'bijection-unique-thm
+  (assume [H _]
+    (have <a> _ :by ((bijective-unique f s1 s2)
+                     (p/and-elim* 1 H)
+                     (p/and-elim* 2 H)
+                     (p/and-elim* 3 H))))
+  (qed <a>))
+
+
+(defthm bijection-inverse-functional
+  [[?T ?U :type] [f (rel T U)] [s1 (set T)] [s2 (set U)] [b (bijection f s1 s2)]]
+  (functional (ra/rinverse f) s2))
+
+(try-proof 'bijection-inverse-functional-thm
+  (pose rf := (ra/rinverse f))
+  (assume [x U Hx (elem x s2)
+           y1 T y2 T
+           Hy1 (rf x y1)
+           Hy2 (rf x y2)]
+    (have <a1> (f y1 x) :by Hy1)
+    (have <a2> (f y2 x) :by Hy2)
+
+
+))
+
+
+(defthm bijection-inverse-injective
+  "The inverse of bijective relation `f` is injective."
+  [[?T ?U :type] [f (rel T U)] [s1 (set T)] [s2 (set U)] [b (bijection f s1 s2)]]
+  (injection (ra/rinverse f) s2 s1))
+
+(try-proof 'bijection-inverse-injective-thm
+  (pose rf := (ra/rinverse f))
+  
+)
