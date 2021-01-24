@@ -544,28 +544,106 @@ hence it is *unique*."
 
 (defthm bijection-inverse-functional
   [[?T ?U :type] [f (rel T U)] [s1 (set T)] [s2 (set U)] [b (bijection f s1 s2)]]
-  (functional (ra/rinverse f) s2))
+  (functional (ra/rinverse f) s2 s1))
 
-(try-proof 'bijection-inverse-functional-thm
+(proof 'bijection-inverse-functional-thm
   (pose rf := (ra/rinverse f))
   (assume [x U Hx (elem x s2)
-           y1 T y2 T
-           Hy1 (rf x y1)
-           Hy2 (rf x y2)]
-    (have <a> (sq/single-in s1 (lambda [y T] (forall [w U]
-                                               (==> (f y w)
-                                                    (equal w x)))))
-          :by (p/and-elim-right ((bijection-unique f s1 s2) b x Hx)))
-     
-))
+           y1 T Hy1 (elem y1 s1)
+           y2 T Hy2 (elem y2 s1)
+           Hrfy1 (rf x y1)
+           Hrfy2 (rf x y2)]
+    (have <a1> (f y1 x) :by Hrfy1)
+    (have <a2> (f y2 x) :by Hrfy2)
+    (have <b> (equal y1 y2)
+          :by ((bijection-injective f s1 s2 b)
+               y1 Hy1
+               y2 Hy2
+               x Hx
+               x Hx
+               <a1> <a2>
+               (eq/eq-refl x))))
+  (qed <b>))
+
+(defthm bijection-inverse-serial
+  [[?T ?U :type] [f (rel T U)] [s1 (set T)] [s2 (set U)] [b (bijection f s1 s2)]]
+  (serial (ra/rinverse f) s2 s1))
+
+(proof 'bijection-inverse-serial-thm
+  (pose rf := (ra/rinverse f))
+  (assume [y U Hy (elem y s2)]
+    (have <a> (exists-in [x s1] (f x y))
+          :by ((bijection-surjective f s1 s2 b) y Hy))
+    (assume [x T Hx (elem x s1)
+             Hfx (f x y)]
+      (have <b1> (rf y x) :by Hfx)
+      (have <b> (exists-in [x s1] (rf y x))
+            :by ((sq/ex-in-intro s1 (lambda [$ T]
+                                      (rf y $)) x)
+                 Hx <b1>)))
+    (have <c> (exists-in [x s1] (rf y x))
+          :by (sq/ex-in-elim <a> <b>)))
+  (qed <c>))
 
 
 (defthm bijection-inverse-injective
   "The inverse of bijective relation `f` is injective."
   [[?T ?U :type] [f (rel T U)] [s1 (set T)] [s2 (set U)] [b (bijection f s1 s2)]]
-  (injection (ra/rinverse f) s2 s1))
+  (injective (ra/rinverse f) s2 s1))
 
-(try-proof 'bijection-inverse-injective-thm
+(proof 'bijection-inverse-injective-thm
   (pose rf := (ra/rinverse f))
-  
-)
+  (assume [x1 U Hx1 (elem x1 s2)
+           x2 U Hx2 (elem x2 s2)
+           y1 T Hy1 (elem y1 s1)
+           y2 T Hy2 (elem y2 s1)
+           Hf1 (rf x1 y1)
+           Hf2 (rf x2 y2)
+           Heq (equal y1 y2)]
+    "We have to prove that x1=x2."
+    (have <a1> (f y1 x1) :by Hf1)
+    (have <a2> (f y2 x2) :by Hf2)
+    (have <a3> (f y2 x1)
+          :by (eq/rewrite <a1> Heq)) 
+    (have <b> (functional f s1 s2)
+          :by (p/and-elim* 1 b))
+    (have <c> (equal x1 x2)
+          :by (<b> y2 Hy2 x1 Hx1 x2 Hx2 <a3> <a2>)))
+  (qed <c>))
+
+
+(defthm bijection-inverse-surjective
+  "The inverse of bijective relation `f` is surjective."
+  [[?T ?U :type] [f (rel T U)] [s1 (set T)] [s2 (set U)] [b (bijection f s1 s2)]]
+  (surjective (ra/rinverse f) s2 s1))
+
+(proof 'bijection-inverse-surjective-thm
+  (pose rf := (ra/rinverse f))
+  (assume [y T
+           Hy (elem y s1)]
+    (have <a> (serial f s1 s2)
+          :by (p/and-elim* 2 b))
+    (have <c> (exists-in [x s2] (f y x)) :by (<a> y Hy))
+    (have <d> (exists-in [x s2] (rf x y)) :by <c>))
+  (qed <d>))
+
+
+(defthm bijection-inverse-bijective
+  "The inverse of bijective relation `f` is bijective."
+  [[?T ?U :type] [f (rel T U)] [s1 (set T)] [s2 (set U)] [b (bijection f s1 s2)]]
+  (bijective (ra/rinverse f) s2 s1))
+
+(proof 'bijection-inverse-bijective-thm
+  (qed (p/and-intro (bijection-inverse-injective f s1 s2 b)
+                    (bijection-inverse-surjective f s1 s2 b))))
+
+(defthm bijection-inverse-bijection
+  "The inverse of a bijection is a bijection."
+  [[?T ?U :type] [f (rel T U)] [s1 (set T)] [s2 (set U)] [b (bijection f s1 s2)]]
+  (bijection (ra/rinverse f) s2 s1))
+
+(proof 'bijection-inverse-bijection-thm
+  (qed (p/and-intro* (bijection-inverse-functional f s1 s2 b)
+                     (bijection-inverse-serial f s1 s2 b)
+                     (bijection-inverse-bijective f s1 s2 b))))
+                     
