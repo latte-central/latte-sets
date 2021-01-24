@@ -31,19 +31,20 @@
 
 (definition functional
   "The relation `f` is functional (a.k.a. right-unique) on the domain-set `from`.
- Note that the relation `f`  outside `from` is not consrained."
-  [[?T ?U :type], f (rel T U), from (set T)]
+  and range set `to`."
+  [[?T ?U :type], f (rel T U), from (set T), to (set U)]
   (forall-in [x from]
-    (forall [y1 y2 U]
-      (==> (f x y1)
-           (f x y2)
-           (equal y1 y2)))))
+    (forall-in [y1 to]
+      (forall-in [y2 to]
+        (==> (f x y1)
+             (f x y2)
+             (equal y1 y2))))))
 
 (defn fetch-functional-type [def-env ctx t]
   (latte.utils/decomposer
    (fn [t]
      (if (clojure.core/and (seq? t)
-                           (= (count t) 4)
+                           (= (count t) 5)
                            (= (first t) #'latte-sets.pfun/functional-def))
        (into [] (rest t))
        (throw (ex-info "Not a functional type." {:type t}))))
@@ -54,13 +55,15 @@
 any domain set."
   [T :type]
   (forall [from (set T)]
-    (functional (rel/identity T) from)))
+    (forall [to (set T)]
+      (functional (rel/identity T) from to))))
 
 (proof 'ridentity-functional
   (pose rid := (rel/identity T))
-  (assume [from (set T)
+  (assume [from (set T) to (set T)
            x T Hx (elem x from)
-           y1 T y2 T
+           y1 T Hy1 (elem y1 to)
+           y2 T Hy2 (elem y2 to)
            Hid1 (rid x y1)
            Hid2 (rid x y2)]
     (have <a> (equal y1 y2) :by (eq/eq-trans (eq/eq-sym Hid1) Hid2)))
@@ -78,104 +81,101 @@ any domain set."
 restriction."
   [[?T ?U :type], f (==> T U)]
   (forall [from (set T)]
-    (functional (functional-fun f) from)))
+    (forall [to (set U)]
+      (functional (functional-fun f) from to))))
 
 (proof 'functional-fun-prop-thm
   (pose pf := (functional-fun f))
-  (assume [from (set T)
+  (assume [from (set T) to (set U)
            x T Hx (elem x from)
-           y1 U y2 U
-           Hy1 (pf x y1)
-           Hy2 (pf x y2)]
-    (have <a> (equal y1 y2) :by (eq/eq-trans (eq/eq-sym Hy1) Hy2)))
+           y1 U Hy1 (elem y1 to)
+           y2 U Hy2 (elem y2 to)
+           Hpfy1 (pf x y1)
+           Hpfy2 (pf x y2)]
+    (have <a> (equal y1 y2) :by (eq/eq-trans (eq/eq-sym Hpfy1) Hpfy2)))
   (qed <a>))
 
 (definition domain
   "The actual domain of relation `f`, taking antecedents in `from`.
 It is sometimes called the active domain of `f`."
-  [[?T ?U :type], f (rel T U), from (set T)]
+  [[?T ?U :type], f (rel T U), from (set T), to (set U)]
   (set-of [x T] (and (elem x from)
-                     (exists [y U] (f x y)))))
+                     (sq/exists-in [y to] (f x y)))))
 
 (definition image
   "The image of set `from` through relation `f`. This is also
 sometimes called the *range* or *codomain* but image is less ambiguous
 (especially in type theory)."
-  [[?T ?U :type], f (rel T U), from (set T)]
-  (set-of [y U] (exists-in [x from] (f x y))))
+  [[?T ?U :type], f (rel T U), from (set T), to (set U)]
+  (set-of [y U] (and (elem y to)
+                     (exists-in [x from] (f x y)))))
 
 (definition serial
   "The relation `f` covers all of (is total wrt.) the provided `from` domain set."
-  [[?T ?U :type], f (rel T U), from (set T)]
+  [[?T ?U :type], f (rel T U), from (set T), to (set U)]
   (forall-in [x from]
-    (exists [y U]
+    (exists-in [y to]
       (f x y))))
 
 (definition serial-alt
   "Alternative definition for [[serial]]."
-  [[?T ?U :type], f (rel T U), from (set T)]
-  (seteq (domain f from) from))
+  [[?T ?U :type], f (rel T U), from (set T), to (set U)]
+  (seteq (domain f from to) from))
 
 (defthm serial-serial-alt
-  [[?T ?U :type], f (rel T U), from (set T)]
-  (==> (serial f from)
-       (serial-alt f from)))
+  [[?T ?U :type], f (rel T U), from (set T), to (set U)]
+  (==> (serial f from to)
+       (serial-alt f from to)))
 
 (proof 'serial-serial-alt-thm
-  (assume [Htot (serial f from)]
+  (assume [Htot (serial f from to)]
     "First the subset direction."
-    (assume [x T Hx (elem x (domain f from))]
+    (assume [x T Hx (elem x (domain f from to))]
       "We have to prove that `x` is in `from`."
       (have <a> (elem x from) :by (p/and-elim-left Hx)))
     "Second the superset direction."
     (assume [x T Hx (elem x from)]
       "We have to prove that `x` is in `(domain f from)`"
-      (have <b1> (exists [y U] (f x y)) :by (Htot x Hx))
-      (have <b> (elem x (domain f from)) :by (p/and-intro Hx <b1>)))
+      (have <b1> (exists-in [y to] (f x y)) :by (Htot x Hx))
+      (have <b> (elem x (domain f from to)) :by (p/and-intro Hx <b1>)))
     "Deduce set-equality."
-    (have <c> (seteq (domain f from) from) :by (p/and-intro <a> <b>)))
+    (have <c> (seteq (domain f from to) from) :by (p/and-intro <a> <b>)))
   (qed <c>))
       
 (defthm serial-alt-serial
-  [[?T ?U :type], f (rel T U), from (set T)]
-  (==> (serial-alt f from)
-       (serial f from)))
+  [[?T ?U :type], f (rel T U), from (set T), to (set U)]
+  (==> (serial-alt f from to)
+       (serial f from to)))
 
 (proof 'serial-alt-serial-thm
-  (assume [Htot (serial-alt f from)]
+  (assume [Htot (serial-alt f from to)]
     (assume [x T Hx (elem x from)]
-      (have <a> (elem x (domain f from)) 
+      (have <a> (elem x (domain f from to)) 
             :by ((p/and-elim-right Htot) x Hx))
-      (have <b> (exists [y U] (f x y))
+      (have <b> (exists-in [y to] (f x y))
             :by (p/and-elim-right <a>))))
   (qed <b>))
+
+(comment
+
+  ;; this needs to be updated with explicit range `to`
 
 (defthm functional-fun-serial
   "A type-theoretic function `f` is always serial."
   [[?T ?U :type], f (==> T U)]
   (forall [from (set T)]
-    (serial (functional-fun f) from)))
+    (forall [to (set U)]
+      (serial (functional-fun f) from (image (functional-fun f) from to)))))
 
 (proof 'functional-fun-serial-thm
   (pose rf := (functional-fun f))
-  (assume [from (set T)]
-    "subset (if) part"
-    (assume [x T
-             Hx (elem x (domain rf from))]
-      (have <a> (elem x from) :by (p/and-elim-left Hx)))
-    "cosubset (only if) part"
-    (assume [x T
-             Hx (elem x from)]
-      (have <b1> (rf x (f x)) :by (eq/eq-refl (f x)))
-      (have <b2> (exists [y U] (rf x y))
-            :by ((q/ex-intro (lambda [y U] (rf x y)) (f x)) <b1>))
-      (have <b> (elem x (domain rf from)) :by (p/and-intro Hx <b2>)))
-    "(sub)set equality"
-    (have <c> (seteq (domain rf from) from) :by (p/and-intro <a> <b>))
-    (have <d> (serial-alt rf from) :by <c>)
-    (have <e> (serial rf from) :by ((serial-alt-serial rf from) <d>)))
-  (qed <e>))
+  ?
+))
 
+(comment
+
+  ;; this needs to be updated too
+  
 (defthm rcomp-functional
   [[?T ?U ?V :type] [f (rel T U)] [g (rel U V)] [from (set T)]]
   (==> (functional f from)
@@ -250,6 +250,7 @@ sometimes called the *range* or *codomain* but image is less ambiguous
       (have <e> _ :by (q/ex-elim <a> <d>))))
   (qed <e>))
   
+)
 
 (definition injective
   "The relation `f` is injective wrt. domain set `from`
@@ -320,13 +321,16 @@ proofs by contradiction."
     (have <b> (equal x1 x2) :by (eq/eq-trans* Hr1 Heqy <a>)))
   (qed <b>))
 
+(comment
+  ;; this needs to be updated
+
 (defthm rcomp-injective
   [[?T ?U ?V :type] [f1 (rel T U)] [f2 (rel U V)] [s1 (set T)] [s2 (set V)]]
   (==> (injective f1 s1 (image f1 s1))
        (injective f2 (image f1 s1) s2)
        (injective (rel/rcomp f1 f2) s1 s2)))
 
-(try-proof 'rcomp-injective-thm
+(proof 'rcomp-injective-thm
   (assume [Hf1 _
            Hf2 _]
     (assume [x1 T Hx1 (elem x1 s1)
@@ -369,10 +373,12 @@ proofs by contradiction."
 
   (qed <h>))
 
+)
+
 (definition injection
   [[?T ?U :type] [f (rel T U)] [s1 (set T)] [s2 (set U)]]
-  (and* (functional f s1)
-        (serial f s1)
+  (and* (functional f s1 s2)
+        (serial f s1 s2)
         (injective f s1 s2)))
 
 ;;; XXX : are functionality and seriality required in the definition ?
@@ -383,10 +389,10 @@ proofs by contradiction."
             (injection f s1 s2))))
 
 (definition surjective
-  "The relation `f` is surjective onto `to` for domain `from`."
-  [[?T ?U :type] [f (rel T U)] [from (set T)] [to (set U)]]
-  (forall-in [y to]
-    (exists-in [x from]
+  "The relation `f` is surjective onto `s2` for domain `s1`."
+  [[?T ?U :type] [f (rel T U)] [s1 (set T)] [s2 (set U)]]
+  (forall-in [y s2]
+    (exists-in [x s1]
       (f x y))))
 
 ;;; TODO :  if functional and serial (to check), then
@@ -396,8 +402,8 @@ proofs by contradiction."
 (definition surjection
   "The relation `f` is a functional surjection on-to set `s2`."
   [[?T ?U :type] [f (rel T U)] [s1 (set T)] [s2 (set U)]]
-  (and* (functional f s1)
-        (serial f s1)
+  (and* (functional f s1 s2)
+        (serial f s1 s2)
         (surjective f s1 s2)))
 
 (definition bijective
@@ -410,8 +416,8 @@ and `s2`. A [[bijection]] needs to be also [[functional]] and [[serial]]."
 (definition bijection
   "The relation `f` is a bijection between sets `s1` and `s2`."
   [[?T ?U :type] [f (rel T U)] [s1 (set T)] [s2 (set U)]]
-  (and* (functional f s1)
-        (serial f s1)
+  (and* (functional f s1 s2)
+        (serial f s1 s2)
         (bijective f s1 s2)))
 
 (defthm bijection-injective
@@ -430,85 +436,100 @@ and `s2`. A [[bijection]] needs to be also [[functional]] and [[serial]]."
 
  
 (defthm injective-single
-  [[?T ?U :type] [f (rel T U)] [from (set T)] [to (set U)]]
-  (==> (serial f from) ;; seriality is needed, although not functionality
-       (injective f from to)
-       (forall-in [z to]
-         (sq/single-in from (lambda [x T] (forall [w U] 
-                                            (==> (f x w)
-                                                 (equal w z))))))))
+  [[?T ?U :type] [f (rel T U)] [s1 (set T)] [s2 (set U)]]
+  (==> (serial f s1 s2) ;; seriality is needed, although not functionality
+       (injective f s1 s2)
+       (forall-in [z s2]
+         (sq/single-in s1 (lambda [x T] (forall-in [w s2] 
+                                          (==> (f x w)
+                                               (equal w z))))))))
 
 (proof 'injective-single-thm
   (assume [Htot _
            Hinj _
-           z U Hz (elem z to)]
-    (pose P := (lambda [x T] (forall [w U]
+           z U Hz (elem z s2)]
+    (pose P := (lambda [x T] (forall-in [w s2]
                                (==> (f x w)
                                     (equal w z)))))
-    (assume [x T Hx (elem x from)
-             y T Hy (elem y from)
+    (assume [x T Hx (elem x s1)
+             y T Hy (elem y s1)
              HPx (P x)
              HPy (P y)]
       "We have to show that x equals y"
-      (assume [xim U
-               Hxim (f x xim)]
-        (have <a1> (equal xim z) :by (HPx xim Hxim))
-        (have <a2> (f x z) :by (eq/rewrite Hxim <a1>)))
-      (have <a> (f x z) :by (q/ex-elim (Htot x Hx) <a2>))
-      (assume [yim U
-               Hyim (f y yim)]
-        (have <b1> (equal yim z) :by (HPy yim Hyim))
-        (have <b2> (f y z) :by (eq/rewrite Hyim <b1>)))
-      (have <b> (f y z) :by (q/ex-elim (Htot y Hy) <b2>))
+      (assume [xim U Hxim (elem xim s2)
+               Hfxim (f x xim)]
+        (have <a1> (equal xim z) :by (HPx xim Hxim Hfxim))
+        (have <a2> (f x z) :by (eq/rewrite Hfxim <a1>)))
+
+      ;; Don't know why the following does not work, it's an issue
+      ;; with set membership  (elem-def ...)   
+      ;;(have <a> (f x z) :by (sq/ex-in-elim (Htot x Hx) <a2>))
+      ;; But the explicit variant does
+      (have <a> (f x z) :by ((sq/ex-in-elim-rule s2 (lambda [$ U]
+                                                      (f x $)) (f x z))
+                             (Htot x Hx)
+                             <a2>))
+      (assume [yim U Hyim (elem yim s2)
+               Hfyim (f y yim)]
+        (have <b1> (equal yim z) :by (HPy yim Hyim Hfyim))
+        (have <b2> (f y z) :by (eq/rewrite Hfyim <b1>)))
+      
+      ;; Similar issue ...
+      ;; (have <b> (f y z) :by (sq/ex-in-elim (Htot y Hy) <b2>))
+
+      (have <b> (f y z) :by ((sq/ex-in-elim-rule s2 (lambda [$ U]
+                                                      (f y $)) (f y z))
+                             (Htot y Hy)
+                             <b2>))
+
       (have <c> (equal x y) :by (Hinj x Hx y Hy z Hz z Hz <a> <b> (eq/eq-refl z))))
-    (have <d> _ :by ((sq/single-in-intro from P) <c>)))
+    (have <d> _ :by ((sq/single-in-intro s1 P) <c>)))
   (qed <d>))
 
-
 (defthm bijective-unique
-  [[?T ?U :type] [f (rel T U)] [from (set T)] [to (set U)]]
-  (==> (functional f from)
-       (serial f from)
-       (bijective f from to)
-       (forall-in [z to]
-         (sq/unique-in from (lambda [x T] (forall [w U] 
-                                            (==> (f x w)
-                                                 (equal w z))))))))
+  [[?T ?U :type] [f (rel T U)] [s1 (set T)] [s2 (set U)]]
+  (==> (functional f s1 s2)
+       (serial f s1 s2)
+       (bijective f s1 s2)
+       (forall-in [z s2]
+         (sq/unique-in s1 (lambda [x T] (forall-in [w s2] 
+                                          (==> (f x w)
+                                               (equal w z))))))))
 
 (proof 'bijective-unique-thm
   (assume [Hfun _
            Htot _
            Hbij _
-           z U Hz (elem z to)]
-    (have Hinj (injective f from to) :by (p/and-elim-left Hbij))
-    (have Hsurj (surjective f from to) :by (p/and-elim-right Hbij))
-    (pose P := (lambda [x T] (forall [w U]
+           z U Hz (elem z s2)]
+    (have Hinj (injective f s1 s2) :by (p/and-elim-left Hbij))
+    (have Hsurj (surjective f s1 s2) :by (p/and-elim-right Hbij))
+    (pose P := (lambda [x T] (forall-in [w s2]
                                (==> (f x w)
                                     (equal w z)))))
     "First we have to show  that there's an `x` in `s` such as `(P x)`"
     "We exploit surjectivity."
-    (assume [x T Hx (elem x from)
+    (assume [x T Hx (elem x s1)
              Hfx (f x z)]
-      (assume [w U Hw (f x w)]
-        (have <a1> (equal w z) :by (Hfun x Hx w z Hw Hfx)))
+      (assume [w U Hw (elem w s2) Hfw (f x w)]
+        (have <a1> (equal w z) :by (Hfun x Hx w Hw z Hz Hfw Hfx)))
       (have <a2> (P x) :by <a1>)
-      (have <a3> (exists-in [x from] (P x)) :by ((sq/ex-in-intro from P x) Hx <a2>)))
-    (have <a4> (exists-in [x from] (f x z)) :by (Hsurj z Hz))
+      (have <a3> (exists-in [x s1] (P x)) :by ((sq/ex-in-intro s1 P x) Hx <a2>)))
+    (have <a4> (exists-in [x s1] (f x z)) :by (Hsurj z Hz))
     ;; XXX : this does not work if <a4> is inlined within the elimination below
-    (have <a> (exists-in [x from] (P x)) :by (sq/ex-in-elim <a4> <a3>))
+    (have <a> (exists-in [x s1] (P x)) :by (sq/ex-in-elim <a4> <a3>))
     "The second part is thanks to injectivity."
-    (have <b> _ :by ((injective-single f from to) Htot Hinj z Hz))
+    (have <b> _ :by ((injective-single f s1 s2) Htot Hinj z Hz))
     "The uniqueness follows"
     (have <c> _ :by (p/and-intro <a> <b>)))
   (qed <c>))
-      
+
 (defthm bijection-unique
   "The relation `f` is a bijection between sets `s1` and `s2`, 
 hence it is *unique*."
   [[?T ?U :type] [f (rel T U)] [s1 (set T)] [s2 (set U)]]
   (==> (bijection f s1 s2)
        (forall-in [z s2]
-         (sq/unique-in s1 (lambda [x T] (forall [w U] 
+         (sq/unique-in s1 (lambda [x T] (forall-in [w s2] 
                                           (==> (f x w)
                                                (equal w z))))))))
 
@@ -531,10 +552,11 @@ hence it is *unique*."
            y1 T y2 T
            Hy1 (rf x y1)
            Hy2 (rf x y2)]
-    (have <a1> (f y1 x) :by Hy1)
-    (have <a2> (f y2 x) :by Hy2)
-
-
+    (have <a> (sq/single-in s1 (lambda [y T] (forall [w U]
+                                               (==> (f y w)
+                                                    (equal w x)))))
+          :by (p/and-elim-right ((bijection-unique f s1 s2) b x Hx)))
+     
 ))
 
 
