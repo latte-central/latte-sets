@@ -147,23 +147,6 @@ This function is used for implicits in relations."
     (have <c> (equal x z) :by (eq/eq-trans <a> <b>)))
   (qed <c>))
 
-(definition equivalence
-  "An equivalence relation."
-  [?T :type, R (rel T T)]
-  (and* (reflexive R)
-        (symmetric R)
-        (transitive R)))
-
-(defthm ident-equiv
-  "The indentity on `T` is an equivalence relation."
-  [T :type]
-  (equivalence (identity T)))
-
-(proof 'ident-equiv
-  (qed (p/and-intro* (ident-refl T)
-                     (ident-sym T)
-                     (ident-trans T))))
-
 (definition fullrel
   "The full (total) relation between `T` and `U`."
   [T :type, U :type]
