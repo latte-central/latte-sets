@@ -16,6 +16,7 @@
                        latte-sets.powerset
                        latte-sets.rel
                        latte-sets.ralgebra
+                       latte-sets.equiv
                        latte-sets.powerrel
                        latte-sets.pfun]}
   :profiles {:uberjar {:aot [latte-sets.main]}}

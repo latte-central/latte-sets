@@ -5,7 +5,7 @@
 
 (defn -main [& args]
   (latte-main args "latte-sets" '[latte-sets.set latte-sets.quant latte-sets.powerset latte-sets.algebra
-                                  latte-sets.rel latte-sets.ralgebra latte-sets.powerrel
+                                  latte-sets.rel latte-sets.ralgebra latte-sets.powerrel latte-sets.equiv
                                   latte-sets.pfun]))
 
 
