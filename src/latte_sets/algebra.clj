@@ -231,6 +231,15 @@
           :by (p/and-intro Hx Hx)))
   (qed (p/and-intro <a> <b>)))
 
+(definition disjoint
+  [?T :type, s1 (set T), s2 (set T)]
+  (set-equal (inter s1 s2) (emptyset T)))
+
+(defthm disjoint-eq
+  [?T :type, s1 (set T), s2 (set T)]
+  (==> (disjoint s1 s2)
+       (seteq (inter s1 s2) (emptyset T))))
+
 (defthm inter-empty
   [?T :type, s (set T)]
   (seteq (inter s (emptyset T))
