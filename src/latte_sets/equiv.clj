@@ -143,7 +143,7 @@
   [?T :type, P (powerset T)]
   (forall [s (set T)]
     (==> (set-elem s P)
-         (not (set-equal s (emptyset T))))))
+         (s/non-empty s))))
 
 (definition partition-member
   "The elements of set `s` are members of partition `P`"
@@ -160,14 +160,16 @@
     (==> (set-elem s1 P)
          (set-elem s2 P)
          (not (set-equal s1 s2))
-         (set-equal (inter s1 s2) (emptyset T)))))
+         (alg/disjoint s1 s2))))
 
 (definition partition
   "`P` is a partition of set `s`"
-  [?T :type, S (set T), P (powerset T)]
+  [?T :type, s (set T), P (powerset T)]
   (and* (all-nonempty P)
-        (partition-member S P)
+        (partition-member s P)
         (all-disjoint P)))
+
+
 
 
 

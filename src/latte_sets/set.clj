@@ -400,6 +400,11 @@ requires this axiom. This is because we cannot lift membership
                  (seteq s1 s2)) :by (set-equal-implies-seteq s1 s2))
   (qed (p/iff-intro <a> <b>)))
 
+(definition non-empty
+  "A non-empty set `s` of elements of type `T`"
+  [?T :type, s (set T)]
+  (not (set-equal s (emptyset T))))
+
 (definition psubset
   "The anti-reflexive variant of the subset relation.
 

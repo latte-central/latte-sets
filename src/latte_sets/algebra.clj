@@ -240,6 +240,11 @@
   (==> (disjoint s1 s2)
        (seteq (inter s1 s2) (emptyset T))))
 
+(proof 'disjoint-eq-thm
+  (assume [Hd (disjoint s1 s2)]
+    (have <a> _ :by ((sets/set-equal-implies-seteq (inter s1 s2) (emptyset T)) Hd)))
+  (qed <a>))
+
 (defthm inter-empty
   [?T :type, s (set T)]
   (seteq (inter s (emptyset T))
