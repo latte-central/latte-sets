@@ -75,7 +75,7 @@ shortcut for `(exists [x (element-type-of s)]
   (if (not= (count binding) 2)
     [:ko {:msg "Binding of `exists-in` should be of the form `[x s]`."
           :binding binding}]
-    [:ok (list 'exists [(first binding) (list #'s/element-type-of (second binding))]
+    [:ok (list #'exists [(first binding) (list #'s/element-type-of (second binding))]
                (list 'and (list #'elem (first binding) (second binding))
                      body))]))
 

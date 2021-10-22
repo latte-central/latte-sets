@@ -405,6 +405,21 @@ requires this axiom. This is because we cannot lift membership
   [?T :type, s (set T)]
   (not (set-equal s (emptyset T))))
 
+(defthm non-empty-elem
+  [?T :type, x T, s (set T)]
+  (==> (elem x s)
+       (non-empty s)))
+
+(proof 'non-empty-elem-thm
+  (assume [Hx (elem x s)]
+    (assume [Hcontra (set-equal s (emptyset T))]
+      (have <a> (seteq s (emptyset T)) 
+            :by ((set-equal-implies-seteq s (emptyset T)) Hcontra))
+      (have <b> (subset s (emptyset T))
+            :by (p/and-elim-left <a>))
+      (have <c> p/absurd :by (<b> x Hx))))
+  (qed <c>))
+
 (definition psubset
   "The anti-reflexive variant of the subset relation.
 

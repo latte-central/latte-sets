@@ -4,7 +4,7 @@
   (:refer-clojure :exclude [and or not set])
 
   (:require [latte.core :as latte 
-             :refer [definition defthm defaxiom defnotation
+             :refer [definition defthm deflemma defaxiom defnotation
                      forall lambda
                      assume have pose proof qed lambda]]
 
@@ -13,6 +13,9 @@
 
             [latte-prelude.equal :as eq
              :refer [equal]]
+
+            [latte-prelude.quant :as q
+             :refer [exists]]
 
             [latte-sets.set :as s
              :refer [set elem emptyset set-equal subset seteq]]
@@ -24,7 +27,7 @@
              :refer [rel reflexive symmetric transitive]]
 
             [latte-sets.quant :as sq
-             :refer [forall-in]]
+             :refer [forall-in exists-in]]
 
             [latte-sets.powerset :as pset
              :refer [powerset set-ex set-elem]]
@@ -90,6 +93,34 @@
   (have <a> (R x x) :by ((p/and-elim* 1 eqR) x))
   (qed <a>))
 
+(defthm eqclass-non-empty
+  [?T :type, x T, R (rel T T), eqR (equivalence R)]
+  (s/non-empty (eqclass x R eqR)))
+
+(proof 'eqclass-non-empty-thm
+  (qed ((s/non-empty-elem x (eqclass x R eqR))
+        (eqclass-mem x R eqR))))
+                          
+(defthm eqclass-rel
+  [[?T :type] [x y T] [R (rel T T)] [eqR (equivalence R)]]
+  (==> (elem y (eqclass x R eqR))
+       (R x y)))
+
+(proof 'eqclass-rel-thm
+  (assume [H (elem y (eqclass x R eqR))]
+    (have <a> (R x y) :by H))
+  (qed <a>))
+
+
+(defthm eqclass-rel-conv
+  [[?T :type] [x y T] [R (rel T T)] [eqR (equivalence R)]]
+  (==> (R x y)
+       (elem y (eqclass x R eqR))))
+
+(proof 'eqclass-rel-conv-thm
+  (assume [H (R x y)]
+    (have <a> _ :by H))
+  (qed <a>))
 
 (defthm eqclass-subset
   [[?T :type] [x y T] [R (rel T T)] [eqR (equivalence R)]]
@@ -137,6 +168,13 @@
                      ((eqclass-eq x y R eqR) HR))))
   (qed <a>))
 
+(definition quotient
+  [?T :type, s (set T), R (rel T T), eqR (equivalence R)]
+  (lambda [eqx (set T)]
+    (exists-in [x s]
+      (and (elem x eqx)
+           (set-equal eqx (eqclass x R eqR))))))
+
 ;;;; ==================== PARTITIONS ==================
 
 (definition all-nonempty
@@ -169,7 +207,30 @@
         (partition-member s P)
         (all-disjoint P)))
 
+(deflemma quot-part-non-empty
+  [?T :type, s (set T), R (rel T T), eqR (equivalence R)]
+  (all-nonempty (quotient s R eqR)))
 
+(proof 'quot-part-non-empty-lemma
+  (assume [xcls (set T)
+           Hxcls (set-elem xcls (quotient s R eqR))]
+    (have <a> (exists [x T]
+                (and (elem x s)
+                     (and (elem x xcls)
+                          (set-equal xcls (eqclass x R eqR)))))
+          :by Hxcls)
+    (assume [x T
+             Hx (and (elem x s)
+                     (and (elem x xcls)
+                          (set-equal xcls (eqclass x R eqR))))]
+      (have <b> (s/non-empty (eqclass x R eqR))
+            :by (eqclass-non-empty x R eqR))
+      (have <c> (set-equal xcls (eqclass x R eqR)) :by (p/and-elim-right (p/and-elim-right Hx)))
+      
+      (have <d> (s/non-empty xcls) 
+            :by ((p/and-elim-right (<c> (lambda [$ (set T)] (s/non-empty $)))) <b>)))
+    (have <e> (s/non-empty xcls) :by (q/ex-elim <a> <d>)))
+  (qed <e>))
 
 
 
