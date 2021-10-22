@@ -6,7 +6,7 @@
   (:require [latte.core :as latte 
              :refer [definition defthm deflemma defaxiom defnotation
                      forall lambda
-                     assume have pose proof qed lambda]]
+                     assume have pose proof try-proof qed lambda]]
 
             [latte-prelude.prop :as p
              :refer [and and* not]]
@@ -175,6 +175,26 @@
       (and (elem x eqx)
            (set-equal eqx (eqclass x R eqR))))))
 
+(defthm quotient-eqclass
+  [?T :type, s (set T), R (rel T T), eqR (equivalence R)]
+  (forall-in [x s]
+    (set-elem (eqclass x R eqR) (quotient s R eqR))))
+
+(proof 'quotient-eqclass-thm
+  (assume [x T
+           Hx (elem x s)]
+    (pose P := (lambda [y T]
+                 (and (elem y s)
+                      (and (elem y (eqclass x R eqR))
+                           (set-equal (eqclass x R eqR) (eqclass y R eqR))))))
+    (have <a> (elem x (eqclass x R eqR)) :by (eqclass-mem x R eqR))
+    (have <b> (set-equal (eqclass x R eqR) (eqclass x R eqR))
+          :by (s/set-equal-refl (eqclass x R eqR)))
+    (have <c> (P x) :by (p/and-intro Hx (p/and-intro <a> <b>)))
+    (have <d> (q/ex P) :by ((q/ex-intro P x) <c>))
+    (have <e> (set-elem (eqclass x R eqR) (quotient s R eqR)) :by <d>))
+  (qed <e>))
+
 ;;;; ==================== PARTITIONS ==================
 
 (definition all-nonempty
@@ -233,7 +253,16 @@
   (qed <e>))
 
 
+(deflemma quot-part-members
+  [?T :type, s (set T), R (rel T T), eqR (equivalence R)]
+  (partition-member s (quotient s R eqR)))
 
+(proof 'quot-part-members-lemma
+  (assume [x T
+           Hx (elem x s)]
+    (pose P := (lambda [sp (set T)] (and (set-elem sp (quotient s R eqR))
+                                         (elem x sp))))
+    
 
 
 
