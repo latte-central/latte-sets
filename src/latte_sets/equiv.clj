@@ -168,6 +168,78 @@
                      ((eqclass-eq x y R eqR) HR))))
   (qed <a>))
 
+
+(defthm eqclass-not-elem
+  [[?T :type] [x y T] [R (rel T T)] [eqR (equivalence R)]]
+  (==> (not (R x y))
+       (not (elem y (eqclass x R eqR)))))
+
+(proof 'eqclass-not-elem-thm
+  (assume [Hxy (not (R x y))]
+    (assume [Hcontra (elem y (eqclass x R eqR))]
+      (have <a>  (R x y) :by ((eqclass-rel x y R eqR) Hcontra))
+      (have <b> p/absurd :by (Hxy <a>))))
+  (qed <b>))
+
+(defthm eqclass-not-subset
+  [[?T :type] [x y T] [R (rel T T)] [eqR (equivalence R)]]
+  (==> (not (R x y))
+       (not (subset (eqclass y R eqR) (eqclass x R eqR)))))
+
+(proof 'eqclass-not-subset-thm
+  (assume [Hxy (not (R x y))]
+    (assume [Hcontra (subset (eqclass y R eqR) (eqclass x R eqR))]
+      (have <a> (elem y (eqclass y R eqR)) :by (eqclass-mem y R eqR))
+      (have <b> (elem y (eqclass x R eqR)) 
+            :by ((s/subset-elim (eqclass y R eqR) (eqclass x R eqR) y)
+                 <a> Hcontra))
+      (have <c> (R x y) :by ((eqclass-rel x y R eqR) <b>))
+      (have <d> p/absurd :by (Hxy <c>))))
+  (qed <d>))
+ 
+(defthm eqclass-not-seteq
+  [[?T :type] [x y T] [R (rel T T)] [eqR (equivalence R)]]
+  (==> (not (R x y))
+       (not (seteq (eqclass x R eqR) (eqclass y R eqR)))))
+
+(proof 'eqclass-not-seteq-thm
+  (assume [Hxy (not (R x y))]
+    (have <a> (not (subset (eqclass y R eqR) (eqclass x R eqR)))
+          :by ((eqclass-not-subset x y R eqR) Hxy))
+    (assume [Hcontra (seteq (eqclass x R eqR) (eqclass y R eqR))]
+      (have <b> (subset (eqclass y R eqR) (eqclass x R eqR))
+            :by (p/and-elim-right Hcontra))
+      (have <c> p/absurd :by (((eqclass-not-subset x y R eqR) Hxy) <b>))))
+  (qed <c>))
+
+(defthm eqclass-disjoint
+  [[?T :type] [x y T] [R (rel T T)] [eqR (equivalence R)]]
+  (==> (not (R x y))
+       (alg/disjoint (eqclass x R eqR) (eqclass y R eqR))))
+
+(proof 'eqclass-disjoint-thm
+  (assume [Hxy (not (R x y))]
+    "We want to show that the intersection of the twoclasses is a subset of the emptyset"
+    (assume [z T
+             Hz (elem z (inter (eqclass x R eqR) (eqclass y R eqR)))]
+      (have <a1> (elem z (eqclass x R eqR)) :by (p/and-elim-left Hz))
+      (have <a> (R x z) :by ((eqclass-rel x z R eqR) <a1>))
+      (have <b1> (elem z (eqclass y R eqR)) :by (p/and-elim-right Hz))
+      (have <b> (R y z) :by ((eqclass-rel y z R eqR) <b1>))
+      (have <c> (R z y) :by ((equiv-sym R eqR) y z <b>))
+      (have <d> (R x y) :by (((equiv-trans R eqR) x z y) <a> <c>))
+      (have <e> p/absurd :by (Hxy <d>))
+      (have <f> (elem z (emptyset T)) :by (<e> (elem z (emptyset T)))))
+    (have <g> (subset (inter (eqclass x R eqR) (eqclass y R eqR)) (emptyset T)) 
+          :by <f>)
+    (have <h> (subset (emptyset T) (inter (eqclass x R eqR) (eqclass y R eqR)))
+          :by (s/subset-emptyset-lower-bound (inter (eqclass x R eqR) (eqclass y R eqR))))
+    (have <i> (seteq (inter (eqclass x R eqR) (eqclass y R eqR)) (emptyset T))
+          :by (p/and-intro <g> <h>))
+    (have <j> (set-equal (inter (eqclass x R eqR) (eqclass y R eqR)) (emptyset T))
+          :by ((s/seteq-implies-set-equal (inter (eqclass x R eqR) (eqclass y R eqR)) (emptyset T)) <i>)))
+  (qed <j>))
+
 (definition quotient
   [?T :type, s (set T), R (rel T T), eqR (equivalence R)]
   (lambda [eqx (set T)]
@@ -272,7 +344,26 @@
           :by ((pset/set-ex-intro P (eqclass x R eqR)) <d>)))
   (qed <e>))
 
+(comment
 
+(deflemma quot-part-disjoints
+  [?T :type, s (set T), R (rel T T), eqR (equivalence R)]
+  (all-disjoint (quotient s R eqR)))
 
+(try-proof 'quot-part-disjoints-lemma
+  (assume [eqx (set T) 
+           eqy (set T)
+           Heqx (set-elem eqx (quotient s R eqR))
+           Heqy (set-elem eqy (quotient s R eqR))
+           Hneq (not (set-equal eqx eqy))]
+    (have <a> (exists-in [x s]
+                (and (elem x eqx)
+                     (set-equal eqx (eqclass x R eqR))))
+          :by Heqx)
+    (have <b> (exists-in [y s]
+                (and (elem y eqy)
+                     (set-equal eqy (eqclass y R eqR))))
+          :by Heqy)
+))
 
-
+)

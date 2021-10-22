@@ -215,6 +215,30 @@
     (have <a> (elem x s2) :by (p/and-elim-right H)))
     (qed <a>))
 
+(defthm inter-not-left
+  [[?T :type] [s1 s2 (set T)] [x T]]
+  (==> (not (elem x s1))
+       (not (elem x (inter s1 s2)))))
+
+(proof 'inter-not-left-thm
+  (assume [Hx (not (elem x s1))]
+    (assume [Hcontra (elem x (inter s1 s2))]
+      (have <a> (elem x s1) :by (p/and-elim-left Hcontra))
+      (have <b> p/absurd :by (Hx <a>))))
+  (qed <b>))
+
+(defthm inter-not-right
+  [[?T :type] [s1 s2 (set T)] [x T]]
+  (==> (not (elem x s2))
+       (not (elem x (inter s1 s2)))))
+
+(proof 'inter-not-right-thm
+  (assume [Hx (not (elem x s2))]
+    (assume [Hcontra (elem x (inter s1 s2))]
+      (have <a> (elem x s2) :by (p/and-elim-right Hcontra))
+      (have <b> p/absurd :by (Hx <a>))))
+  (qed <b>))
+
 (defthm inter-idem
   [?T :type, s (set T)]
   (seteq (inter s s) s))
