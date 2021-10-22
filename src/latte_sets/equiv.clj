@@ -262,8 +262,15 @@
            Hx (elem x s)]
     (pose P := (lambda [sp (set T)] (and (set-elem sp (quotient s R eqR))
                                          (elem x sp))))
-    
-
+    (have <a> (set-elem (eqclass x R eqR) (quotient s R eqR))
+          :by ((quotient-eqclass s R eqR) x Hx))
+    (have <b> (elem x (eqclass x R eqR)) :by (eqclass-mem x R eqR))
+    (have <c> (P (eqclass x R eqR)) :by (p/and-intro <a> <b>))
+    (have <d> (set-elem (eqclass x R eqR) P) :by <c>)
+    (have <e> (set-ex (lambda [sp (set T)] (and (set-elem sp (quotient s R eqR))
+                                                (elem x sp)))) 
+          :by ((pset/set-ex-intro P (eqclass x R eqR)) <d>)))
+  (qed <e>))
 
 
 
