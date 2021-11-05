@@ -344,6 +344,21 @@ Note that the identification with [[seteq]] is non-trivial,
           :by (p/iff-trans <a> <b>)))
   (qed <c>))
 
+(defthm set-equal-subst-prop
+  "Substitutivity property of set-equality. 
+This is an important elimination rule."
+  [?T :type, P (==> (set T) :type), s1 (set T), s2 (set T)]
+  (==> (set-equal s1 s2)
+       (P s1)
+       (P s2)))
+
+(proof 'set-equal-subst-prop-thm 
+  (assume [H1 (set-equal s1 s2)
+           H2 (P s1)]
+    (have <a> (<=> (P s1) (P s2)) :by (H1 P))
+    (have <b> (P s2) :by ((p/iff-elim-if <a>) H2)))
+  (qed <b>))
+
 (defthm set-equal-implies-subset
   "Going from *Leibniz* equality on sets to the subset relation is easy."
   [?T :type, [s1 s2 (set T)]]

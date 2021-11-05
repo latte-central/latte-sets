@@ -1,5 +1,5 @@
 (ns latte-sets.equiv
-  "Equivalence relations"
+  "Equivalence relations, quotients, etc."
 
   (:refer-clojure :exclude [and or not set])
 
@@ -9,13 +9,15 @@
                      assume have pose proof try-proof qed lambda]]
 
             [latte-prelude.prop :as p
-             :refer [and and* not]]
+             :refer [and and* or not]]
 
             [latte-prelude.equal :as eq
              :refer [equal]]
 
             [latte-prelude.quant :as q
              :refer [exists]]
+
+            [latte-prelude.classic :as classic]
 
             [latte-sets.set :as s
              :refer [set elem emptyset set-equal subset seteq]]
@@ -241,30 +243,27 @@
   (qed <j>))
 
 (definition quotient
-  [?T :type, s (set T), R (rel T T), eqR (equivalence R)]
+  [?T :type, R (rel T T), eqR (equivalence R)]
   (lambda [eqx (set T)]
-    (exists-in [x s]
-      (and (elem x eqx)
-           (set-equal eqx (eqclass x R eqR))))))
+    (exists-in [x eqx]
+      (set-equal eqx (eqclass x R eqR)))))
 
 (defthm quotient-eqclass
-  [?T :type, s (set T), R (rel T T), eqR (equivalence R)]
-  (forall-in [x s]
-    (set-elem (eqclass x R eqR) (quotient s R eqR))))
+  [?T :type, R (rel T T), eqR (equivalence R)]
+  (forall [x T]
+    (set-elem (eqclass x R eqR) (quotient R eqR))))
 
 (proof 'quotient-eqclass-thm
-  (assume [x T
-           Hx (elem x s)]
+  (assume [x T]
     (pose P := (lambda [y T]
-                 (and (elem y s)
-                      (and (elem y (eqclass x R eqR))
-                           (set-equal (eqclass x R eqR) (eqclass y R eqR))))))
+                 (and (elem y (eqclass x R eqR))
+                      (set-equal (eqclass x R eqR) (eqclass y R eqR)))))
     (have <a> (elem x (eqclass x R eqR)) :by (eqclass-mem x R eqR))
     (have <b> (set-equal (eqclass x R eqR) (eqclass x R eqR))
           :by (s/set-equal-refl (eqclass x R eqR)))
-    (have <c> (P x) :by (p/and-intro Hx (p/and-intro <a> <b>)))
+    (have <c> (P x) :by (p/and-intro <a> <b>))
     (have <d> (q/ex P) :by ((q/ex-intro P x) <c>))
-    (have <e> (set-elem (eqclass x R eqR) (quotient s R eqR)) :by <d>))
+    (have <e> (set-elem (eqclass x R eqR) (quotient R eqR)) :by <d>))
   (qed <e>))
 
 ;;;; ==================== PARTITIONS ==================
@@ -300,33 +299,30 @@
         (all-disjoint P)))
 
 (deflemma quot-part-non-empty
-  [?T :type, s (set T), R (rel T T), eqR (equivalence R)]
-  (all-nonempty (quotient s R eqR)))
+  [?T :type, R (rel T T), eqR (equivalence R)]
+  (all-nonempty (quotient R eqR)))
 
 (proof 'quot-part-non-empty-lemma
   (assume [xcls (set T)
-           Hxcls (set-elem xcls (quotient s R eqR))]
+           Hxcls (set-elem xcls (quotient R eqR))]
     (have <a> (exists [x T]
-                (and (elem x s)
-                     (and (elem x xcls)
-                          (set-equal xcls (eqclass x R eqR)))))
+                (and (elem x xcls)
+                     (set-equal xcls (eqclass x R eqR))))
           :by Hxcls)
     (assume [x T
-             Hx (and (elem x s)
-                     (and (elem x xcls)
-                          (set-equal xcls (eqclass x R eqR))))]
+             Hx (and (elem x xcls)
+                     (set-equal xcls (eqclass x R eqR)))]
       (have <b> (s/non-empty (eqclass x R eqR))
             :by (eqclass-non-empty x R eqR))
-      (have <c> (set-equal xcls (eqclass x R eqR)) :by (p/and-elim-right (p/and-elim-right Hx)))
+      (have <c> (set-equal xcls (eqclass x R eqR)) :by (p/and-elim-right Hx))
       
       (have <d> (s/non-empty xcls) 
             :by ((p/and-elim-right (<c> (lambda [$ (set T)] (s/non-empty $)))) <b>)))
     (have <e> (s/non-empty xcls) :by (q/ex-elim <a> <d>)))
   (qed <e>))
 
-
 (deflemma quot-part-members
-  [?T :type, s (set T), R (rel T T), eqR (equivalence R)]
+  [?T :type, R (rel T T), eqR (equivalence R)]
   (partition-member s (quotient s R eqR)))
 
 (proof 'quot-part-members-lemma
@@ -344,7 +340,7 @@
           :by ((pset/set-ex-intro P (eqclass x R eqR)) <d>)))
   (qed <e>))
 
-(comment
+;;;(comment
 
 (deflemma quot-part-disjoints
   [?T :type, s (set T), R (rel T T), eqR (equivalence R)]
@@ -360,10 +356,53 @@
                 (and (elem x eqx)
                      (set-equal eqx (eqclass x R eqR))))
           :by Heqx)
-    (have <b> (exists-in [y s]
-                (and (elem y eqy)
-                     (set-equal eqy (eqclass y R eqR))))
-          :by Heqy)
-))
+    (assume [x T
+             Hx (and (elem x s)
+                     (and (elem x eqx)
+                          (set-equal eqx (eqclass x R eqR))))]
+      (have <b> (exists-in [y s]
+                  (and (elem y eqy)
+                       (set-equal eqy (eqclass y R eqR))))
+            :by Heqy)
+      (assume [y T
+               Hy (and (elem y s)
+                       (and (elem y eqy)
+                       (set-equal eqy (eqclass y R eqR)))]
+        "We use a classical reasoning (is this provable intuitionistically ?)"
+        (assume [HRyes (R x y)]
+          (have <c1> (set-equal (eqclass x R eqR) (eqclass y R eqR))
+                :by ((eqclass-equal x y R eqR) HRyes))
+          (have <c2> (set-equal eqx (eqclass y R eqR))
+                :by ((s/set-equal-trans eqx (eqclass x R eqR) (eqclass y R eqR))
+                     (p/and-elim-right Ha) <c1>))
+          (have <c3> (set-equal eqx eqy)
+                :by ((s/set-equal-trans eqx (eqclass y R eqR) eqy)
+                     <c2> ((s/set-equal-sym eqy (eqclass y R eqR))
+                           (p/and-elim-right Hb))))
+          (have <c4> p/absurd :by (Hneq <c3>))
+          (have <c> (alg/disjoint eqx eqy) :by (<c4> (alg/disjoint eqx eqy))))
+        (assume [HRno (not (R x y))]
+          (have <d1> (alg/disjoint (eqclass x R eqR) (eqclass y R eqR))
+                :by ((eqclass-disjoint x y R eqR) HRno))
+          (have <d2> (alg/disjoint eqx (eqclass y R eqR))
+                :by ((s/set-equal-subst-prop 
+                      (lambda [$ (set T)] (alg/disjoint $ (eqclass y R eqR)))
+                      (eqclass x R eqR) eqx)
+                     ((s/set-equal-sym eqx (eqclass x R eqR)) (p/and-elim-right Ha))
+                     <d1>))
+          (have <d> (alg/disjoint eqx eqy)
+                :by ((s/set-equal-subst-prop
+                      (lambda [$ (set T)] (alg/disjoint eqx $))
+                      (eqclass y R eqR) eqy)
+                     ((s/set-equal-sym eqy (eqclass y R eqR)) (p/and-elim-right Hb))
+                     <d2>)))
+        (have <e> (or (R x y) (not (R x y)))
+              :by (classic/excluded-middle-ax (R x y)))
+        (have <f> (alg/disjoint eqx eqy) :by (p/or-elim <e> <c> <d>)))
+      (have <g> (alg/disjoint eqx eqy)
+            ;; BUG : ex-elim fails because it captures y ...
+            :by ((q/ex-elim-rule (lambda 
+        
+)))
 
-)
+;)
