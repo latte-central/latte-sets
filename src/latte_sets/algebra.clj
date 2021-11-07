@@ -6,7 +6,7 @@
   (:require [latte.core :as latte
              :refer [definition defthm defaxiom defnotation
                      defimplicit forall lambda 
-                     assume have pose qed proof]]
+                     assume have pose qed proof try-proof]]
  
             [latte-prelude.quant :as q :refer [exists]]
             [latte-prelude.prop :as p :refer [<=> and or not]]
@@ -255,20 +255,6 @@
           :by (p/and-intro Hx Hx)))
   (qed (p/and-intro <a> <b>)))
 
-(definition disjoint
-  [?T :type, s1 (set T), s2 (set T)]
-  (set-equal (inter s1 s2) (emptyset T)))
-
-(defthm disjoint-eq
-  [?T :type, s1 (set T), s2 (set T)]
-  (==> (disjoint s1 s2)
-       (seteq (inter s1 s2) (emptyset T))))
-
-(proof 'disjoint-eq-thm
-  (assume [Hd (disjoint s1 s2)]
-    (have <a> _ :by ((sets/set-equal-implies-seteq (inter s1 s2) (emptyset T)) Hd)))
-  (qed <a>))
-
 (defthm inter-empty
   [?T :type, s (set T)]
   (seteq (inter s (emptyset T))
@@ -347,6 +333,58 @@
   (qed ((sets/seteq-sym (inter s1 (inter s2 s3))
                         (inter (inter s1 s2) s3))
         <a>)))
+
+(definition disjoint
+  [?T :type, s1 (set T), s2 (set T)]
+  (set-equal (inter s1 s2) (emptyset T)))
+
+(defthm disjoint-eq
+  [?T :type, s1 (set T), s2 (set T)]
+  (==> (disjoint s1 s2)
+       (seteq (inter s1 s2) (emptyset T))))
+
+(proof 'disjoint-eq-thm
+  (assume [Hd (disjoint s1 s2)]
+    (have <a> _ :by ((sets/set-equal-implies-seteq (inter s1 s2) (emptyset T)) Hd)))
+  (qed <a>))
+
+(defthm disjoint-elem-left
+  [[?T :type] [s1 s2 (set T)]]
+  (forall [x T]
+    (==> (disjoint s1 s2)
+         (elem x s1)
+         (not (elem x s2)))))
+
+(proof 'disjoint-elem-left-thm
+  (assume [x T
+           Hdis (disjoint s1 s2)
+           Hx (elem x s1)]
+    (assume [Hneg (elem x s2)]
+      (have <a> (elem x (inter s1 s2)) :by (p/and-intro Hx Hneg))
+      (have <b> (elem x (emptyset T)) 
+            :by ((sets/set-equal-subst-prop (lambda [$ (set T)] (elem x $)) (inter s1 s2) (emptyset T))
+                 Hdis <a>))
+      (have <c> p/absurd :by (((sets/emptyset-prop T) x) <b>))))
+  (qed <c>))
+
+(defthm disjoint-elem-right
+  [[?T :type] [s1 s2 (set T)]]
+  (forall [x T]
+    (==> (disjoint s1 s2)
+         (elem x s2)
+         (not (elem x s1)))))
+
+(proof 'disjoint-elem-right-thm
+  (assume [x T
+           Hdis (disjoint s1 s2)
+           Hx (elem x s2)]
+    (assume [Hneg (elem x s1)]
+      (have <a> (elem x (inter s1 s2)) :by (p/and-intro Hneg Hx))
+      (have <b> (elem x (emptyset T)) 
+            :by ((sets/set-equal-subst-prop (lambda [$ (set T)] (elem x $)) (inter s1 s2) (emptyset T))
+                 Hdis <a>))
+      (have <c> p/absurd :by (((sets/emptyset-prop T) x) <b>))))
+  (qed <c>))
 
 (defthm dist-union-inter
   "Distributivity of union over intersection."
