@@ -386,6 +386,21 @@
       (have <c> p/absurd :by (((sets/emptyset-prop T) x) <b>))))
   (qed <c>))
 
+(comment ;; TODO
+(defthm disjoint-complement
+  [[?T :type] [s1 s2 (set T)]]
+  (==> (not (disjoint s1 s2))
+       (exists [x T]
+         (and (elem x s1)
+              (elem x s2)))))
+
+(proof 'disjoint-complement-thm
+  (assume [Hdis (not (disjoint s1 s2))]
+    ))
+
+)
+    
+
 (defthm dist-union-inter
   "Distributivity of union over intersection."
   [?T :type, [s1 s2 s3 (set T)]]

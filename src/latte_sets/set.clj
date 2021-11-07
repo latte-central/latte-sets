@@ -418,7 +418,34 @@ requires this axiom. This is because we cannot lift membership
 (definition non-empty
   "A non-empty set `s` of elements of type `T`"
   [?T :type, s (set T)]
-  (not (set-equal s (emptyset T))))
+  (not (subset s (emptyset T))))
+
+(defthm non-empty-not-eq
+  [?T :type, s (set T)]
+  (==> (non-empty s)
+       (not (seteq s (emptyset T)))))
+
+(proof 'non-empty-not-eq-thm
+  (assume [Hne (non-empty s)]
+    (assume [Hcontra (seteq s (emptyset T))]
+      (have <a> (subset s (emptyset T)) :by (p/and-elim-left Hcontra))
+      (have <b> p/absurd :by (Hne <a>))))
+  (qed <b>))
+
+(defthm non-empty-not-equal
+  [?T :type, s (set T)]
+  (==> (non-empty s)
+       (not (set-equal s (emptyset T)))))
+
+(proof 'non-empty-not-equal-thm
+  (assume [Hne (non-empty s)]
+    (have <a> (not (seteq s (emptyset T)))
+          :by ((non-empty-not-eq s) Hne))
+    (assume [Hcontra (set-equal s (emptyset T))]
+      (have <b> (seteq s (emptyset T))
+            :by ((set-equal-implies-seteq s (emptyset T)) Hcontra))
+      (have <c> p/absurd :by (<a> <b>))))
+  (qed <c>))
 
 (defthm non-empty-elem
   [?T :type, x T, s (set T)]
@@ -427,13 +454,23 @@ requires this axiom. This is because we cannot lift membership
 
 (proof 'non-empty-elem-thm
   (assume [Hx (elem x s)]
-    (assume [Hcontra (set-equal s (emptyset T))]
-      (have <a> (seteq s (emptyset T)) 
-            :by ((set-equal-implies-seteq s (emptyset T)) Hcontra))
-      (have <b> (subset s (emptyset T))
-            :by (p/and-elim-left <a>))
-      (have <c> p/absurd :by (<b> x Hx))))
-  (qed <c>))
+    (assume [Hcontra (subset s (emptyset T))]
+      (have <a> p/absurd :by (Hcontra x Hx))))
+  (qed <a>))
+
+(comment
+
+(defthm non-empty-exist
+  [?T :type, s (set T)]
+  (==> (non-empty s)
+       (exists [x T] (elem x s))))
+
+(proof 'non-empty-exist-thm
+  (assume [Hne (non-empty s)]
+    (assume [Hcontra (not (exists [x T] (elem x s)))]
+      )))
+
+)
 
 (definition psubset
   "The anti-reflexive variant of the subset relation.

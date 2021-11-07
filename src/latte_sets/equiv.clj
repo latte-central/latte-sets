@@ -350,6 +350,34 @@
   [?T :type, s (set T), R (rel T T), eqR (equivalence R)]
   (all-disjoint (quotient s R eqR)))
 
+(comment ;; alternative proof (?)
+(try-proof 'quot-part-disjoints-lemma
+  (assume [eqx (set T) 
+           eqy (set T)
+           Heqx (set-elem eqx (quotient s R eqR))
+           Heqy (set-elem eqy (quotient s R eqR))
+           Hneq (not (set-equal eqx eqy))]
+    (assume [x T
+             Hx (and (elem x s)
+                     (and (elem x eqx)
+                          (set-equal eqx (eqclass x R eqR))))]
+      (assume [y T
+               Hy (and (elem y s)
+                       (and (elem y eqy)
+                            (set-equal eqy (eqclass y R eqR))))]
+        "We proceed by contradiction"
+        (assume [Hcontra (not (alg/disjoint eqx eqx))]
+)))))
+
+)          
+          
+        
+
+
+
+;;(comment
+  ;; an alternative proof based on the law of the excluded middle
+
 (proof 'quot-part-disjoints-lemma
   (assume [eqx (set T) 
            eqy (set T)
@@ -398,6 +426,7 @@
       (have <e> (alg/disjoint eqx eqy) :by (q/ex-elim Heqy <d>)))
     (have <f> (alg/disjoint eqx eqy) :by (q/ex-elim Heqx <e>)))
   (qed <f>))
+;;)
 
 (defthm quotient-partition
   "The quotient of set `s` wrt. equivalence relation `R`
