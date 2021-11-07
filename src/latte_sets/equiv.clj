@@ -356,57 +356,48 @@
            Heqx (set-elem eqx (quotient s R eqR))
            Heqy (set-elem eqy (quotient s R eqR))
            Hneq (not (set-equal eqx eqy))]
-    (have <a> (exists-in [x s]
-                (and (elem x eqx)
-                     (set-equal eqx (eqclass x R eqR))))
-          :by Heqx)
     (assume [x T
              Hx (and (elem x s)
                      (and (elem x eqx)
                           (set-equal eqx (eqclass x R eqR))))]
-      (have <b> (exists-in [y s]
-                  (and (elem y eqy)
-                       (set-equal eqy (eqclass y R eqR))))
-            :by Heqy)
       (assume [y T
                Hy (and (elem y s)
                        (and (elem y eqy)
                             (set-equal eqy (eqclass y R eqR))))]
         "We use a classical reasoning (is this provable intuitionistically ?)"
         (assume [HRyes (R x y)]
-          (have <c1> (set-equal (eqclass x R eqR) (eqclass y R eqR))
+          (have <a1> (set-equal (eqclass x R eqR) (eqclass y R eqR))
                 :by ((eqclass-equal x y R eqR) HRyes))
-          (have <c2> (set-equal eqx (eqclass y R eqR))
+          (have <a2> (set-equal eqx (eqclass y R eqR))
                 :by ((s/set-equal-trans eqx (eqclass x R eqR) (eqclass y R eqR))
-                     (p/and-elim-right (p/and-elim-right Hx)) <c1>))
-          (have <c3> (set-equal eqx eqy)
+                     (p/and-elim-right (p/and-elim-right Hx)) <a1>))
+          (have <a3> (set-equal eqx eqy)
                 :by ((s/set-equal-trans eqx (eqclass y R eqR) eqy)
-                     <c2> ((s/set-equal-sym eqy (eqclass y R eqR))
+                     <a2> ((s/set-equal-sym eqy (eqclass y R eqR))
                            (p/and-elim-right (p/and-elim-right Hy)))))
-          (have <c4> p/absurd :by (Hneq <c3>))
-          (have <c> (alg/disjoint eqx eqy) :by (<c4> (alg/disjoint eqx eqy))))
+          (have <a4> p/absurd :by (Hneq <a3>))
+          (have <a> (alg/disjoint eqx eqy) :by (<a4> (alg/disjoint eqx eqy))))
         (assume [HRno (not (R x y))]
-          (have <d1> (alg/disjoint (eqclass x R eqR) (eqclass y R eqR))
+          (have <b1> (alg/disjoint (eqclass x R eqR) (eqclass y R eqR))
                 :by ((eqclass-disjoint x y R eqR) HRno))
-          (have <d2> (alg/disjoint eqx (eqclass y R eqR))
+          (have <b2> (alg/disjoint eqx (eqclass y R eqR))
                 :by ((s/set-equal-subst-prop 
                       (lambda [$ (set T)] (alg/disjoint $ (eqclass y R eqR)))
                       (eqclass x R eqR) eqx)
                      ((s/set-equal-sym eqx (eqclass x R eqR)) (p/and-elim-right (p/and-elim-right Hx)))
-                     <d1>))
-          (have <d> (alg/disjoint eqx eqy)
+                     <b1>))
+          (have <b> (alg/disjoint eqx eqy)
                 :by ((s/set-equal-subst-prop
                       (lambda [$ (set T)] (alg/disjoint eqx $))
                       (eqclass y R eqR) eqy)
                      ((s/set-equal-sym eqy (eqclass y R eqR)) (p/and-elim-right (p/and-elim-right Hy)))
-                     <d2>)))
-        (have <e> (or (R x y) (not (R x y)))
+                     <b2>)))
+        (have <c> (or (R x y) (not (R x y)))
               :by (classic/excluded-middle-ax (R x y)))
-        (have <f> (alg/disjoint eqx eqy) :by (p/or-elim <e> <c> <d>)))
-
-      (have <g> (alg/disjoint eqx eqy) :by (q/ex-elim <b> <f>)))
-    (have <h> (alg/disjoint eqx eqy) :by (q/ex-elim <a> <g>)))
-  (qed <h>))
+        (have <d> (alg/disjoint eqx eqy) :by (p/or-elim <c> <a> <b>)))
+      (have <e> (alg/disjoint eqx eqy) :by (q/ex-elim Heqy <d>)))
+    (have <f> (alg/disjoint eqx eqy) :by (q/ex-elim Heqx <e>)))
+  (qed <f>))
 
 (defthm quotient-partition
   "The quotient of set `s` wrt. equivalence relation `R`
