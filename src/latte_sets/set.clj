@@ -462,13 +462,15 @@ requires this axiom. This is because we cannot lift membership
 
 (defthm non-empty-exist
   [?T :type, s (set T)]
-  (==> (non-empty s)
+  (==> (non-empty s)  ;; XXX: is this equivalent to choice ?
        (exists [x T] (elem x s))))
 
 (proof 'non-empty-exist-thm
   (assume [Hne (non-empty s)]
     (assume [Hcontra (not (exists [x T] (elem x s)))]
-      )))
+      (assume [x T Hx (elem x s)]
+        
+      ))))
 
 )
 
