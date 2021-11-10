@@ -20,11 +20,12 @@ natural translation to the typed setting.
   (:require [latte.core :as latte :refer [definition defthm defaxiom defnotation
                                           defimplicit deflemma
                                           forall lambda
-                                          assume have pose proof qed]]
+                                          assume have pose proof try-proof qed]]
             [latte.utils :as u]
             [latte-prelude.quant :as q :refer [exists]]
             [latte-prelude.prop :as p :refer [<=> and or not]]
-            [latte-prelude.equal :as eq :refer [equal]]))
+            [latte-prelude.equal :as eq :refer [equal]]
+            [latte-prelude.classic :as classic]))
 
 (definition set
   "The type of sets whose elements are of type `T`."
@@ -458,21 +459,25 @@ requires this axiom. This is because we cannot lift membership
       (have <a> p/absurd :by (Hcontra x Hx))))
   (qed <a>))
 
-(comment
-
-(defthm non-empty-exist
+(defthm non-empty-inhabited
+  "A non-emptyset is inhabited (in classical logic)"
   [?T :type, s (set T)]
-  (==> (non-empty s)  ;; XXX: is this equivalent to choice ?
+  (==> (non-empty s)
        (exists [x T] (elem x s))))
 
-(proof 'non-empty-exist-thm
+(proof 'non-empty-inhabited-thm
   (assume [Hne (non-empty s)]
     (assume [Hcontra (not (exists [x T] (elem x s)))]
-      (assume [x T Hx (elem x s)]
-        
-      ))))
-
-)
+      (assume [x T
+               Hx (elem x s)]
+        (have <a> (not (elem x s))
+              :by (((q/not-ex-elim (lambda [x T] (elem x s))) Hcontra) x))
+        (have <b> p/absurd :by (<a> Hx))
+        (have <c> (elem x (emptyset T)) :by (<b> (elem x (emptyset T)))))
+      (have <d> (subset s (emptyset T)) :by <c>)
+      (have <e> p/absurd :by (Hne <d>)))
+    (have <f> _ :by ((classic/not-not-impl (exists [x T] (elem x s))) <e>)))
+  (qed <f>))
 
 (definition psubset
   "The anti-reflexive variant of the subset relation.
