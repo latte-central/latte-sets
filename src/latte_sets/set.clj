@@ -180,6 +180,19 @@ The expression `(subset-def T s1 s2)` means that
     (have <b> (elem x s) :by ((p/ex-falso (elem x s)) <a>)))
   (qed <b>))
 
+(defthm emptyset-subset-intro
+  [?T :type, s (set T)]
+  (==> (forall [x T] (not (elem x s)))
+       (subset s (emptyset T))))
+
+(proof 'emptyset-subset-intro-thm
+  (assume [H _
+           x T Hx (elem x s)]
+    (have <a> p/absurd :by (H x Hx))
+    (have <b> (elem x (emptyset T))
+          :by (<a> (elem x (emptyset T)))))
+  (qed <b>))
+
 (defthm subset-fullset-upper-bound
   "The fullset is a superset of every other sets."
   [?T :type, s (set T)]
@@ -275,6 +288,17 @@ This is a natural notion of \"equal sets\"
     (have <c2> (subset s3 s1) :by ((subset-trans s3 s2 s1) <b2> <a2>))
     (have <d> (seteq s1 s3) :by (p/and-intro <c1> <c2>)))
   (qed <d>))
+
+(defthm emptyset-seteq-intro
+  [?T :type, s (set T)]
+  (==> (forall [x T] (not (elem x s)))
+       (seteq s (emptyset T))))
+
+(proof 'emptyset-seteq-intro-thm
+  (assume [H _]
+    (have <a> _ :by (p/and-intro ((emptyset-subset-intro s) H)
+                                 (subset-emptyset-lower-bound s))))
+  (qed <a>))
 
 (definition set-equal
   "A *Leibniz*-style equality for sets.

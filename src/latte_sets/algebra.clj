@@ -11,6 +11,7 @@
             [latte-prelude.quant :as q :refer [exists]]
             [latte-prelude.prop :as p :refer [<=> and or not]]
             [latte-prelude.equal :as eq :refer [equal]]
+            [latte-prelude.classic :as classic]
 
             [latte-sets.set :as sets
              :refer [set set-of elem subset seteq set-equal emptyset fullset
@@ -386,7 +387,6 @@
       (have <c> p/absurd :by (((sets/emptyset-prop T) x) <b>))))
   (qed <c>))
 
-(comment ;; TODO
 (defthm disjoint-complement
   [[?T :type] [s1 s2 (set T)]]
   (==> (not (disjoint s1 s2))
@@ -395,11 +395,19 @@
               (elem x s2)))))
 
 (proof 'disjoint-complement-thm
+  (pose P := (lambda [x T] (and (elem x s1) (elem x s2))))
   (assume [Hdis (not (disjoint s1 s2))]
-    ))
-
-)
-    
+    (assume [Hcontra (not (exists [x T] (P x)))]
+      (have <a> (forall [x T] (not (P x)))
+            :by ((q/not-ex-elim P) Hcontra))
+      (have <b> (seteq (inter s1 s2) (emptyset T))
+            :by ((sets/emptyset-seteq-intro (inter s1 s2)) <a>))
+      (have <c> (set-equal (inter s1 s2) (emptyset T))
+            :by ((sets/seteq-implies-set-equal (inter s1 s2) (emptyset T)) <b>))
+      (have <d> p/absurd :by (Hdis <c>)))
+    "Remark : we use a classical principle (double negation)"
+    (have <e> _ :by ((classic/not-not-impl (exists [x T] (P x))) <d>)))
+  (qed <e>))   
 
 (defthm dist-union-inter
   "Distributivity of union over intersection."
