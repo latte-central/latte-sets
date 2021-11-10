@@ -407,7 +407,7 @@
       (have <d> p/absurd :by (Hdis <c>)))
     "Remark : we use a classical principle (double negation)"
     (have <e> _ :by ((classic/not-not-impl (exists [x T] (P x))) <d>)))
-  (qed <e>))   
+  (qed <e>))
 
 (defthm dist-union-inter
   "Distributivity of union over intersection."

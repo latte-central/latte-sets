@@ -350,13 +350,12 @@
   [?T :type, s (set T), R (rel T T), eqR (equivalence R)]
   (all-disjoint (quotient s R eqR)))
 
-(comment ;; alternative proof (?)
-(try-proof 'quot-part-disjoints-lemma
+(proof 'quot-part-disjoints-lemma
   (assume [eqx (set T) 
-           eqy (set T)
-           Heqx (set-elem eqx (quotient s R eqR))
-           Heqy (set-elem eqy (quotient s R eqR))
-           Hneq (not (set-equal eqx eqy))]
+           eqy (set T)]
+    (assume [Heqx (set-elem eqx (quotient s R eqR))
+             Heqy (set-elem eqy (quotient s R eqR))
+             Hneq (not (set-equal eqx eqy))]
     (assume [x T
              Hx (and (elem x s)
                      (and (elem x eqx)
@@ -366,17 +365,55 @@
                        (and (elem y eqy)
                             (set-equal eqy (eqclass y R eqR))))]
         "We proceed by contradiction"
-        (assume [Hcontra (not (alg/disjoint eqx eqx))]
-)))))
-
-)          
+        (assume [Hcontra (not (alg/disjoint eqx eqy))]
           
-        
+          (have <a> (exists [z T] (and (elem z eqx) (elem z eqy)))
+                :by ((alg/disjoint-complement eqx eqy) Hcontra))
+          (assume [z T Hz (and (elem z eqx) (elem z eqy))]
+            (have <b1> (elem z (eqclass x R eqR))
+                  :by ((s/set-equal-subst-prop (lambda [$ (set T)] (elem z $))
+                                               eqx (eqclass x R eqR))
+                       (p/and-elim-right (p/and-elim-right Hx))
+                       (p/and-elim-left Hz)))
+            (have <b2> (elem z (eqclass y R eqR))
+                  :by ((s/set-equal-subst-prop (lambda [$ (set T)] (elem z $))
+                                               eqy (eqclass y R eqR))
+                       (p/and-elim-right (p/and-elim-right Hy))
+                       (p/and-elim-right Hz)))
+            (have <b3> (R x z) :by ((eqclass-rel x z R eqR) <b1>))
+            (have <b4> (R y z) :by ((eqclass-rel y z R eqR) <b2>))
+            (have <b5> (R x y)
+                  :by ((equiv-trans R eqR) x z y
+                       <b3> ((equiv-sym R eqR) y z <b4>)))
+            (have <b6> (set-equal (eqclass x R eqR) (eqclass y R eqR))
+                  :by ((eqclass-equal x y R eqR) <b5>))
+            (have <b7> (set-equal eqx (eqclass y R eqR))
+                  :by ((s/set-equal-subst-prop
+                        (lambda [$ (set T)] (set-equal $ (eqclass y R eqR)))
+                        (eqclass x R eqR) eqx)
+                       ((s/set-equal-sym eqx (eqclass x R eqR))
+                        (p/and-elim-right (p/and-elim-right Hx)))
+                       <b6>))
+            (have <b8> (set-equal eqx eqy)
+                  :by ((s/set-equal-subst-prop
+                        (lambda [$ (set T)] (set-equal eqx $))
+                        (eqclass y R eqR) eqy)
+                       ((s/set-equal-sym eqy (eqclass y R eqR))
+                        (p/and-elim-right (p/and-elim-right Hy)))
+                       <b7>))
+            (have <b> p/absurd :by (Hneq <b8>)))
+          (have <c> p/absurd :by (q/ex-elim <a> <b>)))
+        "We reach our conclusion by classical reasoning (double negation)"
+        (have <d> (alg/disjoint eqx eqy)
+              :by ((classic/not-not-impl (alg/disjoint eqx eqy)) <c>)))
+      (have <e> (alg/disjoint eqx eqy) :by (q/ex-elim Heqy <d>)))
+    (have <f> (alg/disjoint eqx eqy) :by (q/ex-elim Heqx <e>))))
+  (qed <f>))
 
 
-
-;;(comment
-  ;; an alternative proof based on the law of the excluded middle
+(comment
+  ;; an alternative proof directly based on the law of the excluded middle
+  ;; it's a little bit "larger" hence slower than the other proof.
 
 (proof 'quot-part-disjoints-lemma
   (assume [eqx (set T) 
@@ -426,7 +463,7 @@
       (have <e> (alg/disjoint eqx eqy) :by (q/ex-elim Heqy <d>)))
     (have <f> (alg/disjoint eqx eqy) :by (q/ex-elim Heqx <e>)))
   (qed <f>))
-;;)
+)
 
 (defthm quotient-partition
   "The quotient of set `s` wrt. equivalence relation `R`
