@@ -3,7 +3,7 @@
   :url "https://github.com/fredokun/latte-sets.git"
   :license {:name "MIT Licence"
             :url "http://opensource.org/licenses/MIT"}
-  :dependencies [[org.clojure/clojure "1.10.1"]
+  :dependencies [[org.clojure/clojure "1.11.1"]
                  [latte-prelude "1.0b10-SNAPSHOT"]]
   :main latte-sets.main
   :aliases {"certify" ["run" ":certify"]
@@ -20,6 +20,6 @@
                        latte-sets.powerrel
                        latte-sets.pfun]}
   :profiles {:uberjar {:aot [latte-sets.main]}}
-  :plugins [[lein-codox "0.10.7"]])
+  :plugins [[lein-codox "0.10.8"]])
 
 
