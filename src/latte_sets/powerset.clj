@@ -298,3 +298,38 @@ This is the set {y:T | ∀x∈X, y∈x}."
 (proof 'powerset1-prop-equiv-thm
   (qed (p/and-intro (powerset1-prop x)
                     (powerset1-prop-conv x))))
+
+
+(definition family
+  "An indexed family of sets, 
+with `I` the index type and `T` the elements type."
+  [[I :type] [T :type]]
+  (==> I (set T)))
+
+
+(defn fetch-family-type [def-env ctx f-type]
+  "Fetch the `I` and `T` in a family-type `f-type` of the form `(family I T)` (fails otherwise).
+This function is used for implicits in indexed families."
+  (let [[I cod-type] (p/decompose-impl-type def-env ctx f-type)]
+    (let [[T _] (p/decompose-impl-type def-env ctx cod-type)]
+      [I T])))
+
+(u/register-implicit-type-parameters-handler! 'family fetch-family-type 2)
+
+
+(definition funion
+  "The union of a `I`-indexed family of sets of type `T`"
+  [[?I :type] [?T :type] [fam (family I T)]]
+  (lambda [x T]
+    (exists [i I] (elem x (fam i)))))
+
+(definition finter
+  "The intersection of a `I`-indexed family of sets of type `T`"
+  [[?I :type] [?T :type] [fam (family I T)]]
+  (lambda [x T]
+    (forall [i I] (elem x (fam i)))))
+
+
+
+
+
