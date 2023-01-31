@@ -571,6 +571,17 @@
     (and (elem x s1)
          (not (elem x s2)))))
 
+(defthm diff-subset
+  [[?T :type] [s1 s2 (set T)]]
+  (subset (diff s1 s2) s1))
+
+(proof 'diff-subset-thm
+  (assume [x T
+           Hx (elem x (diff s1 s2))]
+    "We want to prove that `(elem x s1)`"
+    (have <a> (elem x s1) :by (p/and-elim-left Hx)))
+  (qed <a>))
+
 (defthm diff-empty-right
   [?T :type, s (set T)]
   (seteq (diff s (emptyset T)) s))
