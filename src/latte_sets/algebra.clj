@@ -720,6 +720,45 @@
           :by (p/and-intro <b> <e>)))
   (qed (p/and-intro <a> <f>)))
 
+
+(defthm diff-diff
+  [[?T :type] [s1 s2 (set T)]]
+  (seteq (diff s1 (diff s1 s2))
+         (inter s1 s2)))
+
+(proof 'diff-diff-thm
+  "Subset case"
+  (assume [x T
+           Hx (elem x (diff s1 (diff s1 s2)))]
+    (have <a> (elem x s1) :by (p/and-elim-left Hx))
+    (have <b> (not (elem x (diff s1 s2))) :by (p/and-elim-right Hx))
+    "Classical reasoning"
+    (have <c> (or (elem x s2) (not (elem x s2))) 
+          :by (classic/excluded-middle-ax (elem x s2)))
+    (assume [Hyes (elem x s2)]
+      (have <d> (elem x (inter s1 s2))
+            :by (p/and-intro <a> Hyes)))
+    (assume [Hno (not (elem x s2))]
+      (have <e1> (elem x (diff s1 s2))
+            :by (p/and-intro <a> Hno))
+      (have <e2> p/absurd :by (<b> <e1>))
+      (have <e> (elem x (inter s1 s2)) 
+            :by (<e2> (elem x (inter s1 s2)))))
+    (have <f> (elem x (inter s1 s2))
+          :by (p/or-elim <c> <d> <e>)))
+  "Superset case"
+  (assume [x T
+           Hx (elem x (inter s1 s2))]
+    (have <g> (elem x s1) :by (p/and-elim-left Hx))
+    (have <h> (elem x s2) :by (p/and-elim-right Hx))
+    "By contradiction"
+    (assume [Hdiff (elem x (diff s1 s2))]
+      (have <i> p/absurd :by ((p/and-elim-right Hdiff) <h>)))
+    (have <j> (elem x (diff s1 (diff s1 s2)))
+          :by (p/and-intro <g> <i>)))
+
+  (qed (p/and-intro <f> <j>)))
+
 (defthm diff-empty-right
   [?T :type, s (set T)]
   (seteq (diff s (emptyset T)) s))
