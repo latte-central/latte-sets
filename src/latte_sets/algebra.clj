@@ -46,6 +46,34 @@
           :by (p/or-intro-left Hx (elem x s))))
   (qed (p/and-intro <c> <d>)))
 
+(defthm union-not-left
+  [[?T :type] [s1 s2 (set T)] [x T]]
+  (==> (not (elem x (union s1 s2)))
+       (not (elem x s1))))
+
+(proof 'union-not-left-thm
+  (assume [H _]
+    "By contradiction"
+    (assume [Hcontra (elem x s1)]
+      (have <a1> (elem x (union s1 s2))
+            :by (p/or-intro-left Hcontra (elem x s2)))
+      (have <a> p/absurd :by (H <a1>))))
+  (qed <a>))
+
+(defthm union-not-right
+  [[?T :type] [s1 s2 (set T)] [x T]]
+  (==> (not (elem x (union s1 s2)))
+       (not (elem x s2))))
+
+(proof 'union-not-right-thm
+  (assume [H _]
+    "By contradiction"
+    (assume [Hcontra (elem x s2)]
+      (have <a1> (elem x (union s1 s2))
+            :by (p/or-intro-right (elem x s1) Hcontra))
+      (have <a> p/absurd :by (H <a1>))))
+  (qed <a>))
+  
 (defthm union-empty
   [?T :type, s (set T)]
   (seteq (union s (emptyset T))
@@ -239,6 +267,34 @@
       (have <a> (elem x s2) :by (p/and-elim-right Hcontra))
       (have <b> p/absurd :by (Hx <a>))))
   (qed <b>))
+
+(defthm inter-not-inter-left
+  [[?T :type] [s1 s2 (set T)] [x T]]
+  (==> (not (elem x (inter s1 s2)))
+       (elem x s1)
+       (not (elem x s2))))
+
+(proof 'inter-not-inter-left-thm
+  (assume [Hinter (not (elem x (inter s1 s2)))
+           Hs1 (elem x s1)]
+    "We proceed by contradiction"
+    (assume [Hs2 (elem x s2)]
+      (have <a> p/absurd :by (Hinter (p/and-intro Hs1 Hs2)))))
+  (qed <a>))
+
+(defthm inter-not-inter-right
+  [[?T :type] [s1 s2 (set T)] [x T]]
+  (==> (not (elem x (inter s1 s2)))
+       (elem x s2)
+       (not (elem x s1))))
+
+(proof 'inter-not-inter-right-thm
+  (assume [Hinter (not (elem x (inter s1 s2)))
+           Hs2 (elem x s2)]
+    "We proceed by contradiction"
+    (assume [Hs1 (elem x s1)]
+      (have <a> p/absurd :by (Hinter (p/and-intro Hs1 Hs2)))))
+  (qed <a>))
 
 (defthm inter-idem
   [?T :type, s (set T)]
@@ -581,6 +637,88 @@
     "We want to prove that `(elem x s1)`"
     (have <a> (elem x s1) :by (p/and-elim-left Hx)))
   (qed <a>))
+
+(defthm diff-inter
+  [[?T :type] [s1 s2 s3 (set T)]]
+  (seteq (diff s3 (inter s1 s2))
+         (union (diff s3 s1) (diff s3 s2))))
+
+(proof 'diff-inter-thm
+  "Subset case"
+  (assume [x T
+           Hx (elem x (diff s3 (inter s1 s2)))]
+    (have <Hx1> (elem x s3) :by (p/and-elim-left Hx))
+    (have <Hx2> (not (elem x (inter s1 s2))) :by (p/and-elim-right Hx))
+    "The proof is classical"
+    (have <a1> (or (elem x s1) (not (elem x s1)))
+          :by (classic/excluded-middle-ax (elem x s1)))
+    (assume [Ha1 (elem x s1)]
+      (have <b1> (not (elem x s2))
+            :by ((inter-not-inter-left s1 s2 x) <Hx2> Ha1))
+      (have <b2> (elem x (diff s3 s2))
+            :by (p/and-intro <Hx1> <b1>))
+      (have <b> (elem x (union (diff s3 s1) (diff s3 s2)))
+            :by (p/or-intro-right (elem x (diff s3 s1)) <b2>)))
+    (assume [Ha1' (not (elem x s1))]
+      (have <c1> (elem x (diff s3 s1))
+            :by (p/and-intro <Hx1> Ha1'))
+      (have <c> (elem x (union (diff s3 s1) (diff s3 s2)))
+            :by (p/or-intro-left <c1> (elem x (diff s3 s2)))))
+    (have <a> (elem x (union (diff s3 s1) (diff s3 s2)))
+          :by (p/or-elim <a1> <b> <c>)))
+
+  "Superset case"
+  (assume [x T
+           Hx (elem x (union (diff s3 s1) (diff s3 s2)))]
+    (assume [Hx1 (elem x (diff s3 s1))]
+      (have <d1> (elem x s3) :by (p/and-elim-left Hx1))
+      (have <d2> (not (elem x s1)) :by (p/and-elim-right Hx1))
+      (have <d3> (not (elem x (inter s1 s2)))
+            :by ((inter-not-left s1 s2 x) <d2>))
+      (have <d> (elem x (diff s3 (inter s1 s2)))
+            :by (p/and-intro <d1> <d3>)))
+    (assume [Hx1' (elem x (diff s3 s2))]
+      (have <e1> (elem x s3) :by (p/and-elim-left Hx1'))
+      (have <e2> (not (elem x s2)) :by (p/and-elim-right Hx1'))
+      (have <e3> (not (elem x (inter s1 s2)))
+            :by ((inter-not-right s1 s2 x) <e2>))
+      (have <e> (elem x (diff s3 (inter s1 s2)))
+            :by (p/and-intro <e1> <e3>)))
+    (have <f> (elem x (diff s3 (inter s1 s2)))
+          :by (p/or-elim Hx <d> <e>)))
+  
+  (qed (p/and-intro <a> <f>)))
+
+(defthm diff-union
+  [[?T :type] [s1 s2 s3 (set T)]]
+  (seteq (diff s3 (union s1 s2))
+         (inter (diff s3 s1) (diff s3 s2))))
+
+(proof 'diff-union-thm
+  "Subset case"
+  (assume [x T
+           Hx (elem x (diff s3 (union s1 s2)))]
+    (have <Hx1> (elem x s3) :by (p/and-elim-left Hx))
+    (have <Hx2> (not (elem x (union s1 s2))) :by (p/and-elim-right Hx))
+    (have <a1> (not (elem x s1)) :by ((union-not-left s1 s2 x) <Hx2>))
+    (have <a2> (elem x (diff s3 s1)) :by (p/and-intro <Hx1> <a1>))
+    (have <a3> (not (elem x s2)) :by ((union-not-right s1 s2 x) <Hx2>))
+    (have <a4> (elem x (diff s3 s2)) :by (p/and-intro <Hx1> <a3>))
+    (have <a> _ :by (p/and-intro <a2> <a4>)))
+  "Superset case"
+  (assume [x T
+           Hx (elem x (inter (diff s3 s1) (diff s3 s2)))]
+    (have <b> (elem x s3) :by (p/and-elim-left (p/and-elim-left Hx)))
+    "By contradiction"
+    (assume [Hcontra (elem x (union s1 s2))]
+      (assume [Hs1 (elem x s1)]
+        (have <c> p/absurd :by ((p/and-elim-right (p/and-elim-left Hx)) Hs1)))
+      (assume [Hs2 (elem x s2)]
+        (have <d> p/absurd :by ((p/and-elim-right (p/and-elim-right Hx)) Hs2)))
+      (have <e> p/absurd :by (p/or-elim Hcontra <c> <d>)))
+    (have <f> (elem x (diff s3 (union s1 s2)))
+          :by (p/and-intro <b> <e>)))
+  (qed (p/and-intro <a> <f>)))
 
 (defthm diff-empty-right
   [?T :type, s (set T)]
