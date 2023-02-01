@@ -24,6 +24,31 @@
     (or (elem x s1)
         (elem x s2))))
 
+(defthm union-subset
+  [?T :type, [s1 s2 (set T)]]
+  (==> (subset s1 s2)
+       (seteq (union s1 s2) s2)))
+
+(proof 'union-subset-thm
+  (assume [Hsub _]
+    "Subset case"
+    (assume [x T
+             Hx (elem x (union s1 s2))]
+      (assume [Hleft (elem x s1)]
+        (have <a> (elem x s2) :by (Hsub x Hleft)))
+      (assume [Hright (elem x s2)]
+        (have <b> (elem x s2) :by Hright))
+      (have <c> (elem x s2) :by (p/or-elim Hx <a> <b>)))
+    "Superset case"
+    (assume [x T
+             Hx (elem x s2)]
+      (have <d> (elem x (union s1 s2))
+            :by (p/or-intro-right (elem x s1) Hx)))
+
+    (have <e> _ :by (p/and-intro <c> <d>)))
+
+  (qed <e>))
+
 (defthm union-idem
   [?T :type, s (set T)]
   (seteq (union s s) s))
@@ -222,6 +247,27 @@
     (and (elem x s1)
          (elem x s2))))
 
+(defthm inter-subset
+  [?T :type, [s1 s2 (set T)]]
+  (==> (subset s1 s2)
+       (seteq (inter s1 s2) s1)))
+
+(proof 'inter-subset-thm
+  (assume [Hsub _]
+    "Subset case"
+    (assume [x T
+             Hx (elem x (inter s1 s2))]
+      (have <a> (elem x s1) :by (p/and-elim-left Hx)))
+    "Superset case"
+    (assume [x T
+             Hx (elem x s1)]
+      (have <b1> (elem x s2) :by (Hsub x Hx))
+      (have <b> (elem x (inter s1 s2))
+            :by (p/and-intro Hx <b1>)))
+    (have <c> _ :by (p/and-intro <a> <b>)))
+
+  (qed <c>))
+ 
 (defthm inter-elim-left
   "Elimination rule for intersection (left operand)."
   [?T :type, [s1 s2 (set T)], x T]
