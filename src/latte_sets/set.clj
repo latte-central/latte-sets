@@ -384,6 +384,21 @@ This is an important elimination rule."
     (have <b> (P s2) :by ((p/iff-elim-if <a>) H2)))
   (qed <b>))
 
+(defthm seteq-subst-prop
+  "cf. [[set-equal-subst-prop]]"
+  [?T :type, P (==> (set T) :type), s1 (set T), s2 (set T)]
+  (==> (seteq s1 s2)
+       (P s1)
+       (P s2)))
+
+(proof 'seteq-subst-prop-thm
+  (assume [Heq _
+           Hs1 _]
+    (have <a> (set-equal s1 s2)
+          :by ((seteq-implies-set-equal s1 s2) Heq))
+    (have <b> (P s2) :by ((set-equal-subst-prop P s1 s2) <a> Hs1)))
+  (qed <b>))
+
 (defthm set-equal-implies-subset
   "Going from *Leibniz* equality on sets to the subset relation is easy."
   [?T :type, [s1 s2 (set T)]]
