@@ -384,6 +384,14 @@ This is an important elimination rule."
     (have <b> (P s2) :by ((p/iff-elim-if <a>) H2)))
   (qed <b>))
 
+(defaxiom seteq-implies-set-equal
+  "Going from subset-based equality to *Leibniz*-style equality
+requires this axiom. This is because we cannot lift membership
+ to an arbitrary predicate."
+  [?T :type, [s1 s2 (set T)]]
+  (==> (seteq s1 s2)
+       (set-equal s1 s2)))
+
 (defthm seteq-subst-prop
   "cf. [[set-equal-subst-prop]]"
   [?T :type, P (==> (set T) :type), s1 (set T), s2 (set T)]
@@ -433,14 +441,6 @@ This is an important elimination rule."
     ;; "... and we can now conclude"
     (have <c> (seteq s1 s2) :by (p/and-intro <a> <b>)))
   (qed <c>))
-
-(defaxiom seteq-implies-set-equal
-  "Going from subset-based equality to *Leibniz*-style equality
-requires this axiom. This is because we cannot lift membership
- to an arbitrary predicate."
-  [?T :type, [s1 s2 (set T)]]
-  (==> (seteq s1 s2)
-       (set-equal s1 s2)))
 
 (defthm set-equal-seteq
   "Set equality and subset-based equality (should) coincide (axiomatically)."
