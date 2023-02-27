@@ -22,7 +22,7 @@
             [latte-prelude.equal :as eq :refer [equal]]
             [latte-prelude.fun :as fun]
 
-            [latte-sets.set :as s :refer [set set-of elem seteq]]
+            [latte-sets.set :as s :refer [set set-of elem seteq subset]]
             [latte-sets.quant :as sq :refer [exists-in forall-in]]
             [latte-sets.algebra :as sa]
             [latte-sets.rel :as rel :refer [rel dom ran]]
@@ -49,6 +49,7 @@
        (into [] (rest t))
        (throw (ex-info "Not a functional type." {:type t}))))
    def-env ctx t))
+
 
 (defthm ridentity-functional
   "The identity relation is a partial function on
@@ -109,6 +110,30 @@ sometimes called the *range* or *codomain* but image is less ambiguous
   [[?T ?U :type], f (rel T U), from (set T), to (set U)]
   (set-of [y U] (and (elem y to)
                      (exists-in [x from] (f x y)))))
+
+(defthm image-subset-monotonous
+  [[?T :type] [?U :type] [f (rel T U)] [s1 (set T)] [s2 (set T)] [sran (set U)]]
+  (==> (subset s1 s2)
+       (subset (image f s1 sran) (image f s2 sran))))
+
+(proof 'image-subset-monotonous-thm
+  (assume [H (subset s1 s2)]
+    (assume [y U
+             Hy (elem y (image f s1 sran))]
+      "We have to prove y∈ f[s2]"
+      (have <a> (elem y sran) :by (p/and-elim-left Hy))
+      (assume [x T
+               Hx (elem x s1)
+               Hfx (f x y)]
+        (have <b1> (elem x s2) :by (H x Hx))
+        (have <b2> (exists-in [x' s2] (f x' y))
+              :by ((sq/ex-in-intro s2 (lambda [x' T] (f x' y)) x) <b1> Hfx)))
+      (have <b3> (exists-in [x s1] (f x y)) :by (p/and-elim-right Hy))
+      (have <b> (exists-in [x' s2] (f x' y))
+            :by (sq/ex-in-elim <b3> <b2>))
+      (have <c> (elem y (image f s2 sran))
+            :by (p/and-intro <a> <b>))))
+  (qed <c>))
 
 (definition serial
   "The relation `f` covers all of (is total wrt.) the provided `from` domain set."

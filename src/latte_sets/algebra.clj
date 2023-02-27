@@ -805,6 +805,24 @@
 
   (qed (p/and-intro <f> <j>)))
 
+(defthm diff-subset-antimonotonous
+  [[?T :type] [s1 s2 s3 (set T)]]
+  (==> (subset s2 s3)
+       (subset (diff s1 s3) (diff s1 s2))))
+
+(proof 'diff-subset-antimonotonous-thm
+  (assume [H1 (subset s2 s3)]
+    (assume [x T 
+             Hx (elem x (diff s1 s3))]
+    "We have to prove that x∈ s1-s2"
+    (have <a> (elem x s1) :by (p/and-elim-left Hx))
+    (assume [Hcontra (elem x s2)]
+      (have <b1> (elem x s3) :by (H1 x Hcontra))
+      (have <b> p/absurd :by ((p/and-elim-right Hx) <b1>)))
+    (have <c> (elem x (diff s1 s2))
+          :by (p/and-intro <a> <b>))))
+  (qed <c>))
+
 (defthm diff-empty-right
   [?T :type, s (set T)]
   (seteq (diff s (emptyset T)) s))
