@@ -6,7 +6,7 @@
   (:require [latte.core :as latte
              :refer [definition defthm defaxiom defnotation
                      forall lambda defimplicit
-                     assume have pose qed proof lambda forall]]
+                     assume have pose qed proof try-proof lambda forall]]
  
             [latte-prelude.quant :as q :refer [exists]]
             [latte-prelude.prop :as p :refer [<=> and or not]]
@@ -840,7 +840,32 @@ the subset `s`."
   (qed <a>))
 
 
+(defthm rinverse-dom
+  [[?T ?U :type], R (rel T U)]
+  (seteq (dom (rinverse R)) (ran R)))
 
+(proof 'rinverse-dom-thm
+  "Subset case"
+  (assume [y U
+           Hy (elem y (dom (rinverse R)))]
+    (assume [x T
+             Hx ((rinverse R) y x)]
+      (have <a1> (R x y) :by Hx)
+      (have <a> (exists [x T] (R x y))
+            :by ((q/ex-intro (lambda [x T] (R x y)) x) <a1>)))
+    (have <b> (elem y (ran R))
+          :by (q/ex-elim Hy <a>)))
 
+  "Superset case"
+  (assume [y U
+           Hy (elem y (ran R))]
+    (assume [x T
+             Hx (R x y)]
+      (have <c1> ((rinverse R) y x) :by Hx)
+      (have <c> (exists [x T] ((rinverse R) y x))
+            :by ((q/ex-intro (lambda [x T] ((rinverse R) y x)) x) <c1>)))
+    (have <d> (elem y (dom (rinverse R)))
+          :by (q/ex-elim Hy <c>)))
 
+  (qed (p/and-intro <b> <d>)))
 
