@@ -406,6 +406,65 @@ proofs by contradiction."
         (serial f s1 s2)
         (injective f s1 s2)))
 
+
+(defthm injection-img-inter
+  [[?T ?U :type] [g (rel T U)] [A B C (set T)] [D (set U)]]
+  (==> (injective g C D)
+       (subset A C)
+       (subset B C)
+       (sa/disjoint A B)
+       (sa/disjoint (image g A D) (image g B D))))
+
+(proof 'injection-img-inter-thm
+  (assume [Hinj _ HA _ HB _ Hdis _]
+    "Subset case"
+    "We have to prove g[A]∩g[B]⊆∅"
+    (assume [y U
+             Hy (and (elem y (image g A D))
+                     (elem y (image g B D)))]
+      (have <a1> (exists-in [x1 A] (g x1 y))
+            :by (p/and-elim-right (p/and-elim-left Hy)))
+      (have <a2> (exists-in [x2 B] (g x2 y))
+            :by (p/and-elim-right (p/and-elim-right Hy)))
+      (assume [x1 T
+               Hx1 (and (elem x1 A) (g x1 y))]
+        (assume [x2 T
+                 Hx2 (and (elem x2 B) (g x2 y))]
+          (have <a3> (elem x1 C) :by (HA x1 (p/and-elim-left Hx1)))
+          (have <a4> (elem x2 C) :by (HB x2 (p/and-elim-left Hx2)))
+          (have <a5> (elem y D) :by (p/and-elim-left (p/and-elim-left Hy)))
+          (have <a6> (equal x1 x2)
+                :by (Hinj 
+                     x1 <a3> 
+                     x2 <a4> 
+                     y <a5>
+                     y <a5>
+                     (p/and-elim-right Hx1)
+                     (p/and-elim-right Hx2)
+                     (eq/eq-refl y)))
+          (have <a7> (elem x2 A) 
+                :by (eq/eq-subst (lambda [$ T] (elem $ A))
+                                  <a6> (p/and-elim-left Hx1)))
+          (have <a8> p/absurd :by ((sa/disjoint-elem-right A B)
+                                   x2
+                                   Hdis
+                                   (p/and-elim-left Hx2)
+                                   <a7>)))
+        (have <a9> p/absurd :by (q/ex-elim <a2> <a8>)))
+      (have <a10> p/absurd :by (q/ex-elim <a1> <a9>)))
+    (have <a> (subset (sa/inter (image g A D) (image g B D)) (s/emptyset U))
+          :by <a10>)
+
+    "Superset case is trivial"
+    (have <b> (subset (s/emptyset U) (sa/inter (image g A D) (image g B D)))
+          :by (s/subset-emptyset-lower-bound (sa/inter (image g A D) (image g B D))))
+
+    (have <c> (sa/disjoint (image g A D) (image g B D))
+          :by ((s/seteq-implies-set-equal (sa/inter (image g A D) (image g B D)) (s/emptyset U))
+               (p/and-intro <a> <b>))))
+
+  (qed <c>))
+
 ;;; XXX : are functionality and seriality required in the definition ?
 (definition smaller
   "The set `s1` is \"smaller\" than `s2`."

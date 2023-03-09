@@ -451,6 +451,17 @@
     (have <a> _ :by ((sets/set-equal-implies-seteq (inter s1 s2) (emptyset T)) Hd)))
   (qed <a>))
 
+(defthm disjoint-from-seteq
+  [?T :type, s1 (set T), s2 (set T)]
+  (==> (seteq (inter s1 s2) (emptyset T))
+       (disjoint s1 s2)))
+
+(proof 'disjoint-from-seteq-thm
+  (assume [Heq _]
+    (have <a> _ :by ((sets/seteq-implies-set-equal (inter s1 s2) (emptyset T))
+                     Heq)))
+  (qed <a>))
+
 (defthm disjoint-elem-left
   [[?T :type] [s1 s2 (set T)]]
   (forall [x T]
