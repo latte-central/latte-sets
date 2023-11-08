@@ -522,26 +522,6 @@
     (have <e> _ :by ((classic/not-not-impl (exists [x T] (P x))) <d>)))
   (qed <e>))
 
-(defthm disjoint-diff
-  [?T :type, [A B (set T)]]
-  (disjoint A (diff B A)))
-
-(proof 'disjoint-diff-thm
-  "Subset case"
-  (assume [x T
-           Hx (elem x (inter A (diff B A)))]
-    (have <a1> (elem x A) :by (p/and-elim-left Hx))
-    (have <a2> (not (elem x A)) :by (p/and-elim-right (p/and-elim-right Hx)))
-    (have <a> p/absurd :by (<a2> <a1>)))
-
-  "Superset case"
-  (have <b> _ :by (sets/subset-emptyset-lower-bound (inter A (diff B A))))
-
-  (have <c> (disjoint A (diff B A)) 
-        :by ((disjoint-from-seteq A (diff B A))
-             (p/and-intro <a> <b>)))
-
-  (qed <c>))
 
 (defthm dist-union-inter
   "Distributivity of union over intersection."
@@ -910,6 +890,28 @@
     (have <c> p/absurd :by (((sets/emptyset-prop T) x) Hx))
     (have <d> _ :by (<c> (elem x (diff s s)))))
   (qed (p/and-intro <b> <d>)))
+
+
+(defthm disjoint-diff
+  [[?T :type] [A B (set T)]]
+  (disjoint A (diff B A)))
+
+(proof 'disjoint-diff-thm
+  "Subset case"
+  (assume [x T
+           Hx (elem x (inter A (diff B A)))]
+    (have <a1> (elem x A) :by (p/and-elim-left Hx))
+    (have <a2> (not (elem x A)) :by (p/and-elim-right (p/and-elim-right Hx)))
+    (have <a> p/absurd :by (<a2> <a1>)))
+
+  "Superset case"
+  (have <b> _ :by (sets/subset-emptyset-lower-bound (inter A (diff B A))))
+
+  (have <c> (disjoint A (diff B A)) 
+        :by ((disjoint-from-seteq A (diff B A))
+             (p/and-intro <a> <b>)))
+
+  (qed <c>))
 
 (definition symdiff
   "Symmetric difference, often denoted by `s1`∆`s2`."
