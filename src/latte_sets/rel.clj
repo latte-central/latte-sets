@@ -745,6 +745,7 @@ one requires an axiom."
       (equal (f x) y))))
 
 (definition functional
+  "A relation `R` is functional if images are unique."
   [[?T ?U :type] [R (rel T U)]]
   (forall [x T]
     (q/unique (lambda [y U] (R x y)))))
@@ -836,3 +837,11 @@ its relational characterization."
          f
          (relfun (funrel f) (funrel-functional f)))
         (relfunrel-ext-equal f))))
+
+
+(definition single-rooted
+  "A relation `R` is single-rooted if pre-images are unique."
+  [[?T ?U :type] [R (rel T U)]]
+  (forall [y U]
+    (q/unique (lambda [x T] (R x y)))))
+

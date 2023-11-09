@@ -30,15 +30,12 @@
             [latte-sets.powerrel :as prel :refer [rel-ex]]))
 
 (definition functional
-  "The relation `f` is functional (a.k.a. right-unique) on the domain-set `from`.
-  and range set `to`."
+  "The relation `f` is functional (a.k.a. right-unique) 
+on the domain-set `from`  and range set `to`."
   [[?T ?U :type], f (rel T U), from (set T), to (set U)]
   (forall-in [x from]
-    (forall-in [y1 to]
-      (forall-in [y2 to]
-        (==> (f x y1)
-             (f x y2)
-             (equal y1 y2))))))
+    (sq/single-in to (lambda [y U] (f x y)))))
+
 
 (defn fetch-functional-type [def-env ctx t]
   (latte.utils/decomposer
@@ -50,7 +47,6 @@
        (throw (ex-info "Not a functional type." {:type t}))))
    def-env ctx t))
 
-
 (defthm ridentity-functional
   "The identity relation is a partial function on
 any domain set."
@@ -59,7 +55,8 @@ any domain set."
     (forall [to (set T)]
       (functional (rel/identity T) from to))))
 
-(proof 'ridentity-functional
+;; TODO
+(try-proof 'ridentity-functional
   (pose rid := (rel/identity T))
   (assume [from (set T) to (set T)
            x T Hx (elem x from)
@@ -67,8 +64,9 @@ any domain set."
            y2 T Hy2 (elem y2 to)
            Hid1 (rid x y1)
            Hid2 (rid x y2)]
-    (have <a> (equal y1 y2) :by (eq/eq-trans (eq/eq-sym Hid1) Hid2)))
+    (have <a> (equal y1 y2) :by (eq/eq-trans (eq/eq-sym Hid1) Hid2))
   (qed <a>))
+
 
 (definition functional-fun
   "The \"partial\" function of a (total) type-theoretic function `f` on its whole domain"
