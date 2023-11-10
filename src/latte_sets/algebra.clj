@@ -913,6 +913,40 @@
 
   (qed <c>))
 
+(defthm diff-not-elem
+  [[?T :type] [A B (set T)]]
+  (forall [x T]
+    (==> (not (elem x (diff A B)))
+         (elem x A)
+         (elem x B))))
+
+(proof 'diff-not-elem-thm
+  (assume [x T
+           H1 (not (elem x (diff A B)))
+           H2 (elem x A)]
+    "We proceed by contradiction"
+    (assume [Hcontra (not (elem x B))]
+      (have <a1> (elem x (diff A B)) :by (p/and-intro H2 Hcontra))
+      (have <a> p/absurd :by (H1 <a1>)))
+    "and we rely on classical reasoning for t"
+    (have <b> (elem x B) :by ((classic/not-not-impl (elem x B)) <a>)))
+  (qed <b>))
+
+(defthm disjoint-diff-subset
+  [[?T :type] [A B C (set T)]]
+  (==> (disjoint A (diff C B))
+       (subset A C)
+       (subset A B)))
+
+(proof 'disjoint-diff-subset-thm
+  (assume [Hdis _ HA _]
+    (assume [x T Hx (elem x A)]
+      (have <a> (not (elem x (diff C B)))
+            :by ((disjoint-elem-left A (diff C B)) x Hdis Hx))
+      (have <b> (elem x C) :by (HA x Hx))
+      (have <c> (elem x B) :by ((diff-not-elem C B) x <a> <b>))))
+  (qed <c>))
+
 (definition symdiff
   "Symmetric difference, often denoted by `s1`∆`s2`."
   [?T :type, [s1 s2 (set T)]]
