@@ -110,6 +110,16 @@ sometimes called the *range* or *codomain* but image is less ambiguous
   (set-of [y U] (and (elem y to)
                      (exists-in [x from] (f x y)))))
 
+(defthm image-subset
+  [[?T ?U :type] [f (rel T U)] [s1 (set T)]  [s2 (set U)]]
+  (subset (image f s1 s2) s2))
+
+(proof 'image-subset-thm
+  (assume [y U
+           Hy (elem y (image f s1 s2))]
+    (have <a> (elem y s2) :by (p/and-elim-left Hy)))
+  (qed <a>))
+
 (defthm image-subset-monotonous
   [[?T :type] [?U :type] [f (rel T U)] [s1 (set T)] [s2 (set T)] [sran (set U)]]
   (==> (subset s1 s2)
@@ -119,7 +129,7 @@ sometimes called the *range* or *codomain* but image is less ambiguous
   (assume [H (subset s1 s2)]
     (assume [y U
              Hy (elem y (image f s1 sran))]
-      "We have to prove y∈ f[s2]"
+      "We have to prove y ∈ f[s2]"
       (have <a> (elem y sran) :by (p/and-elim-left Hy))
       (assume [x T
                Hx (elem x s1)
@@ -732,5 +742,3 @@ hence it is *unique*."
   (qed (p/and-intro* (bijection-inverse-functional f s1 s2 b)
                      (bijection-inverse-serial f s1 s2 b)
                      (bijection-inverse-bijective f s1 s2 b))))
-                     
-
