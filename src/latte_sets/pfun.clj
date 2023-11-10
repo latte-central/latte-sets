@@ -55,18 +55,18 @@ any domain set."
     (forall [to (set T)]
       (functional (rel/identity T) from to))))
 
-;; TODO
-(try-proof 'ridentity-functional
+(proof 'ridentity-functional
   (pose rid := (rel/identity T))
-  (assume [from (set T) to (set T)
-           x T Hx (elem x from)
-           y1 T Hy1 (elem y1 to)
-           y2 T Hy2 (elem y2 to)
-           Hid1 (rid x y1)
-           Hid2 (rid x y2)]
-    (have <a> (equal y1 y2) :by (eq/eq-trans (eq/eq-sym Hid1) Hid2))
-  (qed <a>))
-
+  (assume [from (set T) 
+           to (set T)
+           x T Hx (elem x from)]
+    (assume [y1 T Hy1 (elem y1 to)
+             y2 T Hy2 (elem y2 to)
+             Hid1 (rid x y1)
+             Hid2 (rid x y2)]
+      (have <a> (equal y1 y2) :by (eq/eq-trans (eq/eq-sym Hid1) Hid2)))
+    (have <b> _ :by ((sq/single-in-intro to (lambda [y T] (rid x y))) <a>)))
+  (qed <b>))
 
 (definition functional-fun
   "The \"partial\" function of a (total) type-theoretic function `f` on its whole domain"
@@ -86,13 +86,14 @@ restriction."
 (proof 'functional-fun-prop-thm
   (pose pf := (functional-fun f))
   (assume [from (set T) to (set U)
-           x T Hx (elem x from)
-           y1 U Hy1 (elem y1 to)
-           y2 U Hy2 (elem y2 to)
-           Hpfy1 (pf x y1)
-           Hpfy2 (pf x y2)]
-    (have <a> (equal y1 y2) :by (eq/eq-trans (eq/eq-sym Hpfy1) Hpfy2)))
-  (qed <a>))
+           x T Hx (elem x from)]
+    (assume [y1 U Hy1 (elem y1 to)
+             y2 U Hy2 (elem y2 to)
+             Hpfy1 (pf x y1)
+             Hpfy2 (pf x y2)]
+      (have <a> (equal y1 y2) :by (eq/eq-trans (eq/eq-sym Hpfy1) Hpfy2)))
+    (have <b> _ :by ((sq/single-in-intro to (lambda [y U] (pf x y))) <a>)))
+  (qed <b>))
 
 (definition domain
   "The actual domain of relation `f`, taking antecedents in `from`.
@@ -404,7 +405,6 @@ proofs by contradiction."
         (serial f s1 s2)
         (injective f s1 s2)))
 
-
 (defthm injection-img-inter
   [[?T ?U :type] [g (rel T U)] [A B C (set T)] [D (set U)]]
   (==> (injective g C D)
@@ -591,9 +591,10 @@ and `s2`. A [[bijection]] needs to be also [[functional]] and [[serial]]."
     "First we have to show  that there's an `x` in `s` such as `(P x)`"
     "We exploit surjectivity."
     (assume [x T Hx (elem x s1)
-             Hfx (f x z)]
+             Hfz (f x z)]
+      (have <a0> (sq/single-in s2 (lambda [y U] (f x y))) :by (Hfun x Hx))
       (assume [w U Hw (elem w s2) Hfw (f x w)]
-        (have <a1> (equal w z) :by (Hfun x Hx w Hw z Hz Hfw Hfx)))
+        (have <a1> (equal w z) :by ((sq/single-in-elim <a0> w z) Hw Hz Hfw Hfz)))
       (have <a2> (P x) :by <a1>)
       (have <a3> (exists-in [x s1] (P x)) :by ((sq/ex-in-intro s1 P x) Hx <a2>)))
     (have <a4> (exists-in [x s1] (f x z)) :by (Hsurj z Hz))
@@ -623,28 +624,29 @@ hence it is *unique*."
                      (p/and-elim* 3 H))))
   (qed <a>))
 
-
 (defthm bijection-inverse-functional
   [[?T ?U :type] [f (rel T U)] [s1 (set T)] [s2 (set U)] [b (bijection f s1 s2)]]
   (functional (ra/rinverse f) s2 s1))
 
 (proof 'bijection-inverse-functional-thm
   (pose rf := (ra/rinverse f))
-  (assume [x U Hx (elem x s2)
-           y1 T Hy1 (elem y1 s1)
-           y2 T Hy2 (elem y2 s1)
-           Hrfy1 (rf x y1)
-           Hrfy2 (rf x y2)]
-    (have <a1> (f y1 x) :by Hrfy1)
-    (have <a2> (f y2 x) :by Hrfy2)
-    (have <b> (equal y1 y2)
-          :by ((bijection-injective f s1 s2 b)
-               y1 Hy1
-               y2 Hy2
-               x Hx
-               x Hx
-               <a1> <a2>
-               (eq/eq-refl x))))
+  (assume [x U 
+           Hx (elem x s2)]
+    (assume [y1 T Hy1 (elem y1 s1)
+             y2 T Hy2 (elem y2 s1)
+             Hrfy1 (rf x y1)
+             Hrfy2 (rf x y2)]
+      (have <a1> (f y1 x) :by Hrfy1)
+      (have <a2> (f y2 x) :by Hrfy2)
+      (have <a> (equal y1 y2)
+            :by ((bijection-injective f s1 s2 b)
+                 y1 Hy1
+                 y2 Hy2
+                 x Hx
+                 x Hx
+                 <a1> <a2>
+                 (eq/eq-refl x))))
+    (have <b> _ :by ((sq/single-in-intro s1 (lambda [y T] (f y x))) <a>)))
   (qed <b>))
 
 (defthm bijection-inverse-serial
@@ -689,10 +691,12 @@ hence it is *unique*."
           :by (eq/rewrite <a1> Heq)) 
     (have <b> (functional f s1 s2)
           :by (p/and-elim* 1 b))
-    (have <c> (equal x1 x2)
-          :by (<b> y2 Hy2 x1 Hx1 x2 Hx2 <a3> <a2>)))
-  (qed <c>))
 
+    (have <c> (sq/single-in s2 (lambda [x U] (f y2 x))) :by (<b> y2 Hy2))
+    (have <d> (equal x1 x2)
+          :by ((sq/single-in-elim <c> x1 x2) Hx1 Hx2 <a3> <a2>)))
+
+  (qed <d>))
 
 (defthm bijection-inverse-surjective
   "The inverse of bijective relation `f` is surjective."
@@ -729,3 +733,4 @@ hence it is *unique*."
                      (bijection-inverse-serial f s1 s2 b)
                      (bijection-inverse-bijective f s1 s2 b))))
                      
+

@@ -838,7 +838,6 @@ its relational characterization."
          (relfun (funrel f) (funrel-functional f)))
         (relfunrel-ext-equal f))))
 
-
 (definition single-rooted
   "A relation `R` is single-rooted if pre-images are unique."
   [[?T ?U :type] [R (rel T U)]]
