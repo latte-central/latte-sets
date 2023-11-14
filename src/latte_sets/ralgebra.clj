@@ -869,3 +869,66 @@ the subset `s`."
 
   (qed (p/and-intro <b> <d>)))
 
+(defthm rinverse-ran
+  [[?T ?U :type], R (rel T U)]
+  (seteq (ran (rinverse R)) (dom R)))
+
+(proof 'rinverse-ran-thm
+  "Subset case"
+  (assume [x T
+           Hx (elem x (ran (rinverse R)))]
+    (assume [y U
+             Hy ((rinverse R) y x)]
+      (have <a1> (R x y) :by Hy)
+      (have <a2> (exists [z U] (R x z))
+            :by ((q/ex-intro (lambda [z U] (R x z)) y) <a1>)))
+    (have <a> (elem x (dom R)) :by (q/ex-elim Hx <a2>)))
+
+  "Superset case"
+  (assume [x T
+           Hx (elem x (dom R))]
+    (assume [y U
+             Hy (R x y)]
+      (have <b1> ((rinverse R) y x) :by Hy)
+      (have <b2> (exists [z U] ((rinverse R) z x))
+            :by ((q/ex-intro (lambda [z U] ((rinverse R) z x)) y) <b1>)))
+    (have <b> (elem x (ran (rinverse R))) :by (q/ex-elim Hx <b2>)))
+
+  (qed (p/and-intro <a> <b>)))
+
+
+(defthm rinverse-idem
+  [[?T ?U :type] [R (rel T U)]]
+  (releq (rinverse (rinverse R)) R))
+
+(proof 'rinverse-idem-thm
+  "Subrel case"
+  (assume [x T
+           y U
+           HR ((rinverse (rinverse R)) x y)]
+    (have <a> (R x y) :by HR))
+  "Superrel case"
+  (assume [x T
+           y U
+           HR (R x y)]
+    (have <b> ((rinverse (rinverse R)) x y) :by HR))
+
+  (qed (p/and-intro <a> <b>)))
+
+(defthm rinverse-idem-prop
+  [[?T ?U :type] [R (rel T U)]]
+  (rel-equal (rinverse (rinverse R)) R))
+
+(proof 'rinverse-idem-prop-thm
+  (qed ((rel/releq-implies-rel-equal (rinverse (rinverse R)) R) (rinverse-idem R))))
+
+(defthm rinverse-idem-prop-sym
+  [[?T ?U :type] [R (rel T U)]]
+  (rel-equal R (rinverse (rinverse R))))
+
+(proof 'rinverse-idem-prop-sym-thm
+  (qed ((rel/rel-equal-sym (rinverse (rinverse R)) R)
+        (rinverse-idem-prop R))))
+
+
+

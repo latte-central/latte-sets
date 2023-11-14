@@ -21,6 +21,7 @@
             [latte-prelude.prop :as p :refer [<=> and and* or not]]
             [latte-prelude.equal :as eq :refer [equal]]
             [latte-prelude.fun :as fun]
+            [latte-prelude.classic :as classic]
 
             [latte-sets.set :as s :refer [set set-of elem seteq subset]]
             [latte-sets.quant :as sq :refer [exists-in forall-in]]
@@ -204,7 +205,84 @@ sometimes called the *range* or *codomain* but image is less ambiguous
 (proof 'functional-fun-serial-thm
   (pose rf := (functional-fun f))
   ?
-))
+)
+
+)
+
+(definition single-rooted
+  "A relation `R` is single-rooted if pre-images are unique."
+  [[?T ?U :type] [R (rel T U)] [from (set T)] [to (set U)]]
+  (forall-in [y to]
+    (sq/single-in from (lambda [x T] (R x y)))))
+
+(defthm rel-functional-rinverse-single-rooted
+  [[?T ?U :type] [R (rel T U)] [from (set T)] [to (set U)]]
+  (==> (functional R from to)
+       (single-rooted (ra/rinverse R) to from)))
+
+(proof 'rel-functional-rinverse-single-rooted-thm
+  (assume [Hfun _]
+    (assume [x T Hx (elem x from)]
+      (assume [y1 U Hy1 (elem y1 to)
+               y2 U Hy2 (elem y2 to)
+               HRy1 ((ra/rinverse R) y1 x)
+               HRy2 ((ra/rinverse R) y2 x)]
+        "We have to show: y1=y2"
+        (have <a> (R x y1) :by HRy1)
+        (have <b> (R x y2) :by HRy2)
+        (have <c> (equal y1 y2) 
+              :by ((sq/single-in-elim (Hfun x Hx) y1 y2) Hy1 Hy2 <a> <b>)))
+      (have <d> _ :by ((sq/single-in-intro to (lambda [y U] ((ra/rinverse R) y x))) <c>))))
+  (qed <d>))
+
+(defthm rinverse-functional-rel-single-rooted
+  [[?T ?U :type] [R (rel T U)] [from (set T)] [to (set U)]]
+  (==> (functional (ra/rinverse R) to from)
+       (single-rooted R from to)))
+
+(proof 'rinverse-functional-rel-single-rooted-thm
+  (assume [Hfun _]
+    (have <a> (single-rooted (ra/rinverse (ra/rinverse R)) from to)
+          :by ((rel-functional-rinverse-single-rooted (ra/rinverse R) to from) Hfun))
+
+    (have <b> (single-rooted R from to)
+          :by ((rel/rel-equal-prop (ra/rinverse (ra/rinverse R)) R
+                                   (lambda [X (rel T U)] (single-rooted X from to)))
+               (ra/rinverse-idem-prop R)
+               <a>)))
+  (qed <b>))
+
+(defthm rinverse-single-rooted-rel-functional
+  [[?T ?U :type] [R (rel T U)] [from (set T)] [to (set U)]]
+  (==> (single-rooted (ra/rinverse R) to from)
+       (functional R from to)))
+
+(proof 'rinverse-single-rooted-rel-functional-thm
+  (assume [Hsr _]
+    (assume [x T Hx (elem x from)]
+      (assume [y1 U Hy1 (elem y1 to)
+               y2 U Hy2 (elem y2 to)
+               HRy1 (R x y1)
+               HRy2 (R x y2)]
+        (have <a> (equal y1 y2)
+              :by ((sq/single-in-elim (Hsr x Hx) y1 y2) Hy1 Hy2 HRy1 HRy2)))
+      (have <b> _ :by ((sq/single-in-intro to (lambda [y U] (R x y))) <a>))))
+  (qed <b>))
+
+(defthm rel-single-rooted-rinverse-functional
+  [[?T ?U :type] [R (rel T U)] [from (set T)] [to (set U)]]
+  (==> (single-rooted R from to)
+       (functional (ra/rinverse R) to from)))
+
+(proof 'rel-single-rooted-rinverse-functional-thm
+  (assume [Hsr _]
+    (have <a> (single-rooted (ra/rinverse (ra/rinverse R)) from to)
+          :by ((rel/rel-equal-prop R (ra/rinverse (ra/rinverse R)) (lambda [X (rel T U)] (single-rooted X from to)))
+               (ra/rinverse-idem-prop-sym R)
+               Hsr))
+    (have <b> (functional (ra/rinverse R) to from)
+          :by ((rinverse-single-rooted-rel-functional (ra/rinverse R) to from) <a>)))
+  (qed <b>))
 
 (comment
 
@@ -353,6 +431,77 @@ proofs by contradiction."
            Heqy (equal y1 y2)]
     (have <a> (equal y2 x2) :by (eq/eq-sym Hr2))
     (have <b> (equal x1 x2) :by (eq/eq-trans* Hr1 Heqy <a>)))
+  (qed <b>))
+
+(defthm injective-single-rooted
+  [[?T ?U :type] [f (rel T U)] [from (set T)] [to (set U)]]
+  (==> (injective f from to)
+       (single-rooted f from to)))
+
+(proof 'injective-single-rooted-thm
+  (assume [Hinj _]
+    (assume [y U Hy (elem y to)]
+;; need to show   (sq/single-in from (lambda [x T] (f x y))))
+      (assume [x1 T Hx1 (elem x1 from)
+               x2 T Hx2 (elem x2 from)
+               Hfx1 (f x1 y)
+               Hfx2 (f x2 y)]
+        "We need to show that x1=x2"
+        (have <a> (equal x1 x2)
+              :by (Hinj x1 Hx1 x2 Hx2 y Hy y Hy Hfx1 Hfx2 (eq/eq-refl y))))
+      (have <b> _ :by ((sq/single-in-intro from (lambda [x T] (f x y)))
+                       <a>))))
+  (qed <b>))
+
+(defthm single-rooted-injective
+  [[?T ?U :type] [f (rel T U)] [from (set T)] [to (set U)]]
+  (==> (single-rooted f from to)
+       (injective f from to)))
+
+(proof 'single-rooted-injective-thm
+  (assume [Hsr _]
+    (assume [x1 T Hx1 (elem x1 from)
+             x2 T Hx2 (elem x2 from)
+             y1 U Hy1 (elem y1 to)
+             y2 U Hy2 (elem y2 to)
+             Hf1 (f x1 y1)
+             Hf2 (f x2 y2)
+             Heq (equal y1 y2)]
+      "We have to show that x1=x2"
+      (have <a> (sq/single-in from (lambda [x T] (f x y1))) :by (Hsr y1 Hy1))
+      (have <b> (f x2 y1) :by (eq/eq-subst (lambda [$ U] (f x2 $)) (eq/eq-sym Heq) Hf2))
+
+      (have <c> (equal x1 x2) :by ((sq/single-in-elim <a> x1 x2)
+                                   Hx1
+                                   Hx2
+                                   Hf1
+                                   <b>))))
+  (qed <c>))
+
+(defthm function-rinverse-injective
+  [[?T ?U :type] [f (rel T U)] [from (set T)] [to (set U)]]
+  (==> (functional f from to)
+       (injective (ra/rinverse f) to from)))
+
+(proof 'function-rinverse-injective-thm
+  (assume [Hfun _]
+    (have <a> (single-rooted (ra/rinverse f) to from) 
+          :by ((rel-functional-rinverse-single-rooted f from to) Hfun))
+    (have <b> (injective (ra/rinverse f) to from)
+          :by ((single-rooted-injective (ra/rinverse f) to from) <a>)))
+  (qed <b>))
+
+(defthm injective-rinverse-functional
+  [[?T ?U :type] [f (rel T U)] [from (set T)] [to (set U)]]
+  (==> (injective f from to)
+       (functional (ra/rinverse f) to from)))
+
+(proof 'injective-rinverse-functional-thm
+  (assume [Hinj _]
+    (have <a> (single-rooted f from to) 
+          :by ((injective-single-rooted f from to) Hinj))
+    (have <b> (functional (ra/rinverse f) to from) 
+          :by ((rel-single-rooted-rinverse-functional f from to) <a>)))
   (qed <b>))
 
 (comment

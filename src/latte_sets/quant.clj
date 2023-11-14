@@ -223,7 +223,7 @@ This is a set-theoretic variant of [[latte-prelude.quant/single]]."
 (defimplicit single-in-elim
   "Elimination rule for [[single-in]]. `(single-in-elim s-proof x y)`
  such that the type of `s-proof` is `(single-in s P)` for some property `P`, then
- we have `(==> (P x) (P y) (equal x y))` thanks to `[[single-in-elim-rule]]`."
+ we have `(==> (elem x s) (elem y s) (P x) (P y) (equal x y))` thanks to `[[single-in-elim-rule]]`."
   [def-env ctx [s-proof s-proof-type] [x x-type] [y y-type]]
   (let [[T s P] (decompose-single-in-type def-env ctx s-proof-type)]
     [(list #'single-in-elim-rule-thm T s P x y) s-proof]))
