@@ -15,7 +15,8 @@
 
             [latte-sets.set :as sets
              :refer [set set-of elem subset seteq set-equal emptyset fullset
-                     fetch-set-type]]))
+                     fetch-set-type]]
+            [latte-sets.quant :as sq :refer [forall-in]]))
 
 (definition union
   "Set union, `(union s1 s2)` is the set `s1`∪`s2`."
@@ -778,7 +779,6 @@
           :by (p/and-intro <b> <e>)))
   (qed (p/and-intro <a> <f>)))
 
-
 (defthm diff-diff
   [[?T :type] [s1 s2 (set T)]]
   (seteq (diff s1 (diff s1 s2))
@@ -947,6 +947,32 @@
       (have <c> (elem x B) :by ((diff-not-elem C B) x <a> <b>))))
   (qed <c>))
 
+(defthm diff-split
+  "A classical reasoning principle wrt. [[diff]]"
+  [[?T :type] [A B (set T)]]
+  (forall-in [x A] (or (elem x B)
+                       (elem x (diff A B)))))
+
+(proof 'diff-split-thm
+  (assume [x T
+           Hx (elem x A)]
+    (have <a> (or (elem x (diff A B))
+                  (not (elem x (diff A B))))
+          :by (classic/excluded-middle-ax (elem x (diff A B))))
+    (assume [Hyes (elem x (diff A B))]
+      (have <b> (or (elem x B)
+                    (elem x (diff A B))) 
+            :by (p/or-intro-right (elem x B) Hyes)))
+    (assume [Hno (not (elem x (diff A B)))]
+      (have <c1> (elem x B) :by ((diff-not-elem A B) x Hno Hx))
+      (have <c> (or (elem x B)
+                    (elem x (diff A B)))
+            :by (p/or-intro-left <c1> (elem x (diff A B)))))
+    (have <d> (or (elem x B)
+                  (elem x (diff A B)))
+          :by (p/or-elim <a> <b> <c>)))
+  (qed <d>))
+
 (definition symdiff
   "Symmetric difference, often denoted by `s1`∆`s2`."
   [?T :type, [s1 s2 (set T)]]
@@ -1029,6 +1055,19 @@ a somewhat unsatisfying notion of \"a universe of discourse\"."
           :by ((sets/emptyset-prop T) x)))
   (qed (p/and-intro <a> <b>)))
 
+
+(defthm complement-classic
+  [[?T :type] [s (set T)]]
+  (forall [x T]
+    (or (elem x s)
+        (elem x (complement s)))))
+
+(proof 'complement-classic-thm
+  (assume [x T]
+    (have <a> (or (elem x s)
+                  (not (elem x s)))
+          :by (classic/excluded-middle-ax (elem x s))))
+  (qed <a>))
 
 
 
