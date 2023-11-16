@@ -680,6 +680,20 @@ and `s2`. A [[bijection]] needs to be also [[functional]] and [[serial]]."
   (and (injective f s1 s2)
        (surjective f s1 s2)))
 
+
+(comment ;; can this be demonstrated ?
+(defthm bijective-inverse-injective
+  [[?T ?U :type] [f (rel T U)] [s1 (set T)] [s2 (set U)]]
+  (==> (bijective f s1 s2)
+       (surjective (ra/rinverse f) s2 s1)))
+
+(try-proof 'bijective-inverse-injectve-thm
+  (assume [x T Hx (elem x s1)]
+    ;; we have to show : ∃y∈s2 (ra/rinverse f) y x
+    ))
+)
+
+
 (definition bijection
   "The relation `f` is a bijection between sets `s1` and `s2`."
   [[?T ?U :type] [f (rel T U)] [s1 (set T)] [s2 (set U)]]
