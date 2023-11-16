@@ -31,7 +31,7 @@
             [latte-sets.powerrel :as prel :refer [rel-ex]]))
 
 (definition functional
-  "The relation `f` is functional (a.k.a. right-unique) 
+  "The relation `f` is functional (a.k.a. single-valued) 
 on the domain-set `from`  and range set `to`."
   [[?T ?U :type], f (rel T U), from (set T), to (set U)]
   (forall-in [x from]
@@ -783,51 +783,55 @@ hence it is *unique*."
                      (p/and-elim* 3 H))))
   (qed <a>))
 
+
+(defthm bijective-inverse-functional
+  [[?T ?U :type] [f (rel T U)] [s1 (set T)] [s2 (set U)]]
+  (==> (bijective f s1 s2)
+       (functional (ra/rinverse f) s2 s1)))
+
+(proof 'bijective-inverse-functional-thm
+  (assume [Hbij (bijective f s1 s2)]
+    (have <a> _ :by ((injective-rinverse-functional f s1 s2)
+                     (p/and-elim-left Hbij))))
+  (qed <a>))
+
 (defthm bijection-inverse-functional
   [[?T ?U :type] [f (rel T U)] [s1 (set T)] [s2 (set U)] [b (bijection f s1 s2)]]
   (functional (ra/rinverse f) s2 s1))
 
 (proof 'bijection-inverse-functional-thm
+  (qed ((bijective-inverse-functional f s1 s2)
+        (p/and-elim* 3 b))))
+
+(defthm surjective-inverse-serial
+  [[?T ?U :type] [f (rel T U)] [s1 (set T)] [s2 (set U)]]
+  (==> (surjective f s1 s2)
+       (serial (ra/rinverse f) s2 s1)))
+
+(proof 'surjective-inverse-serial-thm
   (pose rf := (ra/rinverse f))
-  (assume [x U 
-           Hx (elem x s2)]
-    (assume [y1 T Hy1 (elem y1 s1)
-             y2 T Hy2 (elem y2 s1)
-             Hrfy1 (rf x y1)
-             Hrfy2 (rf x y2)]
-      (have <a1> (f y1 x) :by Hrfy1)
-      (have <a2> (f y2 x) :by Hrfy2)
-      (have <a> (equal y1 y2)
-            :by ((bijection-injective f s1 s2 b)
-                 y1 Hy1
-                 y2 Hy2
-                 x Hx
-                 x Hx
-                 <a1> <a2>
-                 (eq/eq-refl x))))
-    (have <b> _ :by ((sq/single-in-intro s1 (lambda [y T] (f y x))) <a>)))
-  (qed <b>))
+  (assume [Hsurj (surjective f s1 s2)]
+    (assume [y U Hy (elem y s2)]
+      (have <a> (exists-in [x s1] (f x y))
+            :by (Hsurj y Hy))
+      (assume [x T Hx (elem x s1)
+               Hfx (f x y)]
+        (have <b1> (rf y x) :by Hfx)
+        (have <b> (exists-in [x s1] (rf y x))
+              :by ((sq/ex-in-intro s1 (lambda [$ T]
+                                        (rf y $)) x)
+                   Hx <b1>)))
+      (have <c> (exists-in [x s1] (rf y x))
+            :by (sq/ex-in-elim <a> <b>))))
+  (qed <c>))
 
 (defthm bijection-inverse-serial
   [[?T ?U :type] [f (rel T U)] [s1 (set T)] [s2 (set U)] [b (bijection f s1 s2)]]
   (serial (ra/rinverse f) s2 s1))
 
 (proof 'bijection-inverse-serial-thm
-  (pose rf := (ra/rinverse f))
-  (assume [y U Hy (elem y s2)]
-    (have <a> (exists-in [x s1] (f x y))
-          :by ((bijection-surjective f s1 s2 b) y Hy))
-    (assume [x T Hx (elem x s1)
-             Hfx (f x y)]
-      (have <b1> (rf y x) :by Hfx)
-      (have <b> (exists-in [x s1] (rf y x))
-            :by ((sq/ex-in-intro s1 (lambda [$ T]
-                                      (rf y $)) x)
-                 Hx <b1>)))
-    (have <c> (exists-in [x s1] (rf y x))
-          :by (sq/ex-in-elim <a> <b>)))
-  (qed <c>))
-
+  (qed ((surjective-inverse-serial f s1 s2)
+        (p/and-elim-right (p/and-elim* 3 b)))))
 
 (defthm bijection-inverse-injective
   "The inverse of bijective relation `f` is injective."
@@ -891,3 +895,10 @@ hence it is *unique*."
   (qed (p/and-intro* (bijection-inverse-functional f s1 s2 b)
                      (bijection-inverse-serial f s1 s2 b)
                      (bijection-inverse-bijective f s1 s2 b))))
+
+(comment
+(defthm bijective-functional
+  [[?T ?U :type] [f (rel T U)] [s1 (set T)] [s2 (set U)]]
+  (==> (bijective f s1 s2)
+       (functional f s1 s2)))
+)
