@@ -640,6 +640,29 @@ proofs by contradiction."
 ;;; the   'to' set is a subset of (image f from)
 ;;; (or even (image f s1) ...
 
+(defthm surjective-inverse-serial
+  [[?T ?U :type] [f (rel T U)] [s1 (set T)] [s2 (set U)]]
+  (==> (surjective f s1 s2)
+       (serial (ra/rinverse f) s2 s1)))
+
+(proof 'surjective-inverse-serial-thm
+  (pose rf := (ra/rinverse f))
+  (assume [Hsurj (surjective f s1 s2)]
+    (assume [y U Hy (elem y s2)]
+      (have <a> (exists-in [x s1] (f x y))
+            :by (Hsurj y Hy))
+      (assume [x T Hx (elem x s1)
+               Hfx (f x y)]
+        (have <b1> (rf y x) :by Hfx)
+        (have <b> (exists-in [x s1] (rf y x))
+              :by ((sq/ex-in-intro s1 (lambda [$ T]
+                                        (rf y $)) x)
+                   Hx <b1>)))
+      (have <c> (exists-in [x s1] (rf y x))
+            :by (sq/ex-in-elim <a> <b>))))
+  (qed <c>))
+
+
 (definition surjection
   "The relation `f` is a functional surjection on-to set `s2`."
   [[?T ?U :type] [f (rel T U)] [s1 (set T)] [s2 (set U)]]
@@ -802,28 +825,6 @@ hence it is *unique*."
 (proof 'bijection-inverse-functional-thm
   (qed ((bijective-inverse-functional f s1 s2)
         (p/and-elim* 3 b))))
-
-(defthm surjective-inverse-serial
-  [[?T ?U :type] [f (rel T U)] [s1 (set T)] [s2 (set U)]]
-  (==> (surjective f s1 s2)
-       (serial (ra/rinverse f) s2 s1)))
-
-(proof 'surjective-inverse-serial-thm
-  (pose rf := (ra/rinverse f))
-  (assume [Hsurj (surjective f s1 s2)]
-    (assume [y U Hy (elem y s2)]
-      (have <a> (exists-in [x s1] (f x y))
-            :by (Hsurj y Hy))
-      (assume [x T Hx (elem x s1)
-               Hfx (f x y)]
-        (have <b1> (rf y x) :by Hfx)
-        (have <b> (exists-in [x s1] (rf y x))
-              :by ((sq/ex-in-intro s1 (lambda [$ T]
-                                        (rf y $)) x)
-                   Hx <b1>)))
-      (have <c> (exists-in [x s1] (rf y x))
-            :by (sq/ex-in-elim <a> <b>))))
-  (qed <c>))
 
 (defthm bijection-inverse-serial
   [[?T ?U :type] [f (rel T U)] [s1 (set T)] [s2 (set U)] [b (bijection f s1 s2)]]
