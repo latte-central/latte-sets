@@ -650,18 +650,21 @@ proofs by contradiction."
   (assume [Hsurj (surjective f s1 s2)]
     (assume [y U Hy (elem y s2)]
       (have <a> (exists-in [x s1] (f x y))
-            :by (Hsurj y Hy))
-      (assume [x T Hx (elem x s1)
-               Hfx (f x y)]
-        (have <b1> (rf y x) :by Hfx)
-        (have <b> (exists-in [x s1] (rf y x))
-              :by ((sq/ex-in-intro s1 (lambda [$ T]
-                                        (rf y $)) x)
-                   Hx <b1>)))
-      (have <c> (exists-in [x s1] (rf y x))
-            :by (sq/ex-in-elim <a> <b>))))
-  (qed <c>))
+            :by (Hsurj y Hy))))
 
+  (qed <a>))
+
+(defthm serial-inverse-surjective
+  [[?T ?U :type] [f (rel T U)] [s1 (set T)] [s2 (set U)]]
+  (==> (serial (ra/rinverse f) s2 s1)
+       (surjective f s1 s2)))
+
+(proof 'serial-inverse-surjective-thm
+  (assume [Hser _]
+    (assume [y U Hy (elem y s2)]
+      (have <a> (exists-in [x s1] ((ra/rinverse f) y x))
+            :by (Hser y Hy))))
+  (qed <a>))
 
 (definition surjection
   "The relation `f` is a functional surjection on-to set `s2`."
