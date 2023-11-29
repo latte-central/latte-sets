@@ -13,7 +13,7 @@
 
   (:refer-clojure :exclude [and or not set])
 
-  (:require [latte.core :as latte :refer [definition defthm defaxiom defnotation
+  (:require [latte.core :as latte :refer [definition defthm try-defthm defaxiom defnotation
                                           defimplicit
                                           forall lambda
                                           assume have pose proof try-proof qed lambda]]
@@ -51,16 +51,12 @@ on the domain-set `from`  and range set `to`."
 (defthm ridentity-functional
   "The identity relation is a partial function on
 any domain set."
-  [T :type]
-  (forall [from (set T)]
-    (forall [to (set T)]
-      (functional (rel/identity T) from to))))
+  [[?T :type] [from to (set T)]]
+  (functional (rel/identity T) from to))
 
-(proof 'ridentity-functional
+(proof 'ridentity-functional-thm
   (pose rid := (rel/identity T))
-  (assume [from (set T) 
-           to (set T)
-           x T Hx (elem x from)]
+  (assume [x T Hx (elem x from)]
     (assume [y1 T Hy1 (elem y1 to)
              y2 T Hy2 (elem y2 to)
              Hid1 (rid x y1)
@@ -208,6 +204,18 @@ sometimes called the *range* or *codomain* but image is less ambiguous
 )
 
 )
+
+(defthm ridentity-serial
+  [[?T :type] [s (set T)]]
+  (serial (rel/identity T) s s))
+
+(proof 'ridentity-serial-thm
+  (assume [x T Hx (elem x s)]
+    (have <a> ((rel/identity T) x x) :by (eq/eq-refl x))
+    (have <b> (sq/exists-in [y s] ((rel/identity T) x y))
+          :by ((sq/ex-in-intro s (lambda [$ T] ((rel/identity T) x $)) x) Hx <a>)))
+
+  (qed <b>))
 
 (definition single-rooted
   "A relation `R` is single-rooted if pre-images are unique."
@@ -415,14 +423,12 @@ proofs by contradiction."
   (qed <b>))
 
 (defthm ridentity-injective
-  [T :type]
-  (forall [s (set T)]
-    (injective (rel/identity T) s s)))
+  [[?T :type] [s (set T)]]
+  (injective (rel/identity T) s s))
 
-(proof 'ridentity-injective
+(proof 'ridentity-injective-thm
   (pose rid := (rel/identity T))
-  (assume [s (set T)
-           x1 T Hx1 (elem x1 s)
+  (assume [x1 T Hx1 (elem x1 s)
            x2 T Hx2 (elem x2 s)
            y1 T Hy1 (elem y1 s)
            y2 T Hy2 (elem y2 s)
@@ -666,6 +672,18 @@ proofs by contradiction."
             :by (Hser y Hy))))
   (qed <a>))
 
+(defthm ridentity-surjective
+  [[?T :type] [s (set T)]]
+  (surjective (rel/identity T) s s))
+
+(proof 'ridentity-surjective-thm
+  (assume [y T Hy (elem y s)]
+    (have <a> ((rel/identity T) y y)
+          :by (eq/eq-refl y))
+    (have <b> (exists-in [x s] ((rel/identity T) x y))
+          :by ((sq/ex-in-intro s (lambda [$ T] ((rel/identity T) $ y)) y) Hy <a>)))
+  (qed <b>))
+
 (definition surjection
   "The relation `f` is a functional surjection on-to set `s2`."
   [[?T ?U :type] [f (rel T U)] [s1 (set T)] [s2 (set U)]]
@@ -693,6 +711,13 @@ and `s2`. A [[bijection]] needs to be also [[functional]] and [[serial]]."
     ))
 )
 
+(defthm ridentity-bijective
+  [[?T :type] [s (set T)]]
+  (bijective (rel/identity T) s s))
+
+(proof 'ridentity-bijective-thm
+  (qed (p/and-intro (ridentity-injective s)
+                    (ridentity-surjective s))))
 
 (definition bijection
   "The relation `f` is a bijection between sets `s1` and `s2`."
@@ -914,9 +939,14 @@ hence it is *unique*."
                      (bijection-inverse-serial f s1 s2 b)
                      (bijection-inverse-bijective f s1 s2 b))))
 
-(comment
-(defthm bijective-functional
-  [[?T ?U :type] [f (rel T U)] [s1 (set T)] [s2 (set U)]]
-  (==> (bijective f s1 s2)
-       (functional f s1 s2)))
-)
+
+(defthm ridentity-bijection
+  [[?T :type] [s (set T)]]
+  (bijection (rel/identity T) s s))
+
+(try-proof 'ridentity-bijection-thm
+  (qed (p/and-intro* (ridentity-functional s s)
+                     (ridentity-serial s)
+                     (ridentity-bijective s))))
+
+
