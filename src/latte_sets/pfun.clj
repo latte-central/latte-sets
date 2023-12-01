@@ -65,6 +65,22 @@ any domain set."
     (have <b> _ :by ((sq/single-in-intro to (lambda [y T] (rid x y))) <a>)))
   (qed <b>))
 
+(defthm emptyrel-functional
+  [[?T ?U :type] [from (set T)] [to (set U)]]
+  (functional (rel/emptyrel T U) from to))
+
+(proof 'emptyrel-functional-thm
+  (pose rempty := (rel/emptyrel T U))
+  (assume [x T Hx (elem x from)]
+    (assume [y1 U Hy1 (elem y1 to)
+             y2 U Hy2 (elem y2 to)
+             Hid1 (rempty x y1)
+             Hid2 (rempty x y2)]
+      (have <a1> p/absurd :by Hid1)
+      (have <a> (equal y1 y2) :by (<a1> (equal y1 y2))))
+    (have <b> _ :by ((sq/single-in-intro to (lambda [y U] (rempty x y))) <a>)))
+  (qed <b>))
+
 (definition functional-fun
   "The \"partial\" function of a (total) type-theoretic function `f` on its whole domain"
   [[?T ?U :type] [f (==> T U)]]
@@ -214,7 +230,16 @@ sometimes called the *range* or *codomain* but image is less ambiguous
     (have <a> ((rel/identity T) x x) :by (eq/eq-refl x))
     (have <b> (sq/exists-in [y s] ((rel/identity T) x y))
           :by ((sq/ex-in-intro s (lambda [$ T] ((rel/identity T) x $)) x) Hx <a>)))
+  (qed <b>))
 
+(defthm emptyrel-serial
+  [[T U :type] [to (set U)]]
+  (serial (rel/emptyrel T U) (s/emptyset T) to))
+
+(proof 'emptyrel-serial
+  (assume [x T Hx (elem x (s/emptyset T))]
+    (have <a> p/absurd :by Hx)
+    (have <b> _ :by (Hx (exists-in [y to] ((rel/emptyrel T U) x y)))))
   (qed <b>))
 
 (definition single-rooted
@@ -437,6 +462,25 @@ proofs by contradiction."
            Heqy (equal y1 y2)]
     (have <a> (equal y2 x2) :by (eq/eq-sym Hr2))
     (have <b> (equal x1 x2) :by (eq/eq-trans* Hr1 Heqy <a>)))
+  (qed <b>))
+
+(defthm emptyrel-injective
+  [[?T ?U :type] [from (set T)] [to (set U)]]
+  (injective (rel/emptyrel T U) from to))
+
+(proof 'emptyrel-injective-thm
+  (pose rempty := (rel/emptyrel T U))
+  (assume [x1 T Hx1 (elem x1 from)
+           x2 T Hx2 (elem x2 from)
+           y1 U Hy1 (elem y1 to)
+           y2 U Hy2 (elem y2 to)
+           Hr1 (rempty x1 y1)
+           Hr2 (rempty x2 y2)
+           Heqy (equal y1 y2)]
+
+    (have <a> p/absurd :by Hr1)
+    (have <b> _ :by (Hr1 (equal x1 x2))))
+
   (qed <b>))
 
 (defthm injective-single-rooted
@@ -684,6 +728,16 @@ proofs by contradiction."
           :by ((sq/ex-in-intro s (lambda [$ T] ((rel/identity T) $ y)) y) Hy <a>)))
   (qed <b>))
 
+(defthm emptyrel-surjective
+  [[T U :type] [from (set T)]]
+  (surjective (rel/emptyrel T U) from (s/emptyset U)))
+
+(proof 'emptyrel-surjective
+  (assume [y U Hy (elem y (s/emptyset U))]
+    (have <a> p/absurd :by Hy)
+    (have <b> _ :by (Hy (exists-in [x from] ((rel/emptyrel T U) x y)))))
+  (qed <b>))
+
 (definition surjection
   "The relation `f` is a functional surjection on-to set `s2`."
   [[?T ?U :type] [f (rel T U)] [s1 (set T)] [s2 (set U)]]
@@ -697,7 +751,6 @@ and `s2`. A [[bijection]] needs to be also [[functional]] and [[serial]]."
   [[?T ?U :type] [f (rel T U)] [s1 (set T)] [s2 (set U)]]
   (and (injective f s1 s2)
        (surjective f s1 s2)))
-
 
 (comment ;; can this be demonstrated ?
 (defthm bijective-inverse-injective
@@ -718,6 +771,16 @@ and `s2`. A [[bijection]] needs to be also [[functional]] and [[serial]]."
 (proof 'ridentity-bijective-thm
   (qed (p/and-intro (ridentity-injective s)
                     (ridentity-surjective s))))
+
+
+(defthm emptyrel-bijective
+  [[T U :type] [from (set T)]]
+  (bijective (rel/emptyrel T U) from (s/emptyset U)))
+
+(proof 'emptyrel-bijective
+  (qed (p/and-intro (emptyrel-injective from (s/emptyset U))
+                    (emptyrel-surjective T U from))))
+
 
 (definition bijection
   "The relation `f` is a bijection between sets `s1` and `s2`."
@@ -944,9 +1007,19 @@ hence it is *unique*."
   [[?T :type] [s (set T)]]
   (bijection (rel/identity T) s s))
 
-(try-proof 'ridentity-bijection-thm
+(proof 'ridentity-bijection-thm
   (qed (p/and-intro* (ridentity-functional s s)
                      (ridentity-serial s)
                      (ridentity-bijective s))))
+
+
+(defthm emptyrel-bijection
+  [[T U :type]]
+  (bijection (rel/emptyrel T U) (s/emptyset T) (s/emptyset U)))
+
+(proof 'emptyrel-bijection
+  (qed (p/and-intro* (emptyrel-functional (s/emptyset T) (s/emptyset U))
+                     (emptyrel-serial T U (s/emptyset U))
+                     (emptyrel-bijective T U (s/emptyset T)))))
 
 
