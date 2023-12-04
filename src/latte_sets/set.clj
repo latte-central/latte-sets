@@ -114,6 +114,13 @@ of the full set)."
   [?T :type, x T]
   (set-of [y T] (equal y x)))
 
+(defthm singleton-elem
+  [?T :type, x T]
+  (elem x (singleton x)))
+
+(proof 'singleton-elem-thm
+  (qed (eq/eq-refl x)))
+
 (definition subset
   "The subset relation for type `T`.
 The expression `(subset-def T s1 s2)` means that

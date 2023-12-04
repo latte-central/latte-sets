@@ -241,6 +241,31 @@
                         (union (union s1 s2) s3))
         <a>)))
 
+(definition insert 
+  "Insertion of an element `x` et set `s`."
+  [[?T :type] [x T] [s (set T)]]
+  (union (sets/singleton x) s))
+
+(defthm insert-elem
+  [[?T :type] [x T] [s (set T)]]
+  (elem x (insert x s)))
+
+(proof 'insert-elem-thm
+ (have <a> (elem x (sets/singleton x)) :by (sets/singleton-elem x))
+ (qed (p/or-intro-left <a> (elem x s))))
+
+(defthm insert-idem
+  [[?T :type] [x T] [s (set T)]]
+  (forall-in [y s]
+     (elem y (insert x s))))
+
+(proof 'insert-idem-thm
+  (assume [y T
+           Hy (elem y s)]
+     (have <a> (elem y (insert x s)) 
+           :by (p/or-intro-right (elem y (sets/singleton x)) Hy)))
+  (qed <a>))
+
 (definition inter
   "Set intersection, i.e. the set `s1`∩`s2`."
   [?T :type, [s1 s2 (set T)]]

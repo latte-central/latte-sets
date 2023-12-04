@@ -48,6 +48,33 @@ on the domain-set `from`  and range set `to`."
        (throw (ex-info "Not a functional type." {:type t}))))
    def-env ctx t))
 
+(defthm functional-elim
+  [[?T ?U :type] [f (rel T U)] [from (set T)] [to (set U)]]
+  (==> (functional f from to)
+       (forall-in [x from]
+         (forall-in [y1 to]
+           (forall-in [y2 to]
+             (==> (f x y1)
+                  (f x y2)
+                  (equal y1 y2)))))))
+
+(proof 'functional-elim-thm
+  (assume [Hfun (functional f from to)
+           x T Hx (elem x from)
+           y1 U Hy1 (elem y1 to)
+           y2 U Hy2 (elem y2 to)
+           Hfy1 (f x y1)
+           Hfy2 (f x y2)]
+   (have <a> (sq/single-in to (lambda [$ U] (f x $)))
+         :by (Hfun x Hx))
+
+   (have <b> (equal y1 y2) 
+         :by ((sq/single-in-elim <a> y1 y2)
+              Hy1 Hy2 Hfy1 Hfy2)))
+  (qed <b>))
+
+
+
 (defthm ridentity-functional
   "The identity relation is a partial function on
 any domain set."
