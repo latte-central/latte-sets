@@ -284,47 +284,6 @@ sometimes called the *range* or *codomain* but image is less ambiguous
     (have <b> _ :by (Hx (exists-in [y to] ((rel/emptyrel T U) x y)))))
   (qed <b>))
 
-(defthm removal-serial
-  [[?T ?U :type] [f (rel T U)] [from (set T)] [to (set U)] [a T]]
-  (==> (serial f from to)
-       (injective f from to)
-       (forall-in [y to]
-         (==> (elem a from)
-              (f a y)
-              (serial (removal f from a) (sa/remove from a) (sa/remove to y))))))
-
-(proof 'removal-serial-thm
-  (pose RF := (removal f from a))
-  (assume [Hser (serial f from to)
-           Hinj (injective f from to)
-           y U Hy (elem y to)
-           Ha (elem a from)
-           Hfy (f a y)]
-    (assume [x T Hx (elem x (sa/remove from a))]
-      "To show: (exists-in [z (sa/remove to y)] (RF x z))"
-      (have <a> (elem x from) :by (p/and-elim-left Hx))
-      (have <b> (exists-in [z to] (f x z)) :by (Hser x <a>))
-      (assume [z U Hz (elem z to)
-               Hfz (f x z)]
-        ;; we have to show that (elem z (sa/remove to y)))
-        ;; and for this we need to show that z≠y, which is thanks to the injectivity of f
-        (have <c> (not (equal x a)) :by (p/and-elim-right Hx))
-        (have <d> (not (equal z y)) 
-              :by ((injective-contra f from to)
-                   Hinj x <a> a Ha z Hz y Hy Hfz Hfy <c>))
-        (have <e> (elem z (sa/remove to y)) :by (p/and-intro Hz <d>))
-        ;; also we need to show that (RF x z)  which is easy now
-        (have <f> (RF x z) :by (p/and-intro* Ha <a> <c> Hfz))
-
-        (have <g> _ :by ((sq/ex-in-intro (sa/remove to y) (lambda [$ U] (RF x $)) z)
-                         <e> <f>)))
-      (have <h> (exists-in [z (sa/remove to y)] (RF x z))
-            :by (sq/ex-in-elim <b> <g>)))
-
-    (have <i> (serial (removal f from a) (sa/remove from a) (sa/remove to y))
-          :by <h>))
-
-  (qed <i>))
 
 (definition single-rooted
   "A relation `R` is single-rooted if pre-images are unique."
@@ -567,6 +526,83 @@ proofs by contradiction."
 
   (qed <b>))
 
+(defthm removal-serial
+  "Seriality of removal operation, which requires injectivity."
+  [[?T ?U :type] [f (rel T U)] [from (set T)] [to (set U)] [a T]]
+  (==> (serial f from to)
+       (injective f from to)
+       (forall-in [y to]
+         (==> (elem a from)
+              (f a y)
+              (serial (removal f from a) (sa/remove from a) (sa/remove to y))))))
+
+(proof 'removal-serial-thm
+  (pose RF := (removal f from a))
+  (assume [Hser (serial f from to)
+           Hinj (injective f from to)
+           y U Hy (elem y to)
+           Ha (elem a from)
+           Hfy (f a y)]
+    (assume [x T Hx (elem x (sa/remove from a))]
+      "To show: (exists-in [z (sa/remove to y)] (RF x z))"
+      (have <a> (elem x from) :by (p/and-elim-left Hx))
+      (have <b> (exists-in [z to] (f x z)) :by (Hser x <a>))
+      (assume [z U Hz (elem z to)
+               Hfz (f x z)]
+        ;; we have to show that (elem z (sa/remove to y)))
+        ;; and for this we need to show that z≠y, which is thanks to the injectivity of f
+        (have <c> (not (equal x a)) :by (p/and-elim-right Hx))
+        (have <d> (not (equal z y)) 
+              :by ((injective-contra f from to)
+                   Hinj x <a> a Ha z Hz y Hy Hfz Hfy <c>))
+        (have <e> (elem z (sa/remove to y)) :by (p/and-intro Hz <d>))
+        ;; also we need to show that (RF x z)  which is easy now
+        (have <f> (RF x z) :by (p/and-intro* Ha <a> <c> Hfz))
+
+        (have <g> _ :by ((sq/ex-in-intro (sa/remove to y) (lambda [$ U] (RF x $)) z)
+                         <e> <f>)))
+      (have <h> (exists-in [z (sa/remove to y)] (RF x z))
+            :by (sq/ex-in-elim <b> <g>)))
+
+    (have <i> (serial (removal f from a) (sa/remove from a) (sa/remove to y))
+          :by <h>))
+
+  (qed <i>))
+
+
+(defthm removal-injective
+  "Injectivity of removal operation."
+  [[?T ?U :type] [f (rel T U)] [from (set T)] [to (set U)] [a T]]
+  (==> (injective f from to)
+       (forall-in [y to]
+         (==> (f a y)
+              (injective (removal f from a) (sa/remove from a) (sa/remove to y))))))
+
+(proof 'removal-injective-thm
+  (pose RF := (removal f from a))
+  (assume [Hinj (injective f from to)
+           y U Hy (elem y to)
+           Hfy (f a y)] ;; Note: unused hypothesis (because the codomain is not observed)
+    (assume [x1 T Hx1 (elem x1 (sa/remove from a))
+             x2 T Hx2 (elem x2 (sa/remove from a))
+             y1 U Hy1 (elem y1 (sa/remove to y))
+             y2 U Hy2 (elem y2 (sa/remove to y))
+             HRF1 (RF x1 y1)
+             HRF2 (RF x2 y2)
+             Heq (equal y1 y2)]
+      "To show: (equal x1 x2)"
+      "We want to apply the injectivity of f"
+      (have <a> (elem x1 from) :by (p/and-elim-left Hx1))
+      (have <b> (elem x2 from) :by (p/and-elim-left Hx2))
+      (have <c> (elem y1 to) :by (p/and-elim-left Hy1))
+      (have <d> (elem y2 to) :by (p/and-elim-left Hy2))
+      (have <e> (f x1 y1) :by (p/and-elim* 4 HRF1))
+      (have <f> (f x2 y2) :by (p/and-elim* 4 HRF2))
+      (have <g> (equal x1 x2) :by (Hinj x1 <a> x2 <b> y1 <c> y2 <d> <e> <f> Heq))))
+
+  (qed <g>))
+
+
 (defthm injective-single-rooted
   [[?T ?U :type] [f (rel T U)] [from (set T)] [to (set U)]]
   (==> (injective f from to)
@@ -756,6 +792,32 @@ proofs by contradiction."
 
   (qed <c>))
 
+
+
+(defthm removal-injection
+  "Injectivity of removal operation."
+  [[?T ?U :type] [f (rel T U)] [from (set T)] [to (set U)] [a T]]
+  (==> (injection f from to)
+       (forall-in [y to]
+         (==> (elem a from)
+              (f a y)
+              (injection (removal f from a) (sa/remove from a) (sa/remove to y))))))
+
+(proof 'removal-injection-thm
+  (assume [Hinj _
+           y U Hy (elem y to)
+           Ha (elem a from)
+           Hfy (f a y)]
+    (have <fun> (functional f from to) :by (p/and-elim* 1 Hinj))
+    (have <ser> (serial f from to) :by (p/and-elim* 2 Hinj))
+    (have <inj> (injective f from to) :by (p/and-elim* 3 Hinj))
+
+    (have <a> _ :by ((removal-functional f from to a) <fun> y Hy Hfy))
+    (have <b> _ :by ((removal-serial f from to a) <ser> <inj> y Hy Ha Hfy))
+    (have <c> _ :by ((removal-injective f from to a) <inj> y Hy Hfy))
+    (have <d> _ :by (p/and-intro* <a> <b> <c>)))
+  (qed <d>))
+
 ;;; XXX : are functionality and seriality required in the definition ?
 (definition smaller
   "The set `s1` is \"smaller\" than `s2`."
@@ -822,6 +884,50 @@ proofs by contradiction."
     (have <b> _ :by (Hy (exists-in [x from] ((rel/emptyrel T U) x y)))))
   (qed <b>))
 
+(defthm removal-surjective
+  "Surjectivity of removal operation, which also requires functionality."
+  [[?T ?U :type] [f (rel T U)] [from (set T)] [to (set U)] [a T]]
+  (==> (surjective f from to)
+       (functional f from to)
+       (forall-in [y to]
+         (==> (elem a from)
+              (f a y)
+              (surjective (removal f from a) (sa/remove from a) (sa/remove to y))))))
+
+(proof 'removal-surjective-thm
+  (pose RF := (removal f from a))
+  (assume [Hsur (surjective f from to)
+           Hfun (functional f from to)
+           y U Hy (elem y to)
+           Ha (elem a from)
+           Hfy (f a y)]
+    (assume [z U Hz (elem z (sa/remove to y))]
+      "We have to show: (exists-in [x (sa/remove from a)] (RF x z))"
+      (have <a> (elem z to) :by (p/and-elim-left Hz))
+      (have <b> (exists-in [x from] (f x z))
+            :by (Hsur z <a>))
+      (assume [x T Hx (elem x from)
+               Hfxz (f x z)]
+        (assume [Hcontra (equal x a)]
+          (have <c1> (sq/single-in to (lambda [$ U] (f x $)))
+                :by (Hfun x Hx))
+          
+          (have <c2> (f x y) :by (eq/eq-subst (lambda [$ T] (f $ y)) (eq/eq-sym Hcontra) Hfy))
+
+          (have <c3> (equal z y)
+                :by ((sq/single-in-elim <c1> z y)
+                     <a> Hy Hfxz <c2>))
+          (have <c> p/absurd :by ((p/and-elim-right Hz) <c3>)))
+        
+        (have <d1> (elem x (sa/remove from a)) :by (p/and-intro Hx <c>))
+        (have <d2> (RF x z) :by (p/and-intro* Ha Hx <c> Hfxz))
+        (have <d> _ :by ((sq/ex-in-intro (sa/remove from a) (lambda [$ T] (RF $ z)) x)
+                         <d1> <d2>)))
+
+      (have <e> _ :by (sq/ex-in-elim <b> <d>))))
+
+  (qed <e>))
+
 (definition surjection
   "The relation `f` is a functional surjection on-to set `s2`."
   [[?T ?U :type] [f (rel T U)] [s1 (set T)] [s2 (set U)]]
@@ -864,6 +970,35 @@ and `s2`. A [[bijection]] needs to be also [[functional]] and [[serial]]."
 (proof 'emptyrel-bijective
   (qed (p/and-intro (emptyrel-injective from (s/emptyset U))
                     (emptyrel-surjective T U from))))
+
+
+(defthm removal-bijective
+  "Bijectivity of removal operation, which also requires functionality."
+  [[?T ?U :type] [f (rel T U)] [from (set T)] [to (set U)] [a T]]
+  (==> (bijective f from to)
+       (functional f from to)
+       (forall-in [y to]
+         (==> (elem a from)
+              (f a y)
+              (bijective (removal f from a) (sa/remove from a) (sa/remove to y))))))
+
+
+(proof 'removal-bijective-thm
+  (assume [Hbij _
+           Hfun _
+           y U Hy (elem y to)
+           Ha (elem a from)
+           Hfy (f a y)]
+    (have <a> _ :by ((removal-injective f from to a)
+                     (p/and-elim-left Hbij) y Hy Hfy))
+
+    (have <b> _ :by ((removal-surjective f from to a)
+                     (p/and-elim-right Hbij)
+                     Hfun y Hy Ha Hfy))
+
+    (have <c> _ :by (p/and-intro <a> <b>)))
+
+  (qed <c>))
 
 
 (definition bijection
@@ -1105,5 +1240,32 @@ hence it is *unique*."
   (qed (p/and-intro* (emptyrel-functional (s/emptyset T) (s/emptyset U))
                      (emptyrel-serial T U (s/emptyset U))
                      (emptyrel-bijective T U (s/emptyset T)))))
+
+
+(defthm removal-bijection
+  "Bijectivity of removal operation, which also requires functionality."
+  [[?T ?U :type] [f (rel T U)] [from (set T)] [to (set U)] [a T]]
+  (==> (bijection f from to)
+       (forall-in [y to]
+         (==> (elem a from)
+              (f a y)
+              (bijection (removal f from a) (sa/remove from a) (sa/remove to y))))))
+
+(proof 'removal-bijection-thm
+  (assume [Hbij (bijection f from to)
+           y U Hy (elem y to)
+           Ha (elem a from)
+           Hfy (f a y)]
+    (have <fun> (functional f from to) :by (p/and-elim* 1 Hbij))
+    (have <ser> (serial f from to) :by (p/and-elim* 2 Hbij))
+    (have <bij> (bijective f from to) :by (p/and-elim* 3 Hbij))
+
+    (have <a> _ :by ((removal-functional f from to a) <fun> y Hy Hfy))
+    (have <b> _ :by ((removal-serial f from to a) <ser> (p/and-elim-left <bij>) y Hy Ha Hfy))
+    (have <c> _ :by ((removal-bijective f from to a) <bij> <fun> y Hy Ha Hfy))
+    (have <d> _ :by (p/and-intro* <a> <b> <c>)))
+
+  (qed <d>))
+
 
 
