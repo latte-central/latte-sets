@@ -17,7 +17,8 @@ natural translation to the typed setting.
 
   (:refer-clojure :exclude [and or not set])
 
-  (:require [latte.core :as latte :refer [definition defthm defaxiom defnotation
+  (:require [latte.core :as latte :refer [definition try-definition
+                                          defthm defaxiom defnotation
                                           defimplicit deflemma
                                           forall lambda
                                           assume have pose proof try-proof qed]]
@@ -106,6 +107,12 @@ of the full set)."
            H (elem x (emptyset T))]
     (have <a> p/absurd :by H))
   (qed <a>))
+
+
+(definition singleton
+  "The singleton set {x}."
+  [?T :type, x T]
+  (set-of [y T] (equal y x)))
 
 (definition subset
   "The subset relation for type `T`.

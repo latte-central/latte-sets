@@ -81,6 +81,48 @@ any domain set."
     (have <b> _ :by ((sq/single-in-intro to (lambda [y U] (rempty x y))) <a>)))
   (qed <b>))
 
+(definition removal
+  "The removal of an element `a` in a relation/function `f`"
+  [[?T ?U :type] [f (rel T U)] [from (set T)] [a T]]
+  (lambda [x T] 
+    (lambda [y U]
+      (and* (elem a from)
+            (elem x from)
+            (not (equal x a))
+            (f x y)))))
+
+(defthm removal-functional
+  [[?T ?U :type] [f (rel T U)] [from (set T)] [to (set U)] [a T]]
+  (==> (functional f from to)
+       (forall-in [y to]
+         (==> (f a y)
+              (functional (removal f from a) (sa/remove from a) (sa/remove to y))))))
+           
+(proof 'removal-functional-thm
+  (pose RF := (removal f from a))
+  (assume [Hfun (functional f from to)
+           y U Hy (elem y to)
+           Hfy (f a y)] ; Note: this is not used for functionality (because it's just existential)
+                        ; but the theorem doesn't mean much if we don't touch the codomain
+    (assume [x T Hx (elem x (sa/remove from a))]
+      "To show : (sq/single-in (sa/remove to y) (lambda [z U] (RF x z)))"
+      (assume [y1 U Hy1 (elem y1 (sa/remove to y))
+               y2 U Hy2 (elem y2 (sa/remove to y))
+               HRFy1 (RF x y1)
+               HRFy2 (RF x y2)]
+        "To show : (equal y1 y2)"
+        (have <a1> (elem y1 to) :by (p/and-elim-left Hy1))
+        (have <b1> (f x y1) :by (p/and-elim* 4 HRFy1))
+        (have <a2> (elem y2 to) :by (p/and-elim-left Hy2))
+        (have <b2> (f x y2) :by (p/and-elim* 4 HRFy2))
+        (have <c1> (elem x from) :by (p/and-elim-left Hx))
+        (have <c> (sq/single-in to (lambda [y U] (f x y))) :by (Hfun x <c1>))
+        (have <d> (equal y1 y2)
+              :by ((sq/single-in-elim <c> y1 y2)
+                   <a1> <a2> <b1> <b2>)))
+      (have <e> _ :by ((sq/single-in-intro (sa/remove to y) (lambda [z U] (RF x z))) <d>))))
+  (qed <e>))
+
 (definition functional-fun
   "The \"partial\" function of a (total) type-theoretic function `f` on its whole domain"
   [[?T ?U :type] [f (==> T U)]]
@@ -241,6 +283,48 @@ sometimes called the *range* or *codomain* but image is less ambiguous
     (have <a> p/absurd :by Hx)
     (have <b> _ :by (Hx (exists-in [y to] ((rel/emptyrel T U) x y)))))
   (qed <b>))
+
+(defthm removal-serial
+  [[?T ?U :type] [f (rel T U)] [from (set T)] [to (set U)] [a T]]
+  (==> (serial f from to)
+       (injective f from to)
+       (forall-in [y to]
+         (==> (elem a from)
+              (f a y)
+              (serial (removal f from a) (sa/remove from a) (sa/remove to y))))))
+
+(proof 'removal-serial-thm
+  (pose RF := (removal f from a))
+  (assume [Hser (serial f from to)
+           Hinj (injective f from to)
+           y U Hy (elem y to)
+           Ha (elem a from)
+           Hfy (f a y)]
+    (assume [x T Hx (elem x (sa/remove from a))]
+      "To show: (exists-in [z (sa/remove to y)] (RF x z))"
+      (have <a> (elem x from) :by (p/and-elim-left Hx))
+      (have <b> (exists-in [z to] (f x z)) :by (Hser x <a>))
+      (assume [z U Hz (elem z to)
+               Hfz (f x z)]
+        ;; we have to show that (elem z (sa/remove to y)))
+        ;; and for this we need to show that z≠y, which is thanks to the injectivity of f
+        (have <c> (not (equal x a)) :by (p/and-elim-right Hx))
+        (have <d> (not (equal z y)) 
+              :by ((injective-contra f from to)
+                   Hinj x <a> a Ha z Hz y Hy Hfz Hfy <c>))
+        (have <e> (elem z (sa/remove to y)) :by (p/and-intro Hz <d>))
+        ;; also we need to show that (RF x z)  which is easy now
+        (have <f> (RF x z) :by (p/and-intro* Ha <a> <c> Hfz))
+
+        (have <g> _ :by ((sq/ex-in-intro (sa/remove to y) (lambda [$ U] (RF x $)) z)
+                         <e> <f>)))
+      (have <h> (exists-in [z (sa/remove to y)] (RF x z))
+            :by (sq/ex-in-elim <b> <g>)))
+
+    (have <i> (serial (removal f from a) (sa/remove from a) (sa/remove to y))
+          :by <h>))
+
+  (qed <i>))
 
 (definition single-rooted
   "A relation `R` is single-rooted if pre-images are unique."

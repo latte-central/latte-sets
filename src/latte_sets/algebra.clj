@@ -1,7 +1,7 @@
 (ns latte-sets.algebra
   "The boolean algebra operators for sets."
 
-  (:refer-clojure :exclude [and or not set complement])
+  (:refer-clojure :exclude [and or not set complement remove])
 
   (:require [latte.core :as latte
              :refer [definition defthm defaxiom defnotation
@@ -972,6 +972,11 @@
                   (elem x (diff A B)))
           :by (p/or-elim <a> <b> <c>)))
   (qed <d>))
+
+(definition remove
+  "Removal of an element, a specific case of difference [[diff]]."
+  [?T :type, s (set T), a T]
+  (diff s (sets/singleton a)))
 
 (definition symdiff
   "Symmetric difference, often denoted by `s1`∆`s2`."
