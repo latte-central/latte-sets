@@ -844,13 +844,6 @@ proofs by contradiction."
     (have <d> _ :by (p/and-intro* <a> <b> <c>)))
   (qed <d>))
 
-;;; XXX : are functionality and seriality required in the definition ?
-(definition smaller
-  "The set `s1` is \"smaller\" than `s2`."
-  [[?T ?U :type] [s1 (set T)] [s2 (set U)]]
-  (rel-ex (lambda [f (rel T U)]
-            (injection f s1 s2))))
-
 (definition surjective
   "The relation `f` is surjective onto `s2` for domain `s1`."
   [[?T ?U :type] [f (rel T U)] [s1 (set T)] [s2 (set U)]]
@@ -1291,6 +1284,3 @@ hence it is *unique*."
     (have <d> _ :by (p/and-intro* <a> <b> <c>)))
 
   (qed <d>))
-
-
-

@@ -18,8 +18,10 @@
                        latte-sets.ralgebra
                        latte-sets.equiv
                        latte-sets.powerrel
-                       latte-sets.pfun]}
+                       latte-sets.pfun
+                       latte-sets.compare]}
   :profiles {:uberjar {:aot [latte-sets.main]}}
   :plugins [[lein-codox "0.10.8"]])
+
 
 
