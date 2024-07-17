@@ -700,12 +700,12 @@
     (lambda [y U]
             (not (R x y)))))
 
-(defthm rcomp-full-empty
+(defthm rcomplement-full-empty
   [[T :type] [U :type]]
   (releq (rcomplement (fullrel T U))
          (emptyrel T U)))
 
-(proof 'rcomp-full-empty
+(proof 'rcomplement-full-empty
   "Subset case"
   (assume [x T
            y U
@@ -720,12 +720,12 @@
     (have <d> _ :by (<c> ((rcomplement (fullrel T U)) x y))))
   (qed (p/and-intro <b> <d>)))
 
-(defthm rcomp-empty-full
+(defthm rcomplement-empty-full
   [[T :type] [U :type]]
   (releq (rcomplement (emptyrel T U))
          (fullrel T U)))
 
-(proof 'rcomp-empty-full
+(proof 'rcomplement-empty-full
   "Subset case"
   (assume [x T
            y U
