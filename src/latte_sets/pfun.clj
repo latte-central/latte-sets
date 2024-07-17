@@ -123,7 +123,7 @@ any domain set."
   (==> (functional f from to)
        (forall-in [y to]
          (==> (f a y)
-              (functional (removal f from a) (sa/remove from a) (sa/remove to y))))))
+              (functional (removal f from a) (s/remove a from) (s/remove y to))))))
            
 (proof 'removal-functional-thm
   (pose RF := (removal f from a))
@@ -131,23 +131,23 @@ any domain set."
            y U Hy (elem y to)
            Hfy (f a y)] ; Note: this is not used for functionality (because it's just existential)
                         ; but the theorem doesn't mean much if we don't touch the codomain
-    (assume [x T Hx (elem x (sa/remove from a))]
-      "To show : (sq/single-in (sa/remove to y) (lambda [z U] (RF x z)))"
-      (assume [y1 U Hy1 (elem y1 (sa/remove to y))
-               y2 U Hy2 (elem y2 (sa/remove to y))
+    (assume [x T Hx (elem x (s/remove a from))]
+      "To show : (sq/single-in (s/remove to y) (lambda [z U] (RF x z)))"
+      (assume [y1 U Hy1 (elem y1 (s/remove y to))
+               y2 U Hy2 (elem y2 (s/remove y to))
                HRFy1 (RF x y1)
                HRFy2 (RF x y2)]
         "To show : (equal y1 y2)"
-        (have <a1> (elem y1 to) :by (p/and-elim-left Hy1))
+        (have <a1> (elem y1 to) :by (p/and-elim-right Hy1))
         (have <b1> (f x y1) :by (p/and-elim* 4 HRFy1))
-        (have <a2> (elem y2 to) :by (p/and-elim-left Hy2))
+        (have <a2> (elem y2 to) :by (p/and-elim-right Hy2))
         (have <b2> (f x y2) :by (p/and-elim* 4 HRFy2))
-        (have <c1> (elem x from) :by (p/and-elim-left Hx))
+        (have <c1> (elem x from) :by (p/and-elim-right Hx))
         (have <c> (sq/single-in to (lambda [y U] (f x y))) :by (Hfun x <c1>))
         (have <d> (equal y1 y2)
               :by ((sq/single-in-elim <c> y1 y2)
                    <a1> <a2> <b1> <b2>)))
-      (have <e> _ :by ((sq/single-in-intro (sa/remove to y) (lambda [z U] (RF x z))) <d>))))
+      (have <e> _ :by ((sq/single-in-intro (s/remove y to) (lambda [z U] (RF x z))) <d>))))
   (qed <e>))
 
 (definition functional-fun
@@ -561,7 +561,7 @@ proofs by contradiction."
        (forall-in [y to]
          (==> (elem a from)
               (f a y)
-              (serial (removal f from a) (sa/remove from a) (sa/remove to y))))))
+              (serial (removal f from a) (s/remove a from) (s/remove y to))))))
 
 (proof 'removal-serial-thm
   (pose RF := (removal f from a))
@@ -570,32 +570,31 @@ proofs by contradiction."
            y U Hy (elem y to)
            Ha (elem a from)
            Hfy (f a y)]
-    (assume [x T Hx (elem x (sa/remove from a))]
-      "To show: (exists-in [z (sa/remove to y)] (RF x z))"
-      (have <a> (elem x from) :by (p/and-elim-left Hx))
+    (assume [x T Hx (elem x (s/remove a from))]
+      "To show: (exists-in [z (s/remove to y)] (RF x z))"
+      (have <a> (elem x from) :by (p/and-elim-right Hx))
       (have <b> (exists-in [z to] (f x z)) :by (Hser x <a>))
       (assume [z U Hz (elem z to)
                Hfz (f x z)]
-        ;; we have to show that (elem z (sa/remove to y)))
+        ;; we have to show that (elem z (s/remove to y)))
         ;; and for this we need to show that z≠y, which is thanks to the injectivity of f
-        (have <c> (not (equal x a)) :by (p/and-elim-right Hx))
+        (have <c> (not (equal x a)) :by (p/and-elim-left Hx))
         (have <d> (not (equal z y)) 
               :by ((injective-contra f from to)
                    Hinj x <a> a Ha z Hz y Hy Hfz Hfy <c>))
-        (have <e> (elem z (sa/remove to y)) :by (p/and-intro Hz <d>))
+        (have <e> (elem z (s/remove y to)) :by (p/and-intro <d> Hz))
         ;; also we need to show that (RF x z)  which is easy now
         (have <f> (RF x z) :by (p/and-intro* Ha <a> <c> Hfz))
 
-        (have <g> _ :by ((sq/ex-in-intro (sa/remove to y) (lambda [$ U] (RF x $)) z)
+        (have <g> _ :by ((sq/ex-in-intro (s/remove y to) (lambda [$ U] (RF x $)) z)
                          <e> <f>)))
-      (have <h> (exists-in [z (sa/remove to y)] (RF x z))
+      (have <h> (exists-in [z (s/remove y to)] (RF x z))
             :by (sq/ex-in-elim <b> <g>)))
 
-    (have <i> (serial (removal f from a) (sa/remove from a) (sa/remove to y))
+    (have <i> (serial (removal f from a) (s/remove a from) (s/remove y to))
           :by <h>))
 
   (qed <i>))
-
 
 (defthm removal-injective
   "Injectivity of removal operation."
@@ -603,26 +602,26 @@ proofs by contradiction."
   (==> (injective f from to)
        (forall-in [y to]
          (==> (f a y)
-              (injective (removal f from a) (sa/remove from a) (sa/remove to y))))))
+              (injective (removal f from a) (s/remove a from) (s/remove y to))))))
 
 (proof 'removal-injective-thm
   (pose RF := (removal f from a))
   (assume [Hinj (injective f from to)
            y U Hy (elem y to)
            Hfy (f a y)] ;; Note: unused hypothesis (because the codomain is not observed)
-    (assume [x1 T Hx1 (elem x1 (sa/remove from a))
-             x2 T Hx2 (elem x2 (sa/remove from a))
-             y1 U Hy1 (elem y1 (sa/remove to y))
-             y2 U Hy2 (elem y2 (sa/remove to y))
+    (assume [x1 T Hx1 (elem x1 (s/remove a from))
+             x2 T Hx2 (elem x2 (s/remove a from))
+             y1 U Hy1 (elem y1 (s/remove y to))
+             y2 U Hy2 (elem y2 (s/remove y to))
              HRF1 (RF x1 y1)
              HRF2 (RF x2 y2)
              Heq (equal y1 y2)]
       "To show: (equal x1 x2)"
       "We want to apply the injectivity of f"
-      (have <a> (elem x1 from) :by (p/and-elim-left Hx1))
-      (have <b> (elem x2 from) :by (p/and-elim-left Hx2))
-      (have <c> (elem y1 to) :by (p/and-elim-left Hy1))
-      (have <d> (elem y2 to) :by (p/and-elim-left Hy2))
+      (have <a> (elem x1 from) :by (p/and-elim-right Hx1))
+      (have <b> (elem x2 from) :by (p/and-elim-right Hx2))
+      (have <c> (elem y1 to) :by (p/and-elim-right Hy1))
+      (have <d> (elem y2 to) :by (p/and-elim-right Hy2))
       (have <e> (f x1 y1) :by (p/and-elim* 4 HRF1))
       (have <f> (f x2 y2) :by (p/and-elim* 4 HRF2))
       (have <g> (equal x1 x2) :by (Hinj x1 <a> x2 <b> y1 <c> y2 <d> <e> <f> Heq))))
@@ -828,7 +827,7 @@ proofs by contradiction."
        (forall-in [y to]
          (==> (elem a from)
               (f a y)
-              (injection (removal f from a) (sa/remove from a) (sa/remove to y))))))
+              (injection (removal f from a) (s/remove a from) (s/remove y to))))))
 
 (proof 'removal-injection-thm
   (assume [Hinj _
@@ -919,7 +918,7 @@ proofs by contradiction."
        (forall-in [y to]
          (==> (elem a from)
               (f a y)
-              (surjective (removal f from a) (sa/remove from a) (sa/remove to y))))))
+              (surjective (removal f from a) (s/remove a from) (s/remove y to))))))
 
 (proof 'removal-surjective-thm
   (pose RF := (removal f from a))
@@ -928,9 +927,9 @@ proofs by contradiction."
            y U Hy (elem y to)
            Ha (elem a from)
            Hfy (f a y)]
-    (assume [z U Hz (elem z (sa/remove to y))]
-      "We have to show: (exists-in [x (sa/remove from a)] (RF x z))"
-      (have <a> (elem z to) :by (p/and-elim-left Hz))
+    (assume [z U Hz (elem z (s/remove y to))]
+      "We have to show: (exists-in [x (s/remove from a)] (RF x z))"
+      (have <a> (elem z to) :by (p/and-elim-right Hz))
       (have <b> (exists-in [x from] (f x z))
             :by (Hsur z <a>))
       (assume [x T Hx (elem x from)
@@ -944,11 +943,11 @@ proofs by contradiction."
           (have <c3> (equal z y)
                 :by ((sq/single-in-elim <c1> z y)
                      <a> Hy Hfxz <c2>))
-          (have <c> p/absurd :by ((p/and-elim-right Hz) <c3>)))
+          (have <c> p/absurd :by ((p/and-elim-left Hz) <c3>)))
         
-        (have <d1> (elem x (sa/remove from a)) :by (p/and-intro Hx <c>))
+        (have <d1> (elem x (s/remove a from)) :by (p/and-intro <c> Hx))
         (have <d2> (RF x z) :by (p/and-intro* Ha Hx <c> Hfxz))
-        (have <d> _ :by ((sq/ex-in-intro (sa/remove from a) (lambda [$ T] (RF $ z)) x)
+        (have <d> _ :by ((sq/ex-in-intro (s/remove a from) (lambda [$ T] (RF $ z)) x)
                          <d1> <d2>)))
 
       (have <e> _ :by (sq/ex-in-elim <b> <d>))))
@@ -1007,8 +1006,7 @@ and `s2`. A [[bijection]] needs to be also [[functional]] and [[serial]]."
        (forall-in [y to]
          (==> (elem a from)
               (f a y)
-              (bijective (removal f from a) (sa/remove from a) (sa/remove to y))))))
-
+              (bijective (removal f from a) (s/remove a from) (s/remove y to))))))
 
 (proof 'removal-bijective-thm
   (assume [Hbij _
@@ -1276,7 +1274,7 @@ hence it is *unique*."
        (forall-in [y to]
          (==> (elem a from)
               (f a y)
-              (bijection (removal f from a) (sa/remove from a) (sa/remove to y))))))
+              (bijection (removal f from a) (s/remove a from) (s/remove y to))))))
 
 (proof 'removal-bijection-thm
   (assume [Hbij (bijection f from to)

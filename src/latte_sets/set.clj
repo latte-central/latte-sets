@@ -15,7 +15,7 @@ set theories (e.g. ZF and ZFC), which are essentially untyped.
 natural translation to the typed setting.
 "
 
-  (:refer-clojure :exclude [and or not set])
+  (:refer-clojure :exclude [and or not set remove])
 
   (:require [latte.core :as latte :refer [definition try-definition
                                           defthm defaxiom defnotation
@@ -642,6 +642,51 @@ sets are distinct, i.e. `s1`⊂`s2` (or more explicitely `s1`⊊`s2`)."
   (qed (p/and-intro (psubset-emptyset s)
                     (psubset-emptyset-conv s))))
 
+
+(definition insert
+  "Insert element `e` in set `s`."
+  [[?T :type] [e T] [s (set T)]]
+  (lambda [x T]
+    (or (equal x e)
+        (elem x s))))
+
+(defthm insert-elem
+  [[?T :type] [e T] [s (set T)]]
+  (elem e (insert e s)))
+
+(proof 'insert-elem-thm
+  (have <a> (equal e e) :by (eq/eq-refl e))
+  (qed (p/or-intro-left <a> (elem e s))))
+
+
+(defthm insert-elem-alt
+  [[?T :type] [e T] [s (set T)]]
+  (forall [x T] 
+    (==> (elem x s)
+         (elem x (insert e s)))))
+
+(proof 'insert-elem-alt-thm
+  (assume [x _
+           Hx _]
+    (have <a> _ :by (p/or-intro-right (equal x e) Hx)))
+  (qed <a>))
+
+(definition remove
+  "Remove element `e` of set `s`."
+  [[?T :type] [e T] [s (set T)]]
+  (lambda [x T]
+    (and (not (equal x e))
+         (elem x s))))
+
+(defthm remove-not-elem
+  [[?T :type] [e T] [s (set T)]]
+  (not (elem e (remove e s))))
+
+(proof 'remove-not-elem-thm
+  (assume [Hcontra (elem e (remove e s))]
+    (have <a> (not (equal e e)) :by (p/and-elim-left Hcontra))
+    (have <b> p/absurd :by (<a> (eq/eq-refl e))))
+  (qed <b>))
 
 
 

@@ -241,30 +241,29 @@
                         (union (union s1 s2) s3))
         <a>)))
 
-(definition insert 
-  "Insertion of an element `x` et set `s`."
+
+(definition insert-alt 
+  "Insertion of an element `x` in set `s`
+(alternative version)."
   [[?T :type] [x T] [s (set T)]]
   (union (sets/singleton x) s))
 
-(defthm insert-elem
+(defthm insert-alt-insert
   [[?T :type] [x T] [s (set T)]]
-  (elem x (insert x s)))
+  (seteq (insert-alt x s) (sets/insert x s)))
 
-(proof 'insert-elem-thm
- (have <a> (elem x (sets/singleton x)) :by (sets/singleton-elem x))
- (qed (p/or-intro-left <a> (elem x s))))
-
-(defthm insert-idem
-  [[?T :type] [x T] [s (set T)]]
-  (forall-in [y s]
-     (elem y (insert x s))))
-
-(proof 'insert-idem-thm
+(proof 'insert-alt-insert-thm
+  "subset part"
   (assume [y T
-           Hy (elem y s)]
-     (have <a> (elem y (insert x s)) 
-           :by (p/or-intro-right (elem y (sets/singleton x)) Hy)))
-  (qed <a>))
+           Hy (elem y (insert-alt x s))]
+    (have <a> (elem y (sets/insert x s)) :by Hy))
+
+  "superset part"  
+  (assume [y T
+           Hy (elem y (sets/insert x s))]
+    (have <b> (elem y (insert-alt x s)) :by Hy))
+
+  (qed (p/and-intro <a> <b>)))
 
 (definition inter
   "Set intersection, i.e. the set `s1`∩`s2`."
@@ -998,10 +997,33 @@
           :by (p/or-elim <a> <b> <c>)))
   (qed <d>))
 
-(definition remove
-  "Removal of an element, a specific case of difference [[diff]]."
-  [?T :type, s (set T), a T]
+(definition remove-alt
+  "Removal of an element as a specific case of difference [[diff]]."
+  [?T :type, a T, s (set T)]
   (diff s (sets/singleton a)))
+
+(defthm remove-alt-remove
+  [[?T :type] [x T] [s (set T)]]
+  (seteq (remove-alt x s) (sets/remove x s)))
+
+(proof 'remove-alt-remove-thm
+  "Subset"
+  (assume [y T
+           Hy (elem y (remove-alt x s))]
+    (have <a1> (elem y s) :by (p/and-elim-left Hy))
+    (have <a2> (not (equal y x)) :by (p/and-elim-right Hy))
+    (have <a> (elem y (sets/remove x s))
+          :by (p/and-intro <a2> <a1>)))
+
+  (assume [y T
+           Hy (elem y (sets/remove x s))]
+    (have <b1> (elem y s) :by (p/and-elim-right Hy))
+    (have <b2> (not (elem y (sets/singleton x)))
+          :by (p/and-elim-left Hy))
+    (have <b> (elem y (remove-alt x s))
+          :by (p/and-intro <b1> <b2>)))
+
+  (qed (p/and-intro <a> <b>)))
 
 (definition symdiff
   "Symmetric difference, often denoted by `s1`∆`s2`."
