@@ -1059,6 +1059,55 @@ proofs by contradiction."
 
   (qed <e>))
 
+
+(comment
+  
+  ;; TODO
+ 
+(defthm pfcomp-surjective
+  [[?T ?U ?V :type] [f (rel T U)] [g (rel U V)] [from (set T)] [to (set V)]]
+  (==> (surjective f from (sa/inter (ran f) (dom g)))
+       (surjective g (sa/inter (ran f) (dom g)) to)
+       (surjective (pfcomp f g from to) from to)))
+
+(try-proof 'pfcomp-surjective-thm
+  (assume [Hf _
+           Hg _]
+    (assume [z V Hz (elem z to)]
+      (have <a> (exists-in [y (sa/inter (ran f) (dom g))] (g y z))
+            :by (Hg z Hz))
+
+      (assume [y U 
+               Hy (elem y (sa/inter (ran f) (dom g)))
+               Hgy (g y z)]
+        
+        (have <b> (exists-in [x from] (f x y))
+              :by (Hf y Hy))
+
+        (assume [x T
+                 Hx (elem x from)
+                 Hfx (f x y)]
+
+            (have <c1> (and (f x y) (g y z)) :by (p/and-intro Hfx Hgy))
+            
+            (have <c2> _ :by ((sq/ex-in-intro (sa/inter (ran f) (dom g)) 
+                                              (lambda [$ U] (and (f x $) (g $ z))) y)
+                              Hy <c1>))
+            
+            (have <c> ((pfcomp f g from to) x z)
+                  :by (p/and-intro* Hx Hz <c2>))
+            
+            (have <d> _ :by ((sq/ex-in-intro to (lambda [$ V] ((pfcomp f g from to) x $)) z)
+                             Hz <c>)))
+
+     
+          
+          (have <e> _ :by (sq/ex-in-elim <b> <d>))
+
+))))
+
+)
+
 (definition surjection
   "The relation `f` is a functional surjection on-to set `s2`."
   [[?T ?U :type] [f (rel T U)] [s1 (set T)] [s2 (set U)]]
