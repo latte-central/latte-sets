@@ -477,48 +477,49 @@ composition, i.e. `f ; g`."
   
   (qed <g>))     
 
-(comment
 
-  ;; this needs to be updated too
+(defthm pfcomp-serial
+  [[?T ?U ?V :type] [f (rel T U)] [g (rel U V)] [from (set T)] [to (set V)]]
+  (==> (serial f from (sa/inter (ran f) (dom g)))
+       (serial g (sa/inter (ran f) (dom g)) to)
+       (serial (pfcomp f g from to) from to)))
 
-(defthm rcomp-serial
-  [[?T ?U ?V :type] [f (rel T U)] [g (rel U V)] [from (set T)]]
-  (==> (serial f from)
-       (serial g (image f from))
-       (serial (rel/rcomp f g) from)))
-
-(proof 'rcomp-serial-thm
+(proof 'pfcomp-serial-thm
   (assume [Hf _
            Hg _]
     (assume [x T
              Hx (elem x from)]
-      (have <a> (exists [y U] (f x y)) :by (Hf x Hx))
-      (assume [y U
-               Hy (f x y)]
-        (have <b1> (elem y (image f from))
-              :by ((q/ex-intro (lambda [z T]
-                                 (and (elem z from)
-                                      (f z y))) x) (p/and-intro Hx Hy)))
-        (have <b> (exists [z V] (g y z))
-              :by (Hg y <b1>))
-        (assume [z V
-                 Hz (g y z)]
-          (have <c1> (and (f x y) (g y z))
-                :by (p/and-intro Hy Hz))
-          (have <c2> ((rel/rcomp f g) x z)
-                :by ((q/ex-intro (lambda [$ U]
-                                   (and (f x $) (g $ z))) y) <c1>))
-          (have <c> (exists [z V]
-                      ((rel/rcomp f g) x z))
-                :by ((q/ex-intro (lambda [$ V]
-                                   ((rel/rcomp f g) x $)) z) <c2>)))
+      "We have to show that there is a `z` in `to` such that (f<;>g x z)"
 
-        (have <d> (exists [z V] ((rel/rcomp f g) x z))
-              :by (q/ex-elim <b> <c>)))
-      (have <e> _ :by (q/ex-elim <a> <d>))))
-  (qed <e>))
-  
-)
+      (have <a> (exists-in [y (sa/inter (ran f) (dom g))] (f x y)) :by (Hf x Hx))
+
+      (assume [y U Hy (elem y (sa/inter (ran f) (dom g)))
+               Hfy (f x y)]
+
+        (have <b> (exists-in [z to] (g y z)) :by (Hg y Hy))
+
+        (assume [z V Hz (elem z to)
+                 Hgz (g y z)]
+
+          (have <c> (and (f x y) (g y z)) :by (p/and-intro Hfy Hgz))
+
+          (have <d> _ :by ((sq/ex-in-intro (sa/inter (ran f) (dom g))
+                                           (lambda [$ U] (and (f x $) (g $ z))) y)
+                           Hy <c>))
+
+          (have <e> ((pfcomp f g from to) x z)
+                :by (p/and-intro* Hx Hz <d>))
+
+          (have <f> _ :by ((sq/ex-in-intro to (lambda [$ V] ((pfcomp f g from to) x $)) z)
+                           Hz <e>)))
+
+        (have <g> _ :by (sq/ex-in-elim <b> <f>)))
+
+      (have <h> _ :by (sq/ex-in-elim <a> <g>)))
+
+    (have <i> (serial (pfcomp f g from to) from to) :by <h>))
+
+  (qed <i>))
 
 (definition injective
   "The relation `f` is injective wrt. domain set `from`
