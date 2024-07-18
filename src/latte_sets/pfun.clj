@@ -1059,10 +1059,6 @@ proofs by contradiction."
 
   (qed <e>))
 
-
-(comment
-  
-  ;; TODO
  
 (defthm pfcomp-surjective
   [[?T ?U ?V :type] [f (rel T U)] [g (rel U V)] [from (set T)] [to (set V)]]
@@ -1070,10 +1066,12 @@ proofs by contradiction."
        (surjective g (sa/inter (ran f) (dom g)) to)
        (surjective (pfcomp f g from to) from to)))
 
-(try-proof 'pfcomp-surjective-thm
+(proof 'pfcomp-surjective-thm
   (assume [Hf _
            Hg _]
+
     (assume [z V Hz (elem z to)]
+
       (have <a> (exists-in [y (sa/inter (ran f) (dom g))] (g y z))
             :by (Hg z Hz))
 
@@ -1096,17 +1094,19 @@ proofs by contradiction."
             
             (have <c> ((pfcomp f g from to) x z)
                   :by (p/and-intro* Hx Hz <c2>))
-            
-            (have <d> _ :by ((sq/ex-in-intro to (lambda [$ V] ((pfcomp f g from to) x $)) z)
-                             Hz <c>)))
+           
+            (have <d> (exists-in [x from] ((pfcomp f g from to) x z)) 
+                  :by ((sq/ex-in-intro from (lambda [$ T] ((pfcomp f g from to) $ z)) x)
+                       Hx <c>)))
 
-     
-          
-          (have <e> _ :by (sq/ex-in-elim <b> <d>))
+        (have <e> _ :by (sq/ex-in-elim <b> <d>)))
 
-))))
+      (have <f> _ :by (sq/ex-in-elim <a> <e>)))
 
-)
+    (have <g> (surjective (pfcomp f g from to) from to)
+          :by <f>))
+
+  (qed <g>))
 
 (definition surjection
   "The relation `f` is a functional surjection on-to set `s2`."
@@ -1114,6 +1114,28 @@ proofs by contradiction."
   (and* (functional f s1 s2)
         (serial f s1 s2)
         (surjective f s1 s2)))
+
+(defthm pfcomp-surjection
+  [[?T ?U ?V :type] [f (rel T U)] [g (rel U V)] [from (set T)] [to (set V)]]
+  (==> (surjection f from (sa/inter (ran f) (dom g)))
+       (surjection g (sa/inter (ran f) (dom g)) to)
+       (surjection (pfcomp f g from to) from to)))
+
+(proof 'pfcomp-surjection-thm
+  (assume [Hf _
+           Hg _]
+    (have <a> (functional (pfcomp f g from to) from to)
+          :by ((pfcomp-functional f g from to) (p/and-elim* 1 Hf) (p/and-elim* 1 Hg)))
+
+    (have <b> (serial (pfcomp f g from to) from to)
+          :by ((pfcomp-serial f g from to) (p/and-elim* 2 Hf) (p/and-elim* 2 Hg)))
+    
+    (have <c> (surjective (pfcomp f g from to) from to)
+          :by ((pfcomp-surjective f g from to) (p/and-elim* 3 Hf) (p/and-elim* 3 Hg)))
+
+    (have <d> _ :by (p/and-intro* <a> <b> <c>)))
+  
+  (qed <d>))
 
 (definition bijective
   "The relation `f` is both [[injective]] and [[bijective]] wrt. sets `s1`
@@ -1179,6 +1201,26 @@ and `s2`. A [[bijection]] needs to be also [[functional]] and [[serial]]."
 
   (qed <c>))
 
+
+(defthm pfcomp-bijective
+  [[?T ?U ?V :type] [f (rel T U)] [g (rel U V)] [from (set T)] [to (set V)]]
+  (==> (bijective f from (sa/inter (ran f) (dom g)))
+       (bijective g (sa/inter (ran f) (dom g)) to)
+       (bijective (pfcomp f g from to) from to)))
+
+(proof 'pfcomp-bijective-thm
+  (assume [Hf _
+           Hg _]
+
+    (have <a> (injective (pfcomp f g from to) from to)
+          :by ((pfcomp-injective f g from to) (p/and-elim-left Hf) (p/and-elim-left Hg)))
+
+    (have <b> (surjective (pfcomp f g from to) from to)
+          :by ((pfcomp-surjective f g from to) (p/and-elim-right Hf) (p/and-elim-right Hg)))
+
+    (have <c> _ :by (p/and-intro <a> <b>)))
+
+  (qed <c>))
 
 (definition bijection
   "The relation `f` is a bijection between sets `s1` and `s2`."
@@ -1445,3 +1487,26 @@ hence it is *unique*."
     (have <d> _ :by (p/and-intro* <a> <b> <c>)))
 
   (qed <d>))
+
+(defthm pfcomp-bijection
+  [[?T ?U ?V :type] [f (rel T U)] [g (rel U V)] [from (set T)] [to (set V)]]
+  (==> (bijection f from (sa/inter (ran f) (dom g)))
+       (bijection g (sa/inter (ran f) (dom g)) to)
+       (bijection (pfcomp f g from to) from to)))
+
+(proof 'pfcomp-bijection-thm
+  (assume [Hf _
+           Hg _]
+    (have <a> (functional (pfcomp f g from to) from to)
+          :by ((pfcomp-functional f g from to) (p/and-elim* 1 Hf) (p/and-elim* 1 Hg)))
+
+    (have <b> (serial (pfcomp f g from to) from to)
+          :by ((pfcomp-serial f g from to) (p/and-elim* 2 Hf) (p/and-elim* 2 Hg)))
+    
+    (have <c> (bijective (pfcomp f g from to) from to)
+          :by ((pfcomp-bijective f g from to) (p/and-elim* 3 Hf) (p/and-elim* 3 Hg)))
+
+    (have <d> _ :by (p/and-intro* <a> <b> <c>)))
+  
+  (qed <d>))
+
