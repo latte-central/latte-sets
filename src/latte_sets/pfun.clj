@@ -73,8 +73,6 @@ on the domain-set `from`  and range set `to`."
               Hy1 Hy2 Hfy1 Hfy2)))
   (qed <b>))
 
-
-
 (defthm ridentity-functional
   "The identity relation is a partial function on
 any domain set."
@@ -107,6 +105,40 @@ any domain set."
       (have <a> (equal y1 y2) :by (<a1> (equal y1 y2))))
     (have <b> _ :by ((sq/single-in-intro to (lambda [y U] (rempty x y))) <a>)))
   (qed <b>))
+
+
+(defthm functional-subset-ran
+  [[?T ?U :type] [f (rel T U)] [from (set T)] [to (set U)]]
+  (==> (functional f from to)
+       (forall [s (set U)]
+         (==> (subset s to)
+              (functional f from s)))))
+
+(proof 'functional-subset-ran-thm
+  (assume [Hf _]
+    (assume [s (set U)
+             Hs (subset s to)]
+      (assume [x T Hx (elem x from)]
+        (assume [y1 U Hy1 (elem y1 s)
+                 y2 U Hy2 (elem y2 s)
+                 Hfy1 (f x y1)
+                 Hfy2 (f x y2)]
+          "We have to show that y1=y2"
+          (have <a1> (elem y1 to) :by (Hs y1 Hy1))
+          (have <a2> (elem y2 to) :by (Hs y2 Hy2))
+
+          ;; remark : a bug is exposed if we do not introduce this intermediate
+          ;; step, and/or if we try to avoid the single-in-elim rule
+          (have <b> (sq/single-in to (lambda [y U] (f x y))) :by (Hf x Hx))
+
+          (have <c> (equal y1 y2)
+                :by ((sq/single-in-elim <b> y1 y2) <a1> <a2> Hfy1 Hfy2)))
+
+        (have <d> _ :by ((sq/single-in-intro s (lambda [y U] (f x y))) <c>)))
+
+      (have <e> (functional f from s) :by <d>)))
+
+  (qed <e>))
 
 (definition removal
   "The removal of an element `a` in a relation/function `f`"
@@ -404,9 +436,13 @@ composition, i.e. `f ; g`."
   
 (defthm pfcomp-functional
   [[?T ?U ?V :type] [f (rel T U)] [g (rel U V)] [from (set T)] [to (set V)]]
-  (==> (functional f from (ran f))
+  (==> (functional f from (sa/inter (ran f) (dom g)))
        (functional g (sa/inter (ran f) (dom g)) to)
        (functional (pfcomp f g from to) from to)))
+
+;; Remark : it is possible to enlarge the range of f
+;; by requiring only `(functional f from (ran f))`
+;; however, this breaks the composability of partial injections 
 
 ;; proof scheme
 ;;  forall-in [x from], forall-in [z1 z2 to], (f<;>g x z1) /\ (f<;>g x z2) ==> z1=z2
@@ -427,7 +463,7 @@ composition, i.e. `f ; g`."
       
         "We have to show that z1=z2"
         
-        (have <a1> (sq/single-in (ran f) (lambda [y U] (f x y))) :by (Hf x Hx))
+        (have <a1> (sq/single-in (sa/inter (ran f) (dom g)) (lambda [y U] (f x y))) :by (Hf x Hx))
         
         (have <a2> (exists-in [y1 (sa/inter (ran f) (dom g))]
                      (and (f x y1) (g y1 z1)))
@@ -443,15 +479,16 @@ composition, i.e. `f ; g`."
                  HPy1 (and (f x y1) (g y1 z1))]
           (assume [y2 U Hy2 (elem y2 (sa/inter (ran f) (dom g)))
                    HPy2 (and (f x y2) (g y2 z2))]
-            
-            (have <b1> (elem y1 (ran f)) :by ((sa/inter-elim-left (ran f) (dom g) y1) Hy1))
-            (have <b2> (elem y2 (ran f)) :by ((sa/inter-elim-left (ran f) (dom g) y2) Hy2))
+           
+            ;; Remark : these would be needed if we would require only (ran f)
+            ;;(have <b1> (elem y1 (ran f)) :by ((sa/inter-elim-left (ran f) (dom g) y1) Hy1))
+            ;;(have <b2> (elem y2 (ran f)) :by ((sa/inter-elim-left (ran f) (dom g) y2) Hy2))
             (have <b3> (f x y1) :by (p/and-elim-left HPy1))
             (have <b4> (f x y2) :by (p/and-elim-left HPy2))
             
             (have <b> (equal y1 y2) :by 
                   ((sq/single-in-elim <a1> y1 y2)
-                   <b1> <b2> <b3> <b4>))
+                   Hy1 Hy2 <b3> <b4>))
             
             (have <c1> (sq/single-in to (lambda [z V] (g y1 z))) 
                   :by (Hg y1 Hy1))
@@ -760,7 +797,7 @@ proofs by contradiction."
        (injective g (sa/inter (ran f) (dom g)) to)
        (injective (pfcomp f g from to) from to)))
 
-(try-proof 'pfcomp-injective-thm
+(proof 'pfcomp-injective-thm
   (assume [Hf _
            Hg _]
     (assume [x1 T Hx1 (elem x1 from)
@@ -871,8 +908,6 @@ proofs by contradiction."
 
   (qed <c>))
 
-
-
 (defthm removal-injection
   "Injectivity of removal operation."
   [[?T ?U :type] [f (rel T U)] [from (set T)] [to (set U)] [a T]]
@@ -895,6 +930,30 @@ proofs by contradiction."
     (have <b> _ :by ((removal-serial f from to a) <ser> <inj> y Hy Ha Hfy))
     (have <c> _ :by ((removal-injective f from to a) <inj> y Hy Hfy))
     (have <d> _ :by (p/and-intro* <a> <b> <c>)))
+  (qed <d>))
+
+(defthm pfcomp-injection
+  [[?T ?U ?V :type] [f (rel T U)] [g (rel U V)] [from (set T)] [to (set V)]]
+  (==> (injection f from (sa/inter (ran f) (dom g)))
+       (injection g (sa/inter (ran f) (dom g)) to)
+       (injection (pfcomp f g from to) from to)))
+
+(proof 'pfcomp-injection-thm
+  (assume [Hf _
+           Hg _]
+
+    (have <a> (functional (pfcomp f g from to) from to)
+          :by ((pfcomp-functional f g from to) (p/and-elim* 1 Hf) (p/and-elim* 1 Hg)))
+
+    (have <b> (serial (pfcomp f g from to) from to)
+          :by ((pfcomp-serial f g from to) (p/and-elim* 2 Hf) (p/and-elim* 2 Hg)))
+
+    (have <c> (injective (pfcomp f g from to) from to)
+          :by ((pfcomp-injective f g from to) (p/and-elim* 3 Hf) (p/and-elim* 3 Hg)))
+
+    (have <d> (injection (pfcomp f g from to) from to) 
+          :by (p/and-intro* <a> <b> <c>)))
+
   (qed <d>))
 
 (definition surjective

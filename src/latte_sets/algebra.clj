@@ -315,6 +315,24 @@
     (have <a> (elem x s2) :by (p/and-elim-right H)))
     (qed <a>))
 
+(defthm inter-subset-left
+  [?T :type, [s1 s2 (set T)]]
+  (subset (inter s1 s2) s1))
+
+(proof 'inter-subset-left-thm
+  (assume [x T Hx (elem x (inter s1 s2))]
+    (have <a> (elem x s1) :by ((inter-elim-left s1 s2 x) Hx)))
+  (qed <a>))
+
+(defthm inter-subset-right
+  [?T :type, [s1 s2 (set T)]]
+  (subset (inter s1 s2) s2))
+
+(proof 'inter-subset-right-thm
+  (assume [x T Hx (elem x (inter s1 s2))]
+    (have <a> (elem x s2) :by ((inter-elim-right s1 s2 x) Hx)))
+  (qed <a>))
+
 (defthm inter-not-left
   [[?T :type] [s1 s2 (set T)] [x T]]
   (==> (not (elem x s1))
