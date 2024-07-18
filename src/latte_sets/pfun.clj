@@ -387,46 +387,99 @@ sometimes called the *range* or *codomain* but image is less ambiguous
           :by ((rinverse-single-rooted-rel-functional (ra/rinverse R) to from) <a>)))
   (qed <b>))
 
-(comment
 
-  ;; this needs to be updated too
+(definition pfcomp
+  "Partial composition of relations `f` and `g`
+(implicitly assumed as partial functions) on domain `from` and range `to`.
+Since this is based on relational composition, we use the left-to-right
+composition, i.e. `f ; g`."
+  [[?T ?U ?V :type] [f (rel T U)] [g (rel U V)] [from (set T)] [to (set V)]]
+  (lambda [x T]
+    (lambda [z V]
+      (and* (elem x from)
+            (elem z to)
+            (exists-in [y (sa/inter (ran f) (dom g))]
+              (and (f x y)
+                   (g y z)))))))
   
-(defthm rcomp-functional
-  [[?T ?U ?V :type] [f (rel T U)] [g (rel U V)] [from (set T)]]
-  (==> (functional f from)
-       (functional g (image f from))
-       (functional (rel/rcomp f g) from)))
+(defthm pfcomp-functional
+  [[?T ?U ?V :type] [f (rel T U)] [g (rel U V)] [from (set T)] [to (set V)]]
+  (==> (functional f from (ran f))
+       (functional g (sa/inter (ran f) (dom g)) to)
+       (functional (pfcomp f g from to) from to)))
 
-(proof 'rcomp-functional-thm
+;; proof scheme
+;;  forall-in [x from], forall-in [z1 z2 to], (f<;>g x z1) /\ (f<;>g x z2) ==> z1=z2
+;;  (f<;>g x y1)  <=>  x \in from, z1 \in to,  ex [y1 (ran f) \inter (dom g)] s.t. (f x y1) /\ (g y1 z1) 
+;;  (f<;>g x y2)  <=>  x \in from, z2 \in to,  ex [y2 (ran f) \inter (dom g)] s.t. (f x y2) /\ (g y2 z2) 
+;;  since f is functional, we have that y1 = y2
+;;  theb since g is functional, we have z1 = z2  (Qed)
+
+(proof 'pfcomp-functional-thm
   (assume [Hf _
            Hg _]
     (assume [x T
-             Hx (elem x from)
-             z1 V z2 V
-             Hz1 ((rel/rcomp f g) x z1)
-             Hz2 ((rel/rcomp f g) x z2)]
-      (have <a> (exists [y1 U] (and (f x y1) (g y1 z1)))
-            :by Hz1)
-      (assume [y1 U
-               Hy1 (and (f x y1) (g y1 z1))]
-        (have <b> (exists [y2 U] (and (f x y2) (g y2 z2)))
-              :by Hz2)
-        (assume [y2 U
-                 Hy2 (and (f x y2) (g y2 z2))]
-          (have <c1> (equal y1 y2)
-                :by (Hf x Hx y1 y2 (p/and-elim-left Hy1) (p/and-elim-left Hy2)))
-          (have <c2> (elem y1 (image f from))
-                :by ((q/ex-intro (lambda [$ T]
-                                   (and (elem $ from)
-                                        (f $ y1))) x) (p/and-intro Hx (p/and-elim-left Hy1))))
-          (have <c3> (g y1 z2) 
-                :by (eq/rewrite (p/and-elim-right Hy2) (eq/eq-sym <c1>)))
+             Hx (elem x from)]
+      (assume [z1 V Hz1 (elem z1 to) 
+               z2 V Hz2 (elem z2 to)
+               HPz1 ((pfcomp f g from to) x z1)
+               HPz2 ((pfcomp f g from to) x z2)]
+      
+        "We have to show that z1=z2"
+        
+        (have <a1> (sq/single-in (ran f) (lambda [y U] (f x y))) :by (Hf x Hx))
+        
+        (have <a2> (exists-in [y1 (sa/inter (ran f) (dom g))]
+                     (and (f x y1) (g y1 z1)))
+              :by (p/and-elim* 3 HPz1))
+        
+        (have <a3> (exists-in [y2 (sa/inter (ran f) (dom g))]
+                     (and (f x y2) (g y2 z2)))
+              :by (p/and-elim* 3 HPz2))
+        
+        "We, will eliminate the two facts above, in turn"
+        
+        (assume [y1 U Hy1 (elem y1 (sa/inter (ran f) (dom g)))
+                 HPy1 (and (f x y1) (g y1 z1))]
+          (assume [y2 U Hy2 (elem y2 (sa/inter (ran f) (dom g)))
+                   HPy2 (and (f x y2) (g y2 z2))]
+            
+            (have <b1> (elem y1 (ran f)) :by ((sa/inter-elim-left (ran f) (dom g) y1) Hy1))
+            (have <b2> (elem y2 (ran f)) :by ((sa/inter-elim-left (ran f) (dom g) y2) Hy2))
+            (have <b3> (f x y1) :by (p/and-elim-left HPy1))
+            (have <b4> (f x y2) :by (p/and-elim-left HPy2))
+            
+            (have <b> (equal y1 y2) :by 
+                  ((sq/single-in-elim <a1> y1 y2)
+                   <b1> <b2> <b3> <b4>))
+            
+            (have <c1> (sq/single-in to (lambda [z V] (g y1 z))) 
+                  :by (Hg y1 Hy1))
+            
+            (have <c2> (g y1 z1) :by (p/and-elim-right HPy1))
+            (have <c3> (g y1 z2)
+                  :by (eq/eq-subst (lambda [y U] (g y z2)) (eq/eq-sym <b>) (p/and-elim-right HPy2)))
+            
+            (have <c> (equal z1 z2)
+                  :by ((sq/single-in-elim <c1> z1 z2)
+                       Hz1 Hz2 <c2> <c3>)))
+          
+          (have <d> (equal z1 z2)
+                :by (sq/ex-in-elim <a3> <c>)))
+        
+        (have <e> (equal z1 z2)
+              :by (sq/ex-in-elim <a2> <d>)))
+      
+      (have <f> _ :by ((sq/single-in-intro to (lambda [z V] ((pfcomp f g from to) x z)))
+                       <e>)))
 
-          (have <c> (equal z1 z2)
-                :by (Hg y1 <c2> z1 z2 (p/and-elim-right Hy1) <c3>)))
-        (have <d> _ :by (q/ex-elim <b> <c>)))
-      (have <e> _ :by (q/ex-elim <a> <d>))))
-  (qed <e>))
+    (have <g> _ :by <f>))
+  
+  (qed <g>))     
+
+(comment
+
+  ;; this needs to be updated too
 
 (defthm rcomp-serial
   [[?T ?U ?V :type] [f (rel T U)] [g (rel U V)] [from (set T)]]
