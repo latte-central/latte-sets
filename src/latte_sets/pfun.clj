@@ -754,59 +754,58 @@ proofs by contradiction."
           :by ((rel-single-rooted-rinverse-functional f from to) <a>)))
   (qed <b>))
 
-(comment
-  ;; this needs to be updated
+(defthm pfcomp-injective
+  [[?T ?U ?V :type] [f (rel T U)] [g (rel U V)] [from (set T)] [to (set V)]]
+  (==> (injective f from (sa/inter (ran f) (dom g)))
+       (injective g (sa/inter (ran f) (dom g)) to)
+       (injective (pfcomp f g from to) from to)))
 
-(defthm rcomp-injective
-  [[?T ?U ?V :type] [f1 (rel T U)] [f2 (rel U V)] [s1 (set T)] [s2 (set V)]]
-  (==> (injective f1 s1 (image f1 s1))
-       (injective f2 (image f1 s1) s2)
-       (injective (rel/rcomp f1 f2) s1 s2)))
-
-(proof 'rcomp-injective-thm
-  (assume [Hf1 _
-           Hf2 _]
-    (assume [x1 T Hx1 (elem x1 s1)
-             x2 T Hx2 (elem x2 s1)
-             z1 V Hz1 (elem z1 s2)
-             z2 V Hz2 (elem z2 s2)
-             H1 ((rel/rcomp f1 f2) x1 z1)
-             H2 ((rel/rcomp f1 f2) x2 z2)
+(try-proof 'pfcomp-injective-thm
+  (assume [Hf _
+           Hg _]
+    (assume [x1 T Hx1 (elem x1 from)
+             x2 T Hx2 (elem x2 from)
+             z1 V Hz1 (elem z1 to)
+             z2 V Hz2 (elem z2 to)
+             Hpfz1 ((pfcomp f g from to) x1 z1)
+             Hpfz2 ((pfcomp f g from to) x2 z2)
              Heq (equal z1 z2)]
       "We have to prove x1=x2"
-      (have <a> (exists [y1 U] (and (f1 x1 y1) (f2 y1 z1)))
-            :by H1)
-      (assume [y1 U
-               Hy1 (and (f1 x1 y1) (f2 y1 z1))]
-        (have <b> (elem y1 (image f1 s1))
-              :by ((q/ex-intro (lambda [$ T]
-                                 (and (elem $ s1)
-                                      (f1 $ y1))) x1)
-                   (p/and-intro Hx1 (p/and-elim-left Hy1))))
-        (have <c> (exists [y2 U] (and (f1 x2 y2) (f2 y2 z2)))
-              :by H2)
-        (assume [y2 U
-                 Hy2 (and (f1 x2 y2) (f2 y2 z2))]
-          (have <d> (elem y2 (image f1 s1))
-                :by ((q/ex-intro (lambda [$ T]
-                                   (and (elem $ s1)
-                                        (f1 $ y2))) x2)
-                     (p/and-intro Hx2 (p/and-elim-left Hy2))))
+     
+      (have <a1> (exists-in [y1 (sa/inter (ran f) (dom g))]
+                   (and (f x1 y1) (g y1 z1)))
+            :by (p/and-elim* 3 Hpfz1))
 
-          (have <e> (equal y1 y2)
-                :by (Hf2 y1 <b> y2 <d> z1 Hz1 z2 Hz2 
-                         (p/and-elim-right Hy1) (p/and-elim-right Hy2)
-                         Heq))
-          (have <f> (equal x1 x2)
-                :by (Hf1 x1 Hx1 x2 Hx2 y1 <b> y2 <d>
-                         (p/and-elim-left Hy1) (p/and-elim-left Hy2)
-                         <e>)))
-        (have <g> _ :by (q/ex-elim <c> <f>)))
-      (have <h> _ :by (q/ex-elim <a> <g>))))
+      (have <a2> (exists-in [y2 (sa/inter (ran f) (dom g))]
+                   (and (f x2 y2) (g y2 z2)))
+            :by (p/and-elim* 3 Hpfz2))
 
-  (qed <h>))
+      (assume [y1 U Hy1 (elem y1 (sa/inter (ran f) (dom g)))
+               Hpfy1 (and (f x1 y1) (g y1 z1))]
 
-)
+        (assume [y2 U Hy2 (elem y2 (sa/inter (ran f) (dom g)))
+                 Hpfy2 (and (f x2 y2) (g y2 z2))]
+
+          (have <b1> (g y1 z1) :by (p/and-elim-right Hpfy1))
+          (have <b2> (g y2 z2) :by (p/and-elim-right Hpfy2))
+
+          (have <b> (equal y1 y2)
+                :by (Hg y1 Hy1 y2 Hy2 z1 Hz1 z2 Hz2 <b1> <b2> Heq))
+
+          (have <c1> (f x1 y1) :by (p/and-elim-left Hpfy1))
+          (have <c2> (f x2 y2) :by (p/and-elim-left Hpfy2))
+
+          "done!"
+          (have <c> (equal x1 x2)
+                :by (Hf x1 Hx1 x2 Hx2 y1 Hy1 y2 Hy2 <c1> <c2> <b>)))
+
+        (have <d> _ :by (sq/ex-in-elim <a2> <c>)))
+
+      (have <e> _ :by (sq/ex-in-elim <a1> <d>)))
+    
+    (have <f> (injective (pfcomp f g from to) from to) :by <e>))
+
+  (qed <f>))
 
 (definition injection
   [[?T ?U :type] [f (rel T U)] [s1 (set T)] [s2 (set U)]]
