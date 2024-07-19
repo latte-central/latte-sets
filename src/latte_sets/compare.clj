@@ -19,7 +19,7 @@
 
             [latte-sets.powerrel :as prel :refer [rel-ex]]
 
-            [latte-sets.pfun :as pfun :refer [injection bijection]]
+            [latte-sets.pfun :as pfun :refer [injection bijection pfcomp-mid]]
 
             ))
 
@@ -84,16 +84,33 @@
        (equipotent s2 s3)
        (equipotent s1 s3)))
 
-(try-proof 'equipotent-trans-thm
+(proof 'equipotent-trans-thm
   (assume [Heq1 _ 
            Heq2 _]
     
     (assume [g (rel U V)
              Hg (bijection g s2 s3)]
 
-
       (assume [f (rel T U)
-               Hf (bijection g s1 s2)]
+               Hf (bijection f s1 s2)]
 
-        ;; TODO
-        ))))
+        (have <a> (bijection (pfcomp-mid f g s1 s2 s3) s1 s3)
+              :by ((pfun/pfcomp-bijection-mid f g s1 s2 s3)
+                   Hf Hg))
+
+        (have <b> _
+              :by ((prel/rel-ex-intro (lambda [h (rel T V)]
+                                        (bijection h s1 s3))
+                                      (pfcomp-mid f g s1 s2 s3)) <a>)))
+
+      (have <c> _ :by ((prel/rel-ex-elim (lambda [f (rel T U)]
+                                           (bijection f s1 s2))
+                                         (equipotent s1 s3))
+                       Heq1 <b>)))
+
+    (have <d> _ :by ((prel/rel-ex-elim (lambda [g (rel U V)]
+                                           (bijection g s2 s3))
+                                         (equipotent s1 s3))
+                       Heq2 <c>)))
+
+  (qed <d>))
