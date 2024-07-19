@@ -85,8 +85,15 @@
        (equipotent s1 s3)))
 
 (try-proof 'equipotent-trans-thm
-  (assume [Heq1 _ Heq2 _]
+  (assume [Heq1 _ 
+           Heq2 _]
     
-    "TODO"
+    (assume [g (rel U V)
+             Hg (bijection g s2 s3)]
 
-))
+
+      (assume [f (rel T U)
+               Hf (bijection g s1 s2)]
+
+        ;; TODO
+        ))))

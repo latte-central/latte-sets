@@ -433,7 +433,20 @@ composition, i.e. `f ; g`."
             (exists-in [y (sa/inter (ran f) (dom g))]
               (and (f x y)
                    (g y z)))))))
-  
+
+
+(definition pfcomp-mid
+  "Partial composition of relations `f` and `g` with an explicit `middle`
+ set between `from` and `to`."
+  [[?T ?U ?V :type] [f (rel T U)] [g (rel U V)] [from (set T)] [mid (set U)] [to (set V)]]
+  (lambda [x T]
+    (lambda [z V]
+      (and* (elem x from)
+            (elem z to)
+            (exists-in [y mid]
+              (and (f x y)
+                   (g y z)))))))
+ 
 (defthm pfcomp-functional
   [[?T ?U ?V :type] [f (rel T U)] [g (rel U V)] [from (set T)] [to (set V)]]
   (==> (functional f from (sa/inter (ran f) (dom g)))
@@ -444,6 +457,13 @@ composition, i.e. `f ; g`."
 ;; by requiring only `(functional f from (ran f))`
 ;; however, this breaks the composability of partial injections 
 
+
+(defthm pfcomp-functional-mid
+  [[?T ?U ?V :type] [f (rel T U)] [g (rel U V)] [from (set T)] [mid (set U)] [to (set V)]]
+  (==> (functional f from mid)
+       (functional g mid to)
+       (functional (pfcomp-mid f g from mid to) from to)))
+
 ;; proof scheme
 ;;  forall-in [x from], forall-in [z1 z2 to], (f<;>g x z1) /\ (f<;>g x z2) ==> z1=z2
 ;;  (f<;>g x y1)  <=>  x \in from, z1 \in to,  ex [y1 (ran f) \inter (dom g)] s.t. (f x y1) /\ (g y1 z1) 
@@ -451,41 +471,38 @@ composition, i.e. `f ; g`."
 ;;  since f is functional, we have that y1 = y2
 ;;  theb since g is functional, we have z1 = z2  (Qed)
 
-(proof 'pfcomp-functional-thm
+(proof 'pfcomp-functional-mid-thm
   (assume [Hf _
            Hg _]
     (assume [x T
              Hx (elem x from)]
       (assume [z1 V Hz1 (elem z1 to) 
                z2 V Hz2 (elem z2 to)
-               HPz1 ((pfcomp f g from to) x z1)
-               HPz2 ((pfcomp f g from to) x z2)]
+               HPz1 ((pfcomp-mid f g from mid to) x z1)
+               HPz2 ((pfcomp-mid f g from mid to) x z2)]
       
         "We have to show that z1=z2"
         
-        (have <a1> (sq/single-in (sa/inter (ran f) (dom g)) (lambda [y U] (f x y))) :by (Hf x Hx))
-        
-        (have <a2> (exists-in [y1 (sa/inter (ran f) (dom g))]
+        (have <a1> (sq/single-in mid (lambda [y U] (f x y))) :by (Hf x Hx))
+
+        (have <a2> (exists-in [y1 mid]
                      (and (f x y1) (g y1 z1)))
               :by (p/and-elim* 3 HPz1))
-        
-        (have <a3> (exists-in [y2 (sa/inter (ran f) (dom g))]
+
+        (have <a3> (exists-in [y2 mid]
                      (and (f x y2) (g y2 z2)))
               :by (p/and-elim* 3 HPz2))
-        
+
         "We, will eliminate the two facts above, in turn"
         
-        (assume [y1 U Hy1 (elem y1 (sa/inter (ran f) (dom g)))
+        (assume [y1 U Hy1 (elem y1 mid)
                  HPy1 (and (f x y1) (g y1 z1))]
-          (assume [y2 U Hy2 (elem y2 (sa/inter (ran f) (dom g)))
+          (assume [y2 U Hy2 (elem y2 mid)
                    HPy2 (and (f x y2) (g y2 z2))]
            
-            ;; Remark : these would be needed if we would require only (ran f)
-            ;;(have <b1> (elem y1 (ran f)) :by ((sa/inter-elim-left (ran f) (dom g) y1) Hy1))
-            ;;(have <b2> (elem y2 (ran f)) :by ((sa/inter-elim-left (ran f) (dom g) y2) Hy2))
             (have <b3> (f x y1) :by (p/and-elim-left HPy1))
             (have <b4> (f x y2) :by (p/and-elim-left HPy2))
-            
+
             (have <b> (equal y1 y2) :by 
                   ((sq/single-in-elim <a1> y1 y2)
                    Hy1 Hy2 <b3> <b4>))
@@ -503,16 +520,19 @@ composition, i.e. `f ; g`."
           
           (have <d> (equal z1 z2)
                 :by (sq/ex-in-elim <a3> <c>)))
-        
+
         (have <e> (equal z1 z2)
               :by (sq/ex-in-elim <a2> <d>)))
       
-      (have <f> _ :by ((sq/single-in-intro to (lambda [z V] ((pfcomp f g from to) x z)))
+      (have <f> _ :by ((sq/single-in-intro to (lambda [z V] ((pfcomp-mid f g from mid to) x z)))
                        <e>)))
 
     (have <g> _ :by <f>))
   
-  (qed <g>))     
+  (qed <g>))
+
+(proof 'pfcomp-functional-thm
+  (qed (pfcomp-functional-mid f g from (sa/inter (ran f) (dom g)) to)))
 
 
 (defthm pfcomp-serial
@@ -521,16 +541,22 @@ composition, i.e. `f ; g`."
        (serial g (sa/inter (ran f) (dom g)) to)
        (serial (pfcomp f g from to) from to)))
 
-(proof 'pfcomp-serial-thm
+(defthm pfcomp-serial-mid
+  [[?T ?U ?V :type] [f (rel T U)] [g (rel U V)] [from (set T)] [mid (set U)] [to (set V)]]
+  (==> (serial f from mid)
+       (serial g mid to)
+       (serial (pfcomp-mid f g from mid to) from to)))
+
+(proof 'pfcomp-serial-mid-thm
   (assume [Hf _
            Hg _]
     (assume [x T
              Hx (elem x from)]
       "We have to show that there is a `z` in `to` such that (f<;>g x z)"
 
-      (have <a> (exists-in [y (sa/inter (ran f) (dom g))] (f x y)) :by (Hf x Hx))
+      (have <a> (exists-in [y mid] (f x y)) :by (Hf x Hx))
 
-      (assume [y U Hy (elem y (sa/inter (ran f) (dom g)))
+      (assume [y U Hy (elem y mid)
                Hfy (f x y)]
 
         (have <b> (exists-in [z to] (g y z)) :by (Hg y Hy))
@@ -540,23 +566,27 @@ composition, i.e. `f ; g`."
 
           (have <c> (and (f x y) (g y z)) :by (p/and-intro Hfy Hgz))
 
-          (have <d> _ :by ((sq/ex-in-intro (sa/inter (ran f) (dom g))
+          (have <d> _ :by ((sq/ex-in-intro mid
                                            (lambda [$ U] (and (f x $) (g $ z))) y)
                            Hy <c>))
 
-          (have <e> ((pfcomp f g from to) x z)
+          (have <e> ((pfcomp-mid f g from mid to) x z)
                 :by (p/and-intro* Hx Hz <d>))
 
-          (have <f> _ :by ((sq/ex-in-intro to (lambda [$ V] ((pfcomp f g from to) x $)) z)
+          (have <f> _ :by ((sq/ex-in-intro to (lambda [$ V] ((pfcomp-mid f g from mid to) x $)) z)
                            Hz <e>)))
 
         (have <g> _ :by (sq/ex-in-elim <b> <f>)))
 
       (have <h> _ :by (sq/ex-in-elim <a> <g>)))
 
-    (have <i> (serial (pfcomp f g from to) from to) :by <h>))
+    (have <i> (serial (pfcomp-mid f g from mid to) from to) :by <h>))
 
   (qed <i>))
+
+(proof 'pfcomp-serial-thm
+  (qed (pfcomp-serial-mid f g from (sa/inter (ran f) (dom g)) to)))
+
 
 (definition injective
   "The relation `f` is injective wrt. domain set `from`
@@ -797,30 +827,36 @@ proofs by contradiction."
        (injective g (sa/inter (ran f) (dom g)) to)
        (injective (pfcomp f g from to) from to)))
 
-(proof 'pfcomp-injective-thm
+(defthm pfcomp-injective-mid
+  [[?T ?U ?V :type] [f (rel T U)] [g (rel U V)] [from (set T)] [mid (set U)] [to (set V)]]
+  (==> (injective f from mid)
+       (injective g mid to)
+       (injective (pfcomp-mid f g from mid to) from to)))
+
+(proof 'pfcomp-injective-mid-thm
   (assume [Hf _
            Hg _]
     (assume [x1 T Hx1 (elem x1 from)
              x2 T Hx2 (elem x2 from)
              z1 V Hz1 (elem z1 to)
              z2 V Hz2 (elem z2 to)
-             Hpfz1 ((pfcomp f g from to) x1 z1)
-             Hpfz2 ((pfcomp f g from to) x2 z2)
+             Hpfz1 ((pfcomp-mid f g from mid to) x1 z1)
+             Hpfz2 ((pfcomp-mid f g from mid to) x2 z2)
              Heq (equal z1 z2)]
       "We have to prove x1=x2"
      
-      (have <a1> (exists-in [y1 (sa/inter (ran f) (dom g))]
+      (have <a1> (exists-in [y1 mid]
                    (and (f x1 y1) (g y1 z1)))
             :by (p/and-elim* 3 Hpfz1))
 
-      (have <a2> (exists-in [y2 (sa/inter (ran f) (dom g))]
+      (have <a2> (exists-in [y2 mid]
                    (and (f x2 y2) (g y2 z2)))
             :by (p/and-elim* 3 Hpfz2))
 
-      (assume [y1 U Hy1 (elem y1 (sa/inter (ran f) (dom g)))
+      (assume [y1 U Hy1 (elem y1 mid)
                Hpfy1 (and (f x1 y1) (g y1 z1))]
 
-        (assume [y2 U Hy2 (elem y2 (sa/inter (ran f) (dom g)))
+        (assume [y2 U Hy2 (elem y2 mid)
                  Hpfy2 (and (f x2 y2) (g y2 z2))]
 
           (have <b1> (g y1 z1) :by (p/and-elim-right Hpfy1))
@@ -840,9 +876,12 @@ proofs by contradiction."
 
       (have <e> _ :by (sq/ex-in-elim <a1> <d>)))
     
-    (have <f> (injective (pfcomp f g from to) from to) :by <e>))
+    (have <f> (injective (pfcomp-mid f g from mid to) from to) :by <e>))
 
   (qed <f>))
+
+(proof 'pfcomp-injective-thm
+  (qed (pfcomp-injective-mid f g from (sa/inter (ran f) (dom g)) to)))
 
 (definition injection
   [[?T ?U :type] [f (rel T U)] [s1 (set T)] [s2 (set U)]]
@@ -938,23 +977,32 @@ proofs by contradiction."
        (injection g (sa/inter (ran f) (dom g)) to)
        (injection (pfcomp f g from to) from to)))
 
-(proof 'pfcomp-injection-thm
+(defthm pfcomp-injection-mid
+  [[?T ?U ?V :type] [f (rel T U)] [g (rel U V)] [from (set T)] [mid (set U)] [to (set V)]]
+  (==> (injection f from mid)
+       (injection g mid to)
+       (injection (pfcomp-mid f g from mid to) from to)))
+
+(proof 'pfcomp-injection-mid-thm
   (assume [Hf _
            Hg _]
 
-    (have <a> (functional (pfcomp f g from to) from to)
-          :by ((pfcomp-functional f g from to) (p/and-elim* 1 Hf) (p/and-elim* 1 Hg)))
+    (have <a> (functional (pfcomp-mid f g from mid to) from to)
+          :by ((pfcomp-functional-mid f g from mid to) (p/and-elim* 1 Hf) (p/and-elim* 1 Hg)))
 
-    (have <b> (serial (pfcomp f g from to) from to)
-          :by ((pfcomp-serial f g from to) (p/and-elim* 2 Hf) (p/and-elim* 2 Hg)))
+    (have <b> (serial (pfcomp-mid f g from mid to) from to)
+          :by ((pfcomp-serial-mid f g from mid to) (p/and-elim* 2 Hf) (p/and-elim* 2 Hg)))
 
-    (have <c> (injective (pfcomp f g from to) from to)
-          :by ((pfcomp-injective f g from to) (p/and-elim* 3 Hf) (p/and-elim* 3 Hg)))
+    (have <c> (injective (pfcomp-mid f g from mid to) from to)
+          :by ((pfcomp-injective-mid f g from mid to) (p/and-elim* 3 Hf) (p/and-elim* 3 Hg)))
 
-    (have <d> (injection (pfcomp f g from to) from to) 
+    (have <d> (injection (pfcomp-mid f g from mid to) from to) 
           :by (p/and-intro* <a> <b> <c>)))
 
   (qed <d>))
+
+(proof 'pfcomp-injection-thm
+  (qed (pfcomp-injection-mid f g from (sa/inter (ran f) (dom g)) to)))
 
 (definition surjective
   "The relation `f` is surjective onto `s2` for domain `s1`."
@@ -1066,17 +1114,23 @@ proofs by contradiction."
        (surjective g (sa/inter (ran f) (dom g)) to)
        (surjective (pfcomp f g from to) from to)))
 
-(proof 'pfcomp-surjective-thm
+(defthm pfcomp-surjective-mid
+  [[?T ?U ?V :type] [f (rel T U)] [g (rel U V)] [from (set T)] [mid (set U)] [to (set V)]]
+  (==> (surjective f from mid)
+       (surjective g mid to)
+       (surjective (pfcomp-mid f g from mid to) from to)))
+
+(proof 'pfcomp-surjective-mid-thm
   (assume [Hf _
            Hg _]
 
     (assume [z V Hz (elem z to)]
 
-      (have <a> (exists-in [y (sa/inter (ran f) (dom g))] (g y z))
+      (have <a> (exists-in [y mid] (g y z))
             :by (Hg z Hz))
 
       (assume [y U 
-               Hy (elem y (sa/inter (ran f) (dom g)))
+               Hy (elem y mid)
                Hgy (g y z)]
         
         (have <b> (exists-in [x from] (f x y))
@@ -1088,25 +1142,28 @@ proofs by contradiction."
 
             (have <c1> (and (f x y) (g y z)) :by (p/and-intro Hfx Hgy))
             
-            (have <c2> _ :by ((sq/ex-in-intro (sa/inter (ran f) (dom g)) 
+            (have <c2> _ :by ((sq/ex-in-intro mid 
                                               (lambda [$ U] (and (f x $) (g $ z))) y)
                               Hy <c1>))
             
-            (have <c> ((pfcomp f g from to) x z)
+            (have <c> ((pfcomp-mid f g from mid to) x z)
                   :by (p/and-intro* Hx Hz <c2>))
            
-            (have <d> (exists-in [x from] ((pfcomp f g from to) x z)) 
-                  :by ((sq/ex-in-intro from (lambda [$ T] ((pfcomp f g from to) $ z)) x)
+            (have <d> (exists-in [x from] ((pfcomp-mid f g from mid to) x z)) 
+                  :by ((sq/ex-in-intro from (lambda [$ T] ((pfcomp-mid f g from mid to) $ z)) x)
                        Hx <c>)))
 
         (have <e> _ :by (sq/ex-in-elim <b> <d>)))
 
       (have <f> _ :by (sq/ex-in-elim <a> <e>)))
 
-    (have <g> (surjective (pfcomp f g from to) from to)
+    (have <g> (surjective (pfcomp-mid f g from mid to) from to)
           :by <f>))
 
   (qed <g>))
+
+(proof 'pfcomp-surjective-thm
+  (qed (pfcomp-surjective-mid f g from (sa/inter (ran f) (dom g)) to)))
 
 (definition surjection
   "The relation `f` is a functional surjection on-to set `s2`."
@@ -1121,21 +1178,30 @@ proofs by contradiction."
        (surjection g (sa/inter (ran f) (dom g)) to)
        (surjection (pfcomp f g from to) from to)))
 
-(proof 'pfcomp-surjection-thm
+(defthm pfcomp-surjection-mid
+  [[?T ?U ?V :type] [f (rel T U)] [g (rel U V)] [from (set T)] [mid (set U)] [to (set V)]]
+  (==> (surjection f from mid)
+       (surjection g mid to)
+       (surjection (pfcomp-mid f g from mid to) from to)))
+
+(proof 'pfcomp-surjection-mid-thm
   (assume [Hf _
            Hg _]
-    (have <a> (functional (pfcomp f g from to) from to)
-          :by ((pfcomp-functional f g from to) (p/and-elim* 1 Hf) (p/and-elim* 1 Hg)))
+    (have <a> (functional (pfcomp-mid f g from  mid to) from to)
+          :by ((pfcomp-functional-mid f g from mid to) (p/and-elim* 1 Hf) (p/and-elim* 1 Hg)))
 
-    (have <b> (serial (pfcomp f g from to) from to)
-          :by ((pfcomp-serial f g from to) (p/and-elim* 2 Hf) (p/and-elim* 2 Hg)))
+    (have <b> (serial (pfcomp-mid f g from mid to) from to)
+          :by ((pfcomp-serial-mid f g from mid to) (p/and-elim* 2 Hf) (p/and-elim* 2 Hg)))
     
-    (have <c> (surjective (pfcomp f g from to) from to)
-          :by ((pfcomp-surjective f g from to) (p/and-elim* 3 Hf) (p/and-elim* 3 Hg)))
+    (have <c> (surjective (pfcomp-mid f g from mid to) from to)
+          :by ((pfcomp-surjective-mid f g from mid to) (p/and-elim* 3 Hf) (p/and-elim* 3 Hg)))
 
     (have <d> _ :by (p/and-intro* <a> <b> <c>)))
   
   (qed <d>))
+
+(proof 'pfcomp-surjection-thm
+  (qed (pfcomp-surjection-mid f g from (sa/inter (ran f) (dom g)) to)))
 
 (definition bijective
   "The relation `f` is both [[injective]] and [[bijective]] wrt. sets `s1`
@@ -1208,19 +1274,28 @@ and `s2`. A [[bijection]] needs to be also [[functional]] and [[serial]]."
        (bijective g (sa/inter (ran f) (dom g)) to)
        (bijective (pfcomp f g from to) from to)))
 
-(proof 'pfcomp-bijective-thm
+(defthm pfcomp-bijective-mid
+  [[?T ?U ?V :type] [f (rel T U)] [g (rel U V)] [from (set T)] [mid (set U)] [to (set V)]]
+  (==> (bijective f from mid)
+       (bijective g mid to)
+       (bijective (pfcomp-mid f g from mid to) from to)))
+
+(proof 'pfcomp-bijective-mid-thm
   (assume [Hf _
            Hg _]
 
-    (have <a> (injective (pfcomp f g from to) from to)
-          :by ((pfcomp-injective f g from to) (p/and-elim-left Hf) (p/and-elim-left Hg)))
+    (have <a> (injective (pfcomp-mid f g from mid to) from to)
+          :by ((pfcomp-injective-mid f g from mid to) (p/and-elim-left Hf) (p/and-elim-left Hg)))
 
-    (have <b> (surjective (pfcomp f g from to) from to)
-          :by ((pfcomp-surjective f g from to) (p/and-elim-right Hf) (p/and-elim-right Hg)))
+    (have <b> (surjective (pfcomp-mid f g from mid to) from to)
+          :by ((pfcomp-surjective-mid f g from mid to) (p/and-elim-right Hf) (p/and-elim-right Hg)))
 
     (have <c> _ :by (p/and-intro <a> <b>)))
 
   (qed <c>))
+
+(proof 'pfcomp-bijective-thm
+  (qed (pfcomp-bijective-mid f g from (sa/inter (ran f) (dom g)) to)))
 
 (definition bijection
   "The relation `f` is a bijection between sets `s1` and `s2`."
@@ -1494,19 +1569,29 @@ hence it is *unique*."
        (bijection g (sa/inter (ran f) (dom g)) to)
        (bijection (pfcomp f g from to) from to)))
 
-(proof 'pfcomp-bijection-thm
+(defthm pfcomp-bijection-mid
+  [[?T ?U ?V :type] [f (rel T U)] [g (rel U V)] [from (set T)] [mid (set U)] [to (set V)]]
+  (==> (bijection f from mid)
+       (bijection g mid to)
+       (bijection (pfcomp-mid f g from mid to) from to)))
+
+(proof 'pfcomp-bijection-mid-thm
   (assume [Hf _
            Hg _]
-    (have <a> (functional (pfcomp f g from to) from to)
-          :by ((pfcomp-functional f g from to) (p/and-elim* 1 Hf) (p/and-elim* 1 Hg)))
+    (have <a> (functional (pfcomp-mid f g from mid to) from to)
+          :by ((pfcomp-functional-mid f g from mid to) (p/and-elim* 1 Hf) (p/and-elim* 1 Hg)))
 
-    (have <b> (serial (pfcomp f g from to) from to)
-          :by ((pfcomp-serial f g from to) (p/and-elim* 2 Hf) (p/and-elim* 2 Hg)))
+    (have <b> (serial (pfcomp-mid f g from mid to) from to)
+          :by ((pfcomp-serial-mid f g from mid to) (p/and-elim* 2 Hf) (p/and-elim* 2 Hg)))
     
-    (have <c> (bijective (pfcomp f g from to) from to)
-          :by ((pfcomp-bijective f g from to) (p/and-elim* 3 Hf) (p/and-elim* 3 Hg)))
+    (have <c> (bijective (pfcomp-mid f g from mid to) from to)
+          :by ((pfcomp-bijective-mid f g from mid to) (p/and-elim* 3 Hf) (p/and-elim* 3 Hg)))
 
     (have <d> _ :by (p/and-intro* <a> <b> <c>)))
   
   (qed <d>))
+
+(proof 'pfcomp-bijection-thm
+  (qed (pfcomp-bijection-mid f g from (sa/inter (ran f) (dom g)) to)))
+
 
