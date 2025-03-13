@@ -3,7 +3,7 @@
   :url "https://github.com/fredokun/latte-sets.git"
   :license {:name "MIT Licence"
             :url "http://opensource.org/licenses/MIT"}
-  :dependencies [[org.clojure/clojure "1.11.1"]
+  :dependencies [[org.clojure/clojure "1.12.0"]
                  [latte-prelude "1.0b10-SNAPSHOT"]]
   :main latte-sets.main
   :aliases {"certify" ["run" ":certify"]
