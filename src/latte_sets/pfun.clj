@@ -1594,4 +1594,3 @@ hence it is *unique*."
 (proof 'pfcomp-bijection-thm
   (qed (pfcomp-bijection-mid f g from (sa/inter (ran f) (dom g)) to)))
 
-
